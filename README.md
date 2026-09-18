@@ -130,3 +130,7 @@ python tools/export_web.py --run r2 --ckpt runs/r2/ckpt.pt   # ONNX export, pari
 - **Evaluation:** lm-evaluation-harness by EleutherAI (MIT).
 - **Fonts:** Newsreader, Instrument Sans and JetBrains Mono via Google Fonts. Inter (SIL OFL) is used in the film.
 - **Photographs:** the Stari Most (Mostar) photographs on the site are loaded from a third-party host and are not part of this repository.
+
+## License
+
+MIT, see [`LICENSE`](LICENSE). The training data, fonts, third-party libraries and photographs listed under Credits keep their own licences.
