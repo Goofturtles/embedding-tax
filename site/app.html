@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Budget explorer · The Embedding Tax</title>
+<meta name="description" content="Set the vocabulary, the width and the tying, see how many transformer layers fit under a 50 million parameter cap, then run the 49,296,896-parameter model in your browser." />
+<meta name="theme-color" content="#faf9f5" />
+<link rel="icon" href="favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<!-- The type trio (shared.css): Newsreader 400 / 400 italic / 500 on its optical-size axis
+     (the licensed stand-in for Anthropic Serif), Instrument Sans 400..600 as one variable face
+     so the anchor's 480 button weight renders (the stand-in for Anthropic Sans), JetBrains Mono
+     400 / 500 (1:1 with the anchor). Only the weights in use. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=Instrument+Sans:wght@400..600&family=JetBrains+Mono:wght@400;500&display=swap" />
+<link rel="stylesheet" href="shared.css" />
+<link rel="stylesheet" href="explorer.css" />
+<link rel="stylesheet" href="playground.css" />
+<script src="explorer.js" defer></script>
+<script src="results.js" defer></script>
+<!-- infer.js is built by the model workflow; a 404 here is the playground's honest
+     "being packaged" state, never a fake demo. -->
+<script src="infer.js" defer></script>
+<!-- presets.js: the decoding presets, one table for this page, the home composer and the story panel -->
+<script src="presets.js" defer></script>
+<script src="playground.js" defer></script>
+</head>
+<body class="ex-body">
+
+<a class="skip-link" href="#work">Skip to content</a>
+
+<!-- Header capsule (shared.css, "HEADER CAPSULE"): the same glass capsule as index.html's,
+     sticky here (static on phones), with the Explorer chip filled at first paint (honest
+     without JS) and "Back to the story" as Button secondary size-medium. Anthropic research
+     chip sub-nav https://mobbin.com/sites/sections/5d90eadd-ec0b-4ec1-9729-d315afe8d366;
+     OpenAI About rail back link https://mobbin.com/sites/sections/ce8344a8-9e58-49db-b909-db3b5576679d;
+     Linear header and back link https://mobbin.com/sites/sections/192414ab-334b-4a7f-a278-1d4cf5bdc095. -->
+<header class="site-header site-header--app">
+  <div class="site-header-inner">
+    <a class="site-brand" href="index.html" aria-label="The Embedding Tax, home"><svg class="site-mark" viewBox="0 0 64 64" width="24" height="24" aria-hidden="true"><path d="M12 19 L52 19 L52 45 L44 45 L44 37 A12 12 0 0 0 20 37 L20 45 L12 45 Z" fill="currentColor"/></svg><span class="site-word" aria-hidden="true">The Embedding Tax</span></a>
+    <nav class="site-links" aria-label="Main menu">
+      <a class="site-link" href="index.html">Model</a>
+      <a class="site-link" href="story.html">Story</a>
+      <a class="site-link" href="app.html" aria-current="page">Explorer</a>
+    </nav>
+    <div class="site-actions">
+      <a class="btn btn--secondary" href="index.html"><svg class="btn-arrow" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M13 8H3M7 4 3 8l4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="btn-label">Try the model</span></a>
+    </div>
+  </div>
+</header>
+
+<!-- Crumb strip (shared.css, "CRUMB STRIP"): under the capsule, in flow, not sticky. Claude
+     NavBar breadcrumbs https://mobbin.com/sites/sections/6eb09dee-d3e2-4c6c-aa87-3346999a6d3c.
+     #crumbRun is a static provenance note; results.js may extend it to
+     "Snapshot of run {_run} · not live" from results.json._run. Nothing here implies live data. -->
+<nav class="site-crumbs" aria-label="Breadcrumb">
+  <div class="site-crumbs-inner">
+    <ol class="site-crumbs-list">
+      <li><a href="index.html">The Embedding Tax</a></li>
+      <li aria-current="page">Explorer</li>
+    </ol>
+    <p class="site-crumbs-note" id="crumbRun">Snapshot · not live</p>
+  </div>
+</nav>
+
+<!-- PAGE ORDER: hero under the arch, the instrument, the model in use, the provenance seam,
+     then the measured record (run, benchmarks, published samples). Rhythm and white cards
+     divide the page; there is no frame, no rails and no crosses. Claude research hero on ivory
+     https://mobbin.com/sites/sections/d0ea8855-f290-486c-a4ba-7a1f9515d308; Cohere grained
+     ground https://mobbin.com/sites/sections/368bbb9d-dd0f-4d48-b4ff-07de548fd9fa. -->
+<main class="ex-main" id="work" tabindex="-1">
+
+  <!-- HERO UNDER THE ARCH. The signature span draws itself on load (shared.css .arch) and the
+       headline sits under it: whatever is under the crown is under the cap. Antimetal two-tone
+       headline https://mobbin.com/sites/sections/ba61c486-4c3f-46d4-b317-cfc09568460d; Claude
+       use-case columns divided by hairlines https://mobbin.com/sites/sections/ec60e21b-92c5-4277-80c2-07e5358bf74c;
+       Cartesia two-tone serif headline https://mobbin.com/sites/sections/80ad413d-fe11-4cde-b784-2732fea74a89.
+       The thesis figures are filled by explorer.js from budget(); the static text is what
+       budget() returns, so a no-JS page matches. -->
+  <section class="ex-hero" aria-labelledby="exTitle">
+    <div class="arch-wrap arch-wrap--whisper ex-arch" id="exArch" aria-hidden="true" data-reveal>
+      <svg class="arch" viewBox="0 0 1200 300" preserveAspectRatio="none" focusable="false">
+        <path pathLength="1" d="M0 300 C 120 96, 330 40, 600 40 C 870 40, 1080 96, 1200 300"/>
+        <path class="arch-tick" d="M600 33 v14"/>
+      </svg>
+      <span class="arch-label">50,000,000</span>
+    </div>
+    <div class="hero-main">
+      <p class="hero-kicker" data-reveal style="--i:0"><span class="chip">Budget explorer</span></p>
+      <h1 class="hero-title" id="exTitle" data-reveal style="--i:1"><span class="hero-quiet">Fifty million,</span> and the word list counts.</h1>
+      <p class="hero-thesis" data-reveal style="--i:2">At our width of 512, GPT-2's 50,257-token vocabulary spends <b><i class="sw sw--emb" aria-hidden="true"></i><span id="tGptPct">51.5%</span></b> of the cap before a single layer exists and leaves room for <b><i class="sw sw--lay" aria-hidden="true"></i><span id="tGptLayers">7 layers</span></b>. Ours has 16,384 tokens, spends <b><i class="sw sw--emb" aria-hidden="true"></i><span id="tOursPct">16.8%</span></b> and fits <b><i class="sw sw--lay" aria-hidden="true"></i><span id="tOursLayers">13</span></b>. Everything in the calculator below is arithmetic on the cap, recomputed as you move it.</p>
+    </div>
+    <aside class="hero-rules" aria-labelledby="rulesHead" data-reveal style="--i:3">
+      <h2 class="rules-h" id="rulesHead">Three rules decide it</h2>
+      <ol class="rules">
+        <li class="rule"><span class="rule-n" aria-hidden="true">01</span><h3 class="rule-k">Counts</h3><p class="rule-d">The cap includes the token embeddings <em>and</em> the output head. That sentence is the whole game.</p></li>
+        <li class="rule"><span class="rule-n" aria-hidden="true">02</span><h3 class="rule-k">Halves</h3><p class="rule-d">Tying the head to the embedding pays for one matrix instead of two.</p></li>
+        <li class="rule"><span class="rule-n" aria-hidden="true">03</span><h3 class="rule-k">Frees</h3><p class="rule-d">Rotary positions cost nothing; a learned table costs 1,024 × width.</p></li>
+      </ol>
+    </aside>
+  </section>
+
+  <!-- THE INSTRUMENT: one raised card holding the presets, the readout, the drawing, the
+       controls and the ledger. Claude artifact calculator
+       https://mobbin.com/screens/025626bb-da23-4aaa-b892-83a399b2bc19; Stripe Sigma single
+       raised card https://mobbin.com/sites/sections/088a670f-2b5e-4b7a-ad9b-680405acd8fb;
+       Grok cost calculator Reset beside the select
+       https://mobbin.com/sites/sections/81db7590-2786-489b-af2d-ef506c7388b5; Apple's
+       configurator option cards with explicit deltas (benchmark)
+       https://www.apple.com/shop/buy-mac/macbook-pro. -->
+  <section class="ex-sec ex-calcsec" id="calc" aria-labelledby="calcHead">
+    <div class="calc card" id="calcCard" data-reveal>
+
+      <div class="calc-head">
+        <div class="calc-head-txt">
+          <h2 class="calc-title" id="calcHead">Try another word list</h2>
+          <p class="calc-dek">Start from a tokenizer, then move anything. This part is arithmetic on the cap, not a measurement.</p>
+        </div>
+        <span class="chip pz-custom" id="pzCustom" hidden>Custom settings</span>
+        <button class="btn btn--secondary ex-reset" id="resetBtn" type="button" aria-disabled="true"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M3.2 6.2A5 5 0 1 1 3 9.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M2.6 3v3.4H6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="btn-label">Reset to our run</span></button>
+      </div>
+
+      <!-- PRESET TILES. Each option shows its own computed result before it is picked; the
+           Tiny tile carries its tradeoff as reasoning, not a measurement. Claude pricing tab
+           chips https://mobbin.com/sites/sections/9b6e13d2-5ede-4fef-89e8-3752ded72b6d. -->
+      <div class="pz-row" id="pzRow" role="radiogroup" aria-labelledby="calcHead">
+        <label class="pz"><input type="radio" name="preset" value="gpt2" /><span class="pz-top"><span class="pz-name">GPT-2 Small</span><span class="pz-mark" aria-hidden="true"></span></span><span class="pz-dims">50,257 × 768</span><span class="pz-res"><b data-layers>1</b> <span data-unit>layer</span></span><span class="pz-bar" aria-hidden="true"><i style="--share:77.2%"></i></span><span class="pz-share"><span data-share>77.2%</span> on the word list</span></label>
+        <label class="pz"><input type="radio" name="preset" value="gpt2w" /><span class="pz-top"><span class="pz-name">GPT-2 vocabulary, our width</span><span class="pz-mark" aria-hidden="true"></span></span><span class="pz-dims">50,257 × 512</span><span class="pz-res"><b data-layers>7</b> <span data-unit>layers</span></span><span class="pz-bar" aria-hidden="true"><i style="--share:51.5%"></i></span><span class="pz-share"><span data-share>51.5%</span> on the word list</span></label>
+        <label class="pz"><input type="radio" name="preset" value="llama" /><span class="pz-top"><span class="pz-name">Llama tokenizer</span><span class="pz-mark" aria-hidden="true"></span></span><span class="pz-dims">32,000 × 512</span><span class="pz-res"><b data-layers>10</b> <span data-unit>layers</span></span><span class="pz-bar" aria-hidden="true"><i style="--share:32.8%"></i></span><span class="pz-share"><span data-share>32.8%</span> on the word list</span></label>
+        <label class="pz is-ours"><input type="radio" name="preset" value="ours" checked /><span class="pz-top"><span class="pz-name">Ours <span class="chip chip--tag pz-tag">this run</span></span><span class="pz-mark" aria-hidden="true"></span></span><span class="pz-dims">16,384 × 512</span><span class="pz-res"><b data-layers>13</b> <span data-unit>layers</span></span><span class="pz-bar" aria-hidden="true"><i style="--share:16.8%"></i></span><span class="pz-share"><span data-share>16.8%</span> on the word list</span></label>
+        <label class="pz"><input type="radio" name="preset" value="tiny" /><span class="pz-top"><span class="pz-name">Tiny vocabulary</span><span class="pz-mark" aria-hidden="true"></span></span><span class="pz-dims">8,192 × 512</span><span class="pz-note">Less text fits in each 1,024-token window</span><span class="pz-res"><b data-layers>14</b> <span data-unit>layers</span></span><span class="pz-bar" aria-hidden="true"><i style="--share:8.4%"></i></span><span class="pz-share"><span data-share>8.4%</span> on the word list</span></label>
+      </div>
+
+      <div class="calc-body">
+
+        <!-- RESULT, read first and sticky beside the controls: the two readouts that move when
+             you drag, the total as a supporting line, then the cap drawn as floors. Claude
+             artifact result-first tiles https://mobbin.com/screens/025626bb-da23-4aaa-b892-83a399b2bc19;
+             Claude Design preview beside tweak panels https://mobbin.com/screens/c68102a3-1c01-4bd7-9f8a-de639920abb9;
+             Tesla live stat readouts beside options (benchmark) https://www.tesla.com/modely/design;
+             Vercel per-digit reels https://mobbin.com/sites/sections/0215f066-0f95-45b2-bccb-3eaae4db2404. -->
+        <div class="calc-result" id="vBox">
+          <div class="hr-result">
+            <div class="ro" id="hrReadout">
+              <div class="ro-col is-lay">
+                <p class="ro-label"><i class="sw sw--lay" aria-hidden="true"></i>Layers that fit</p>
+                <p class="ro-fig"><span class="ro-roll" id="rLayers" aria-hidden="true">13</span><span class="ro-unit" id="rLayersUnit" aria-hidden="true">layers</span><span class="sr-only" id="rLayersSr">13 layers</span></p>
+                <p class="ro-vs" id="rLayersVs">vs <b>7</b> with GPT-2's vocabulary</p>
+              </div>
+              <div class="ro-col is-emb">
+                <p class="ro-label"><i class="sw sw--emb" aria-hidden="true"></i>Spent before any layer</p>
+                <p class="ro-fig"><span class="ro-roll" id="rShare" aria-hidden="true">16.8</span><span class="ro-unit ro-pct" aria-hidden="true">%</span><span class="sr-only" id="rShareSr">16.8% of the cap</span></p>
+                <p class="ro-vs" id="rShareVs">vs <b>51.5%</b> with GPT-2's vocabulary</p>
+              </div>
+            </div>
+            <p class="ro-cap"><span class="ro-total"><b id="vTotal">49,296,896</b> of 50,000,000 parameters</span><span class="ro-state"><i class="ro-dot" aria-hidden="true"></i><span id="vState">Under the cap, 703,104 spare</span></span></p>
+            <!-- The one live region for the calculator, written 600ms after the last change. -->
+            <p class="sr-only" id="hrLive" role="status" aria-live="polite" aria-atomic="true"></p>
+
+            <!-- THE FIGURE: the cap drawn as the model's own floors, to scale, beside a ghost of
+                 the same settings at the other vocabulary. Linear discrete slabs on hairline
+                 leaders https://mobbin.com/sites/sections/f8b93019-f62b-4e58-8f0d-e577baa204f3;
+                 Mercury two-tier labels on 1px leaders https://mobbin.com/sites/sections/3a483a4e-ab5c-494e-9db9-c6d41660be22;
+                 Goldsand shared-baseline columns https://mobbin.com/sites/sections/4f4b87d7-f4d3-4da8-a11b-847e61f8eaf2;
+                 OpenAI usage chart's dashed limit line https://mobbin.com/screens/008725f3-1e67-4ff3-96c4-d56f14d23e15. -->
+            <figure class="cap" id="capFig" aria-labelledby="figHead" aria-describedby="figAlt">
+              <div class="cap-head">
+                <h3 class="cap-title" id="figHead">The whole cap, drawn to scale</h3>
+                <p class="cap-sub">One block per transformer layer, on the word list's cost.</p>
+              </div>
+              <div class="cap-plot" id="capPlot" aria-hidden="true">
+                <div class="cap-grid" id="capGrid"></div>
+                <div class="cap-col is-ghost"><div class="cap-stack" id="stGhost"></div></div>
+                <div class="cap-gutter"><span class="cap-delta chip chip--layers" id="capDelta">+6</span></div>
+                <div class="cap-col is-live"><div class="cap-stack" id="stLive"></div></div>
+                <div class="cap-leaders" id="capLeaders"></div>
+                <div class="cap-refline" id="capRef"></div>
+                <div class="cap-capline" id="capLine"><span>50M cap</span></div>
+              </div>
+              <div class="cap-names" aria-hidden="true">
+                <p class="cap-name is-ghost"><b id="gName">GPT-2's vocabulary</b><span id="gDims">50,257 × 512</span><span class="cap-name-note">same settings, computed, not trained</span></p>
+                <p class="cap-name is-live"><b><span id="lName">Ours</span> <span class="chip chip--tag" id="lTag">this run</span></b><span id="lDims">16,384 × 512</span></p>
+              </div>
+              <ul class="cap-legend" id="capLegend" aria-hidden="true"></ul>
+              <figcaption class="sr-only" id="figAlt">At a 16,384-token vocabulary and width 512, 16.8% of the cap is spent before any layer exists, leaving room for 13 transformer layers. GPT-2's 50,257-token vocabulary with the same settings spends 51.5% and leaves 7.</figcaption>
+            </figure>
+          </div>
+        </div>
+
+        <!-- CONTROLS. Slider plus a typed box on one row, a tick ruler under each, one helper
+             line stating input = output. Vercel sandbox calculator track and ruler
+             https://mobbin.com/sites/sections/770b030a-8e99-4fc4-97a2-30e9a8a9a7b0; Stripe tier
+             markers https://mobbin.com/sites/sections/088a670f-2b5e-4b7a-ad9b-680405acd8fb;
+             Google AI Studio slider + numeric box https://mobbin.com/screens/3f124cf2-97bf-4ab8-98d1-a06d98ab92b6. -->
+        <div class="calc-controls">
+          <div class="knob">
+            <div class="knob-row"><label class="knob-lbl" for="kVocab">Vocabulary</label><span class="knob-val"><input class="knob-num" id="nVocab" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" aria-label="Vocabulary, exact number of tokens" aria-describedby="kVocabHelp" value="16,384" /><span class="knob-unit">tokens</span></span></div>
+            <p class="knob-help" id="kVocabHelp"><span class="chip chip--rule">Rule 01</span> <b id="hVN">16,384</b> tokens × <b id="hVW">512</b> wide = <b id="hVE">8,388,608</b> before any layer exists.<span id="hVNote" hidden> Smaller vocabularies split text into more tokens, so the same 1,024-token window holds less text.</span><span class="knob-err" id="nVocabErr" hidden>Enter a whole number between 1,024 and 65,536</span></p>
+            <input type="range" id="kVocab" min="1024" max="65536" step="1" value="16384" aria-describedby="kVocabHelp" />
+            <div class="ruler" id="rulerVocab" aria-hidden="true"></div>
+          </div>
+          <div class="knob">
+            <div class="knob-row"><label class="knob-lbl" for="kWidth">Width</label><span class="knob-val"><input class="knob-num" id="nWidth" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" aria-label="Width, exact value in steps of 64" aria-describedby="kWidthHelp" value="512" /><span class="knob-unit">wide</span></span></div>
+            <p class="knob-help" id="kWidthHelp">One layer at this width costs <b id="hPL">3,146,752</b>.<span class="knob-err" id="nWidthErr" hidden>Enter a multiple of 64 between 256 and 1,024</span></p>
+            <input type="range" id="kWidth" min="256" max="1024" step="64" value="512" aria-describedby="kWidthHelp" />
+            <div class="ruler" id="rulerWidth" aria-hidden="true"></div>
+          </div>
+          <div class="knob">
+            <div class="knob-row"><label class="knob-lbl" for="kRatio">Feed-forward ratio</label><span class="knob-val"><input class="knob-num" id="nRatio" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" aria-label="Feed-forward ratio, exact multiple of the width" aria-describedby="kRatioHelp" value="4" /><span class="knob-unit">× width</span></span></div>
+            <p class="knob-help" id="kRatioHelp">Feed-forward is <b id="hMLP">2,097,152</b> of every layer.<span class="knob-err" id="nRatioErr" hidden>Enter a whole number between 2 and 8</span></p>
+            <input type="range" id="kRatio" min="2" max="8" step="1" value="4" aria-describedby="kRatioHelp" />
+            <div class="ruler" id="rulerRatio" aria-hidden="true"></div>
+          </div>
+
+          <!-- SWITCHES. Title, spelled state and the switch pinned right; the state is carried
+               by the knob's position and the word, never by colour alone. Linear preferences
+               rows https://mobbin.com/screens/9ac66835-aa7f-469f-ace3-a915c2cf2dfd. -->
+          <h3 class="ctl-group">Options</h3>
+          <div class="tg-block">
+            <label class="tg"><span class="tg-title">Tie the output head to the embedding</span><input type="checkbox" id="kTie" role="switch" checked aria-describedby="kTieHelp" /><span class="tg-state" aria-hidden="true"></span><span class="tg-track" aria-hidden="true"></span></label>
+            <p class="knob-help" id="kTieHelp"><span class="chip chip--rule">Rule 02</span> <span id="hTie">Tied: +3 layers over a separate head.</span></p>
+          </div>
+          <div class="tg-block">
+            <label class="tg"><span class="tg-title">Rotary positions, not a learned table</span><input type="checkbox" id="kRope" role="switch" checked aria-describedby="kRopeHelp" /><span class="tg-state" aria-hidden="true"></span><span class="tg-track" aria-hidden="true"></span></label>
+            <p class="knob-help" id="kRopeHelp"><span class="chip chip--rule">Rule 03</span> <span id="hRope">Rotary: saves 524,288, under one layer here.</span></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- LEDGER. Every row is Each × Count; the groups are the parts of the drawing. Claude
+           model ledger cards https://mobbin.com/sites/sections/9a8549ad-56b6-4aee-8ceb-8064929f7e9a;
+           Vercel invoice line items https://mobbin.com/screens/f1ccbaa6-e1dd-4903-908e-d656e0201dca;
+           Cursor billing parent/child rows https://mobbin.com/screens/4205c9d6-be6e-4c2b-8cef-2964a4dacf71;
+           Google Cloud pricing calculator grouped ledger (benchmark) https://cloud.google.com/products/calculator. -->
+      <div class="calc-ledger">
+        <div class="lg-intro">
+          <h3 class="lg-title" id="brkHead">Where every parameter goes</h3>
+          <p class="lg-dek">Every row is Each × Count. The groups are the parts of the drawing, and they add up to the total, checked against the cap.</p>
+        </div>
+        <div class="lg-wrap">
+          <table class="lg-table" id="ledger">
+            <caption class="sr-only">Parameter ledger for the current settings: each part's size, how many are paid for, and the parameters it costs.</caption>
+            <colgroup><col /><col class="c-each" /><col class="c-count" /><col class="c-params" /></colgroup>
+            <thead>
+              <tr><th scope="col">Part</th><th scope="col" class="num lg-hide">Each</th><th scope="col" class="num lg-hide">Count</th><th scope="col" class="num">Parameters</th></tr>
+            </thead>
+            <tbody class="lg-grp is-emb">
+              <tr class="lg-head" data-row="grpEmb"><th scope="rowgroup"><span class="lg-sw" aria-hidden="true"></span><span class="lg-name">Before any layer</span><span class="lg-sub" data-sub>16.8% of the cap</span></th><td class="lg-hide"></td><td class="lg-hide"></td><td class="num" data-params>8,388,608</td></tr>
+              <tr data-row="emb"><th scope="row"><span class="lg-name">Token embedding</span><span class="lg-sub is-d" data-sub>16,384 tokens × 512 wide</span><span class="lg-sub is-m" data-subm>8,388,608 × 1</span></th><td class="num lg-hide" data-each>8,388,608</td><td class="num lg-hide" data-count>1</td><td class="num" data-params>8,388,608</td></tr>
+              <tr data-row="head" class="is-zero"><th scope="row"><span class="lg-name">Output head</span><span class="lg-sub is-d" data-sub>Tied to the embedding: saves 8,388,608</span><span class="lg-sub is-m" data-subm>8,388,608 × 0 · tied</span></th><td class="num lg-hide" data-each>8,388,608</td><td class="num lg-hide" data-count>0</td><td class="num" data-params>0</td></tr>
+              <tr data-row="pos" class="is-zero"><th scope="row"><span class="lg-name">Positions</span><span class="lg-sub is-d" data-sub>Rotary: computed, not stored, saves 524,288</span><span class="lg-sub is-m" data-subm>524,288 × 0 · rotary</span></th><td class="num lg-hide" data-each>524,288</td><td class="num lg-hide" data-count>0</td><td class="num" data-params>0</td></tr>
+            </tbody>
+            <tbody class="lg-grp is-lay">
+              <tr class="lg-head" data-row="grpLay"><th scope="rowgroup"><span class="lg-sw" aria-hidden="true"></span><span class="lg-name" data-name>13 layers</span><span class="lg-sub" data-sub>3,146,752 each · 81.8% of the cap</span></th><td class="lg-hide"></td><td class="lg-hide"></td><td class="num" data-params>40,907,776</td></tr>
+              <tr data-row="attn"><th scope="row"><span class="lg-name">Attention</span><span class="lg-sub is-d" data-sub>4d²: query, key, value and output</span><span class="lg-sub is-m" data-subm>1,048,576 × 13</span></th><td class="num lg-hide" data-each>1,048,576</td><td class="num lg-hide" data-count>13</td><td class="num" data-params>13,631,488</td></tr>
+              <tr data-row="mlp"><th scope="row"><span class="lg-name">Feed-forward</span><span class="lg-sub is-d" data-sub>8d²: two matrices at 4× the width</span><span class="lg-sub is-m" data-subm>2,097,152 × 13</span></th><td class="num lg-hide" data-each>2,097,152</td><td class="num lg-hide" data-count>13</td><td class="num" data-params>27,262,976</td></tr>
+              <tr data-row="norms"><th scope="row"><span class="lg-name">Norms</span><span class="lg-sub is-d" data-sub>2d: two weight-only norms</span><span class="lg-sub is-m" data-subm>1,024 × 13</span></th><td class="num lg-hide" data-each>1,024</td><td class="num lg-hide" data-count>13</td><td class="num" data-params>13,312</td></tr>
+            </tbody>
+            <tbody class="lg-grp is-close">
+              <tr data-row="final"><th scope="row"><span class="lg-name">Final norm</span><span class="lg-sub is-d" data-sub>d: after the last layer</span><span class="lg-sub is-m" data-subm>512 × 1</span></th><td class="num lg-hide" data-each>512</td><td class="num lg-hide" data-count>1</td><td class="num" data-params>512</td></tr>
+            </tbody>
+            <tfoot>
+              <tr class="lg-total" data-row="total"><th scope="row"><span class="lg-name">Total</span><span class="lg-sub" data-sub>98.6% of the cap</span></th><td class="lg-hide"></td><td class="lg-hide"></td><td class="num" data-params>49,296,896</td></tr>
+              <tr class="lg-free" data-row="free"><th scope="row"><span class="lg-sw" aria-hidden="true"></span><span class="lg-name" data-name>Unused</span></th><td class="lg-hide"></td><td class="lg-hide"></td><td class="num" data-params>703,104</td></tr>
+              <tr class="lg-cap"><th scope="row"><span class="lg-name">Cap</span></th><td class="lg-hide"></td><td class="lg-hide"></td><td class="num">50,000,000</td></tr>
+            </tfoot>
+          </table>
+          <p class="lg-foot">The cap counts the token embeddings and the output head.</p>
+        </div>
+      </div>
+
+      <!-- PHONE DOCK (below 1024px): the live result pinned to the foot of the instrument
+           while the controls are on screen and the readout itself is not. It only repeats the
+           readout, so it is hidden from screen readers. Glovo's pinned total
+           https://mobbin.com/screens/5c5b98f9-183b-46dc-8054-2216a427980d. -->
+      <div class="ex-dock" id="hrDock" aria-hidden="true">
+        <span class="dock-l"><b id="dLayers">13</b> <span id="dLayersUnit">layers</span></span>
+        <span class="dock-m"><b id="dShare">16.8%</b> before any layer</span>
+        <span class="dock-r"><i class="ro-dot" aria-hidden="true"></i><span id="dTotal">49,296,896 of 50,000,000</span></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- TRY THE MODEL: the see-it-in-use moment. The real 49,296,896-parameter weights run in
+       the visitor's browser (infer.js; onnxruntime-web on WebGPU with a WASM fallback), loaded
+       only on an explicit click, never simulated. playground.js mounts on [data-playground]
+       and binds by data-pg hooks inside that root. Cohere Generate playground
+       https://mobbin.com/screens/8d4c63cf-4598-4ef4-9af6-52e5d598cba8; OpenAI Platform
+       playground with the stop control https://mobbin.com/screens/426f08ac-3a48-46e9-bbc3-b7082e12beea;
+       Google AI Studio run settings https://mobbin.com/screens/21eaf968-ab99-4627-a962-2953f4672f5c;
+       Adaline model settings https://mobbin.com/screens/4dfc9453-f26c-42f0-a75f-03b941cc1386;
+       Mistral AI Studio one-line settings summary https://mobbin.com/screens/c694fcb5-5398-42e4-ae23-4d1e19c4a1ab;
+       Grok Chat API parameter sliders with values at right https://mobbin.com/screens/5b30e536-ed54-49bb-9eb5-fb97b266e878;
+       Snowflake Cortex completions settings https://mobbin.com/screens/8476874a-187a-48d0-99e2-90a4a56425d1;
+       ElevenLabs developer demo panel https://mobbin.com/sites/sections/81b76dd7-5da7-4ac6-9292-c87381d07dc0;
+       Cohere chat empty state with example prompts https://mobbin.com/screens/a875171a-097b-4014-a497-f7761d450ff1;
+       Microsoft Copilot's "may make mistakes" line under the box https://mobbin.com/screens/3bf8942d-8c84-4a1b-a2b1-2f035a1d18e4;
+       AWS upload status bar with bytes and percent https://mobbin.com/screens/d0b2a1fa-99a9-4c29-ba83-f77a3f850d40. -->
+  <section class="ex-sec ex-try" id="try" aria-labelledby="tryTitle" data-playground>
+    <div class="sec-head sec-head--stack" id="tryHead" data-reveal>
+      <p class="sec-kicker"><span class="chip">Runs on this device</span></p>
+      <h2 class="sec-title" id="tryTitle">Try the model.</h2>
+      <p class="sec-dek">The same 49,296,896 parameters the calculator lands on, exported to run in your browser. Load once, then write.</p>
+      <p class="sec-note pg-honesty" data-pg="honesty">It writes fluently and is often wrong. This checkpoint is from step <span data-pg="step">a step not yet published</span> <span data-pg="runline">of a training run that is still going</span>.</p>
+    </div>
+
+    <div class="card pg-card" data-pg="card" data-reveal>
+      <!-- MODEL BAR: which model, which checkpoint, and what it is doing right now (OpenAI
+           Platform model/settings header line https://mobbin.com/screens/1b2b9ede-7021-48a5-8d33-3543c3adbc11). -->
+      <div class="pg-bar">
+        <div class="pg-bar-model">
+          <span class="pg-mark" aria-hidden="true"></span>
+          <span class="pg-bar-name">embedding-tax-50m</span>
+          <span class="pg-bar-meta" data-pg="barmeta" hidden><span data-pg="params">49,296,896</span> parameters · step <span data-pg="step">a step not yet published</span>, <span data-pg="runstate">run still in progress</span></span>
+        </div>
+        <p class="pg-bar-status"><span class="pg-dot" aria-hidden="true"></span><span data-pg="statusline">Not loaded</span></p>
+      </div>
+
+      <div class="pg-write">
+        <div class="pg-presets" id="pgPresets" data-pg="presets" role="group" aria-label="Openings to start from">
+          <button type="button" class="chip--tab pg-preset" data-pg="preset">The reason the sky appears blue is</button>
+          <button type="button" class="chip--tab pg-preset" data-pg="preset">The most important step in making bread is</button>
+          <button type="button" class="chip--tab pg-preset" data-pg="preset">In 1905, Albert Einstein published</button>
+          <button type="button" class="chip--tab pg-preset" data-pg="preset">A computer program is</button>
+        </div>
+
+        <!-- COMPOSER: the box and its controls are one object, the send control in the corner. -->
+        <div class="pg-composer">
+          <label class="sr-only" for="pgPrompt">Your opening sentence</label>
+          <textarea class="pg-prompt" id="pgPrompt" data-pg="prompt" rows="2" placeholder="Start a sentence and the model finishes it" autocomplete="off" spellcheck="true" maxlength="2000"></textarea>
+          <div class="pg-controls">
+            <p class="pg-note" data-pg="loadnote">One download, kept by your browser. Nothing you type leaves this page.</p>
+            <div class="pg-progress" id="pgBar" data-pg="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-labelledby="pgBarText" hidden><i class="pg-progress-fill" data-pg="barfill"></i></div>
+            <span class="pg-progress-text" id="pgBarText" data-pg="bartext" hidden></span>
+            <p class="pg-hint" data-pg="hint" hidden><kbd>Enter</kbd> to write · <kbd>Shift</kbd>+<kbd>Enter</kbd> for a new line</p>
+            <span class="pg-tokens" id="pgTokens" data-pg="tokens" aria-live="off"></span>
+            <button class="btn btn--primary pg-load" id="pgLoad" data-pg="load" type="button" disabled>Load the model</button>
+            <button class="btn btn--primary pg-go" id="pgWrite" data-pg="write" type="button" hidden disabled>Write</button>
+            <button class="btn btn--secondary pg-go" id="pgStop" data-pg="stop" type="button" hidden><span class="pg-stop-glyph" aria-hidden="true"></span>Stop</button>
+          </div>
+        </div>
+
+        <!-- OUTPUT: a response card. The model's mark, name and a base-model tag with Copy as a pill,
+             Base44 https://mobbin.com/screens/1af86cad-8541-40c6-9999-c6d7e4147660; one passage, the
+             prompt in grey running into the model's words in ink, so the page shows exactly which words
+             the model wrote; this run as measured on this device, small labels over larger values with
+             thin dividers, Braintrust https://mobbin.com/screens/a5c47246-f508-4ead-9cb6-5489c6bd9dec;
+             a quiet line with an info icon, ManyChat https://mobbin.com/screens/1545f393-6813-4733-86f4-61de1f4d6ddd -->
+        <div class="pg-out" id="pgOut" data-pg="out">
+          <div class="pg-out-head">
+            <span class="pg-mark pg-out-mark" aria-hidden="true"></span>
+            <p class="pg-out-model"><span class="pg-out-name">embedding-tax-50m</span> <span class="pg-out-tag">base model</span></p>
+            <button class="pg-copy" id="pgCopy" data-pg="copy" type="button" hidden><svg class="pg-copy-ico" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><rect x="5.25" y="5.25" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10.75 3.25A1.5 1.5 0 0 0 9.25 2h-5A1.5 1.5 0 0 0 2.75 3.5v5A1.5 1.5 0 0 0 4 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><svg class="pg-copy-done" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-pg="copylabel">Copy</span></button>
+          </div>
+          <p class="pg-cont" id="pgCont" data-pg="cont" hidden><span class="pg-echo" id="pgEcho" data-pg="echo" hidden></span><span class="pg-gen" data-pg="conttext"></span><span class="pg-caret" data-pg="caret" aria-hidden="true" hidden></span></p>
+          <p class="pg-empty" data-pg="empty">Pick an opening or type your own. The model's words follow yours in darker type as they arrive.</p>
+          <dl class="pg-run" data-pg="run" hidden>
+            <div><dt>Preset</dt><dd data-pg="runpreset"></dd></div>
+            <div><dt>New tokens</dt><dd data-pg="runtokens"></dd></div>
+            <div><dt>Speed</dt><dd data-pg="runspeed"></dd></div>
+            <div><dt>First token</dt><dd data-pg="runfirst"></dd></div>
+            <div><dt>Stopped by</dt><dd data-pg="runstop"></dd></div>
+            <div><dt>Backend</dt><dd data-pg="runbackend"></dd></div>
+          </dl>
+          <p class="pg-out-kind"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="6.25" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 7.25v4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="4.9" r=".95" fill="currentColor"/></svg><span>A base model, not a chat assistant: it continues whatever you type. It writes fluently and is often wrong.</span></p>
+        </div>
+
+        <div class="pg-state" data-pg="packaging" hidden>
+          <p class="pg-state-title">The model is being packaged.</p>
+          <p class="pg-state-body">The weights are being exported for the browser. This panel will run them here as soon as they land; nothing is simulated in the meantime.</p>
+          <p class="pg-state-link"><a href="#results">See the run so far</a></p>
+        </div>
+        <div class="pg-state" data-pg="failure" hidden>
+          <p class="pg-state-title">The model could not load on this device. Try a current Chrome, Edge or Firefox.</p>
+          <p class="pg-state-detail" data-pg="failuredetail"></p>
+          <button class="btn btn--secondary" data-pg="retry" type="button">Try again</button>
+        </div>
+        <p class="sr-only" id="pgStatus" data-pg="status" role="status" aria-live="polite" aria-atomic="true"></p>
+      </div>
+
+      <!-- SETTINGS RAIL: the decoding preset first (a segmented radio group with the name of what
+           runs at its right and one line on what it does), then the sliders, limited to the ranges
+           tested with the guards on and locked while Published is selected, the Unlimited switch,
+           the guards in plain words, the seed, the summary line, the reset and the model card.
+           Presets and ranges come from blind tests of the decode harness (playground.js PRESETS). -->
+      <aside class="pg-rail" aria-labelledby="pgRailHead">
+        <h3 class="pg-rail-head" id="pgRailHead">Sampling</h3>
+
+        <div class="pg-set pg-mode">
+          <div class="pg-set-row"><span class="pg-set-lbl" id="pgModeLbl">Preset</span><span class="pg-mode-name" data-pg="preset-name">Focused</span></div>
+          <div class="pg-seg" role="radiogroup" aria-labelledby="pgModeLbl" aria-describedby="pgModeDesc">
+            <label class="pg-seg-opt"><input type="radio" name="pgMode" value="balanced" data-pg="preset-mode" /><span>Balanced</span></label>
+            <label class="pg-seg-opt"><input type="radio" name="pgMode" value="focused" data-pg="preset-mode" checked /><span>Focused</span></label>
+            <label class="pg-seg-opt"><input type="radio" name="pgMode" value="creative" data-pg="preset-mode" /><span>Creative</span></label>
+            <label class="pg-seg-opt"><input type="radio" name="pgMode" value="published" data-pg="preset-mode" /><span>Published</span></label>
+          </div>
+          <p class="pg-set-help" id="pgModeDesc" data-pg="preset-desc">Uses Balanced's sampler but stops at the end of the first finished passage (about 55 tokens). Shorter, faster, and with less room to drift off topic.</p>
+        </div>
+
+        <p class="pg-set-help pg-locknote" data-pg="locknote" hidden>Published keeps temperature, top-k and length at its fixed values. Pick another preset to change them.</p>
+        <div class="pg-set">
+          <div class="pg-set-row"><label class="pg-set-lbl" for="pgTemp">Temperature</label><input class="knob-num pg-num" id="pgTempN" data-pg="tempN" type="text" inputmode="decimal" autocomplete="off" aria-label="Temperature, exact value" value="0.7" /></div>
+          <input type="range" id="pgTemp" data-pg="temp" min="0.6" max="1.4" step="0.05" value="0.7" aria-describedby="pgTempHelp" />
+          <p class="pg-set-help" id="pgTempHelp">Higher is wilder. 0.6 to 1.4, the range tested with the guards on.</p>
+        </div>
+        <div class="pg-set">
+          <div class="pg-set-row"><label class="pg-set-lbl" for="pgTopk">Top-k</label><input class="knob-num pg-num" id="pgTopkN" data-pg="topkN" type="text" inputmode="numeric" autocomplete="off" aria-label="Top-k, exact value" value="40" /></div>
+          <input type="range" id="pgTopk" data-pg="topk" min="40" max="200" step="1" value="40" aria-describedby="pgTopkHelp" />
+          <p class="pg-set-help" id="pgTopkHelp">Sample from the k likeliest tokens. 40 to 200, the values tested with the guards on.</p>
+        </div>
+        <div class="pg-set">
+          <div class="pg-set-row"><label class="pg-set-lbl" for="pgMax">Max new tokens</label><input class="knob-num pg-num" id="pgMaxN" data-pg="maxN" type="text" inputmode="numeric" autocomplete="off" aria-label="Max new tokens, exact value" value="90" /></div>
+          <input type="range" id="pgMax" data-pg="max" min="8" max="90" step="1" value="90" aria-describedby="pgMaxHelp" />
+          <p class="pg-set-help" id="pgMaxHelp">Stops sooner at end of text. Up to 90, the longest length tested; longer runs drift further from the prompt.</p>
+        </div>
+        <div class="tg-block pg-set pg-set--unlimited">
+          <label class="tg"><span class="tg-title">Unlimited <span class="pg-badge" data-pg="unlimitedbadge" hidden>Not recommended</span></span><input type="checkbox" id="pgUnlimited" data-pg="unlimited" role="switch" aria-describedby="pgUnlimitedHelp" /><span class="tg-state" aria-hidden="true"></span><span class="tg-track" aria-hidden="true"></span></label>
+          <p class="pg-set-help" id="pgUnlimitedHelp">At most 256 new tokens. It stops sooner at the end of the first finished passage, when it starts repeating, or if a very long prompt fills its 1,024-token context. With the guards on, stopping at the end of the passage scored more coherent in blind tests than running to 90 tokens: Focused is Balanced with this on. Published with this on was not part of those tests, so it is not recommended there.</p>
+        </div>
+
+        <div class="pg-set pg-guards">
+          <div class="pg-set-row"><span class="pg-set-lbl">Guards</span><span class="pg-mode-name" data-pg="guardstate">On</span></div>
+          <p class="pg-set-help">Every preset except Published adds these rules, and so do your own settings made from one of them; Published, with or without Unlimited, has none. They only change which token can come next; the model's words are never edited.</p>
+          <ul class="pg-guard-list">
+            <li><strong>Stays on your prompt.</strong> Each step also runs the model with no prompt at all, then favours tokens your prompt made likelier (context-aware decoding, strength 1). Two passes per token, so about half the speed.</li>
+            <li><strong>Skips long shots.</strong> Drops any token less than about a tenth as likely as the top choice (min-p, set from the temperature; stricter below 1).</li>
+            <li><strong>Repeats less.</strong> Tokens already in the last 64, your prompt included, are made less likely (repetition penalty 1.2).</li>
+            <li><strong>No blank start.</strong> The first 3 tokens cannot be a line break or the end of the text.</li>
+            <li><strong>Breaks after sentences.</strong> A line break can only follow a finished sentence.</li>
+          </ul>
+        </div>
+
+        <div class="pg-set">
+          <div class="pg-set-row"><label class="pg-set-lbl" for="pgSeed">Seed</label><input class="knob-num pg-num" id="pgSeed" data-pg="seed" type="text" inputmode="numeric" autocomplete="off" aria-describedby="pgSeedHelp" value="1337" /></div>
+          <p class="pg-set-help" id="pgSeedHelp">Same seed, same text, on the same backend.</p>
+        </div>
+        <div class="tg-block pg-set">
+          <label class="tg"><span class="tg-title">Same seed</span><input type="checkbox" id="pgSeedLock" data-pg="seedlock" role="switch" /><span class="tg-state" aria-hidden="true"></span><span class="tg-track" aria-hidden="true"></span></label>
+        </div>
+        <p class="pg-summary" data-pg="summary">Focused · temperature 0.7 · top-k 40 · until done, at most 256 tokens · guards on, min-p 0.1 · seed 1337</p>
+        <button class="btn btn--secondary pg-reset" id="pgReset" data-pg="reset" type="button" aria-disabled="true">Reset to Focused</button>
+        <dl class="pg-model">
+          <div><dt>Shape</dt><dd class="pg-mono">13 layers · 16,384-token vocabulary</dd></div>
+          <div><dt>Weights</dt><dd data-pg="quant">not loaded yet</dd></div>
+          <div><dt>Download</dt><dd><span data-pg="mb">not loaded yet</span><span data-pg="mbunit" hidden> MB, kept by your browser</span></dd></div>
+          <div><dt>Backend</dt><dd data-pg="backendname">not loaded yet</dd></div>
+        </dl>
+      </aside>
+    </div>
+  </section>
+
+  <!-- THE SEAM: provenance stated once for everything below it. Vercel breakdown seam
+       https://mobbin.com/sites/sections/770b030a-8e99-4fc4-97a2-30e9a8a9a7b0; Claude
+       InlineTooltip card material https://mobbin.com/sites/sections/e3dc86d1-cea3-4f7b-9864-46230a89e735. -->
+  <div class="ex-sec ex-seam" data-reveal>
+    <p class="ex-note" role="note"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.25" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 7.2v3.6M8 5.1v.1" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span><b>Measured, not calculated.</b> Everything below is a snapshot read from results.json, written from the training log and the evaluation output; the GPT-2 Small and chance rows are published reference figures kept in the same file. It never refreshes on its own, and the controls above change none of it.</span></p>
+  </div>
+
+  <!-- THE RUN. One card: a status line with the progress stated once, the loss curve stopping
+       where the run stopped, the evaluations, five stats. OpenAI fine-tuning job panel
+       https://mobbin.com/screens/6e0f323d-26d1-4e47-822e-fee1366ea4f9; Vercel deployment in
+       progress https://mobbin.com/screens/787123a5-8a85-4d1b-838f-705673a0c820; Stripe Today
+       chart stopping at now https://mobbin.com/screens/a31f7d76-ade4-4cae-a816-a4c9b33814c3;
+       Cohere fine-tuned model overview https://mobbin.com/screens/dd89e83a-58b4-4483-9b75-b41581b17c6b;
+       Linear progress properties https://mobbin.com/screens/e202915c-130d-4e3b-8d03-334f09650bb5.
+       Every slot ships as "not measured yet" or hidden; results.js fills them from results.json. -->
+  <section class="ex-sec ex-report" id="results" aria-labelledby="runHead">
+    <div class="card ex-card" data-reveal>
+      <div class="sec-head">
+        <h2 class="sec-title" id="runHead">The run so far</h2>
+        <p class="sec-meta" id="runMeta"><span class="is-unmeasured">not measured yet</span></p>
+      </div>
+      <div class="run-status">
+        <p class="run-state" id="runLine">
+          <span class="chip run-chip" id="runState">Results not loaded</span>
+          <span class="run-seg" id="runPctSeg" hidden><span id="runPct"></span></span>
+          <span class="run-seg is-soft" id="runStepSeg" hidden>published at step <span id="runStep"></span></span>
+        </p>
+        <div class="rs-bar" id="runBar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-labelledby="runLine" hidden><i></i></div>
+        <p class="run-detail" id="runStatus">Training results are read from results.json by this page's script. With scripts off, nothing below has been filled in.</p>
+      </div>
+
+      <figure class="lc" id="lossChart" aria-labelledby="lcLabel">
+        <div class="lc-head">
+          <div class="lc-read">
+            <p class="lc-label" id="lcLabel">Validation loss</p>
+            <p class="lc-val" id="lcVal"><span class="is-unmeasured">not measured yet</span></p>
+            <p class="lc-sub" id="lcSub"></p>
+          </div>
+          <div class="lc-read lc-cmp" id="lcCmp" hidden>
+            <p class="lc-label">Since the first evaluation</p>
+            <p class="lc-val2" id="lcDelta"></p>
+            <p class="lc-sub" id="lcDeltaSub"></p>
+          </div>
+          <div class="lc-read lc-best">
+            <p class="lc-label">Best so far</p>
+            <p class="lc-val2"><span id="mBestVal" class="is-unmeasured">not measured yet</span></p>
+            <p class="lc-sub">perplexity <span id="mBestPpl" class="is-unmeasured">not measured yet</span> per token</p>
+          </div>
+        </div>
+        <div class="lc-plotwrap" id="curveWrap"></div>
+        <figcaption class="lc-cap">Held-out shard, scored on the same fixed sample at every evaluation. Lower is better. Perplexity is per token, so a smaller vocabulary lowers it without the model being any better: compare it only with models that use this exact tokenizer.</figcaption>
+        <p class="sr-only" id="lcLive" aria-live="polite"></p>
+      </figure>
+
+      <dl class="run-stats">
+        <div><dt>Tokens seen</dt><dd><span id="mTokens" class="run-val is-unmeasured">not measured yet</span><span class="run-sub" id="mTokensSub"></span></dd></div>
+        <div><dt>Wall clock</dt><dd><span id="mHours" class="run-val is-unmeasured">not measured yet</span><span class="run-sub" id="mHoursSub"></span></dd></div>
+        <div><dt>Throughput</dt><dd><span id="mTps" class="run-val is-unmeasured">not measured yet</span><span class="run-sub" id="mTpsSub"></span></dd></div>
+        <div><dt>Steps</dt><dd><span id="mSteps" class="run-val is-unmeasured">not measured yet</span><span class="run-sub" id="mStepsSub"></span></dd></div>
+        <div><dt>Peak VRAM</dt><dd><span id="mVram" class="run-val is-unmeasured">not measured yet</span><span class="run-sub" id="mVramSub"></span></dd></div>
+      </dl>
+      <p class="run-note"><span class="run-note-k">Corpus</span> <span id="mCorpus" class="is-unmeasured">not measured yet</span></p>
+    </div>
+  </section>
+
+  <!-- BENCHMARKS. One row per task on a shared 0-100 axis; the best value in a row is bold
+       even when GPT-2 Small wins it. Google DeepMind Gemini benchmark table (benchmark)
+       https://deepmind.google/models/gemini/; OpenAI GPT-4 stat pairs
+       https://mobbin.com/sites/sections/7ff6e67f-a6d3-44c7-abca-ab6202e67e7a; Manus benchmark
+       card https://mobbin.com/sites/sections/8c5370ca-c779-41fb-9c7d-ecbf95db7147; Aside
+       one-accent comparison rows https://mobbin.com/sites/sections/4f0a6897-50b7-4b01-a168-b355fb8421e3;
+       NVIDIA relative-performance chart with a one-line conditions footnote (benchmark)
+       https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/rtx-5090/. -->
+  <section class="ex-sec ex-report" id="benchmarks" aria-labelledby="benchHead">
+    <div class="card ex-card" data-reveal>
+      <div class="sec-head"><h2 class="sec-title" id="benchHead">How it scores against GPT-2 Small</h2></div>
+      <p class="sec-dek" id="benchNote">Scores load from results.json. Random chance is drawn on every row because at this size two of these tasks are expected to sit near chance.</p>
+
+      <h3 class="bm-h" id="bmMcHead">Multiple choice, accuracy in %</h3>
+      <table class="bm-table" role="table" aria-labelledby="bmMcHead">
+        <caption class="sr-only">Accuracy on four multiple-choice tasks for this model, GPT-2 Small and random chance, in percent.</caption>
+        <colgroup><col class="bm-c-task" /><col class="bm-c-plot" /><col class="bm-c-ours" /><col class="bm-c-ref" /><col class="bm-c-ch" /></colgroup>
+        <thead role="rowgroup">
+          <tr role="row">
+            <th scope="col" role="columnheader">Task</th>
+            <th scope="col" role="columnheader" class="bm-scale"><span class="sr-only">Scale, 0 to 100</span><span class="bm-ticks" aria-hidden="true"><i style="--x:0">0</i><i style="--x:25">25</i><i style="--x:50">50</i><i style="--x:75">75</i><i style="--x:100">100</i></span></th>
+            <th scope="col" role="columnheader" class="num"><span class="bm-sw is-ours" aria-hidden="true"></span>This model</th>
+            <th scope="col" role="columnheader" class="num"><span class="bm-sw is-ref" aria-hidden="true"></span>GPT-2 Small<span class="bm-th-sub">124M parameters</span></th>
+            <th scope="col" role="columnheader" class="num"><span class="bm-sw is-ch" aria-hidden="true"></span>Chance</th>
+          </tr>
+        </thead>
+        <tbody id="benchRows" role="rowgroup">
+          <tr role="row"><td role="cell" colspan="5" class="bm-empty">Scores are read from results.json by this page's script. With scripts off, none are shown.</td></tr>
+        </tbody>
+      </table>
+
+      <h3 class="bm-h bm-h2">Text prediction, WikiText-2 test set</h3>
+      <dl class="bm-metrics">
+        <div><dt>Word perplexity</dt><dd><span id="ppl" class="bm-fig is-unmeasured">not measured yet</span><span class="bm-cap">per word · lower is better</span></dd></div>
+        <div><dt>Bits per byte</dt><dd><span id="bpb" class="bm-fig is-unmeasured">not measured yet</span><span class="bm-cap">per byte, tokenizer-independent · lower is better</span></dd></div>
+      </dl>
+      <p class="bm-foot">Every row runs 0 to 100. Both WikiText figures are divided by the text itself, per word and per byte, so the tokenizer cancels out and they compare fairly with any other model's. When they are published, lm-evaluation-harness scores them on the WikiText-2 test set, which WikiText-103 shares.</p>
+    </div>
+  </section>
+
+  <!-- PUBLISHED SAMPLES. One sample at a time behind a Previous / Next pager, the prompt as a
+       quiet block and the continuation as open serif text, published unedited. OpenAI ChatGPT
+       launch post samples pager https://mobbin.com/sites/sections/41ca9a91-ea14-4bf0-a4b8-2b362f1fc026;
+       Mistral playground prompt block and open answer https://mobbin.com/screens/40582f72-0ff3-4655-90ed-67b01f1697a7;
+       OpenAI Platform inline sampling config line https://mobbin.com/screens/e10b3dd0-7224-4092-9eec-da2fec9efd98;
+       Plain absent-value slot https://mobbin.com/screens/72526f03-b98d-4df9-8c99-27e59a321ccc. -->
+  <section class="ex-sec ex-report" id="playground" aria-labelledby="playHead">
+    <div class="card ex-card" data-reveal>
+      <div class="sec-head">
+        <div>
+          <h2 class="sec-title" id="playHead">Published samples</h2>
+          <p class="sec-dek">Written once from the checkpoint at fixed settings and published unedited. For fresh text, use the model above; it runs on your device.</p>
+        </div>
+        <p class="sp-count" id="sCount"></p>
+      </div>
+      <dl class="sp-settings" id="sSettings" hidden></dl>
+      <div class="sp-pager" id="sPager" hidden>
+        <button class="btn btn--tertiary btn--sm" id="sPrev" type="button" aria-disabled="true">Previous</button>
+        <button class="btn btn--tertiary btn--sm" id="sNext" type="button">Next</button>
+        <span class="sp-page" id="sPage" aria-live="polite"></span>
+      </div>
+      <ol class="sp-grid" id="sRows">
+        <li class="s-row s-row-pending">
+          <div class="pend">
+            <span class="pend-icon" aria-hidden="true"><svg viewBox="0 0 16 16" width="32" height="32"><path d="M4 1.75h5.5L12.25 4.5v9.75H4z" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M6 7.5h4M6 10h2.5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></span>
+            <p class="pend-title">Not generated yet</p>
+            <p class="pend-body">Samples are written once from the finished checkpoint, at fixed settings, and published here unedited.</p>
+          </div>
+        </li>
+      </ol>
+      <p class="sp-foot" id="sFoot">Only the architecture controls and the on-device model are live.</p>
+    </div>
+  </section>
+
+</main>
+
+<!-- Site footer (shared.css, "FOOTER"): the anchor's slate ending, the same markup as
+     index.html's without the wordmark. Harvey dark CTA + footer
+     https://mobbin.com/sites/sections/3479c6e6-96b2-428f-9142-f47d07c94134; OpenAI footer
+     columns https://mobbin.com/sites/sections/2a7bd006-b64c-468d-be1e-8e1440c7ad7e; "Back to
+     top" in the baseline row after Vucko
+     https://mobbin.com/sites/sections/325d9889-5eae-493d-926a-a959e8e99005. -->
+<footer class="site-footer site-footer--app theme-dark">
+  <div class="site-footer-inner">
+    <p class="site-footer-brand"><svg viewBox="0 0 64 64" width="24" height="24" aria-hidden="true"><path d="M12 19 L52 19 L52 45 L44 45 L44 37 A12 12 0 0 0 20 37 L20 45 L12 45 Z" fill="currentColor"/></svg>The Embedding Tax</p>
+    <nav class="site-footer-nav" aria-label="Footer">
+      <div>
+        <h2 class="site-footer-head">Story</h2>
+        <ul class="site-footer-list">
+          <li><a class="site-footer-link" href="story.html#cinema">Intro</a></li>
+          <li><a class="site-footer-link" href="story.html#budget">Budget</a></li>
+          <li><a class="site-footer-link" href="story.html#depth">Depth</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2 class="site-footer-head">Explorer</h2>
+        <ul class="site-footer-list">
+          <li><a class="site-footer-link" href="#work">Budget explorer</a></li>
+          <li><a class="site-footer-link" href="#try">Try the model</a></li>
+          <li><a class="site-footer-link" href="#results">Training run</a></li>
+          <li><a class="site-footer-link" href="#benchmarks">Benchmarks</a></li>
+          <li><a class="site-footer-link" href="#playground">Published samples</a></li>
+        </ul>
+      </div>
+    </nav>
+    <div class="site-footer-bar">
+      <p>© 2026 The Embedding Tax. Built by Arjun Sharma for GIBC V2, Track 01.</p>
+      <p>Training from scratch on one RTX 4090: no pretrained weights, no fine-tuning, no distillation.</p>
+      <p><a class="site-footer-link foot-up" href="#top">Back to top<svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M6 10V2.5M2.5 6 6 2.5 9.5 6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></a></p>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

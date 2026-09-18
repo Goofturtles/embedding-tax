@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The Embedding Tax - film stage</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="stage">
+
+  <!-- 1. the cap -->
+  <section class="sc" id="s1">
+    <div class="big" id="s1-num">0</div>
+    <div class="cap" id="s1-cap">parameters. the entire budget.</div>
+  </section>
+
+  <!-- 2-6. the grid, carried across the middle of the film -->
+  <section class="sc" id="s2">
+    <div class="gridwrap">
+      <canvas id="grid" width="1000" height="800"></canvas>
+      <div class="gridlabel" id="grid-label"></div>
+    </div>
+    <div class="readout">
+      <div class="ro" id="ro-vocab"><b>-</b><span>vocabulary</span></div>
+      <div class="ro" id="ro-emb"><b>-</b><span>spent on the word list</span></div>
+      <div class="ro" id="ro-layers"><b>-</b><span>transformer layers</span></div>
+    </div>
+    <div class="line" id="s2-line"></div>
+  </section>
+
+  <!-- 7. the comparison -->
+  <section class="sc" id="s3">
+    <div class="compare">
+      <div class="col"><div class="bar" id="bar-a"></div><div class="barnum" id="num-a">7</div><div class="barcap">50,257 tokens</div></div>
+      <div class="col"><div class="bar" id="bar-b"></div><div class="barnum" id="num-b">13</div><div class="barcap">16,384 tokens</div></div>
+    </div>
+    <div class="line" id="s3-line">Same cap. Six more layers.</div>
+  </section>
+
+  <!-- 8. title -->
+  <section class="sc" id="s4">
+    <div class="title" id="s4-title">The Embedding Tax</div>
+    <div class="sub" id="s4-sub">A 50M-parameter language model, built from scratch on one GPU.</div>
+  </section>
+
+  <div id="grain"></div>
+  <div id="vignette"></div>
+</div>
+<script src="scenes.js"></script>
+</body>
+</html>

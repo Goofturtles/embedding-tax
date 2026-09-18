@@ -1,0 +1,24 @@
+# Regenerable or too large for GitHub (runs/ and data/ hold multi-GB shards and checkpoints;
+# build/ holds the fp32 ONNX graph, 198 MB). The shipped model lives in site/model/ on purpose.
+.venv/
+__pycache__/
+*.pyc
+build/
+data/
+*.tmp
+
+# runs/ holds the checkpoints (best.pt 197 MB, ckpt.pt 592 MB, over GitHub's 100 MB limit).
+# The small files every published number is read from are kept: the training log, the
+# lm-evaluation-harness output, the published samples and the corpus snapshot.
+runs/*
+!runs/r1/
+runs/r1/*
+!runs/r1/log.jsonl
+!runs/r1/eval.json
+!runs/r1/samples.json
+!runs/r1/meta.json
+
+# film/: the 3,001 rendered frames (3.6 GB), node_modules and probe renders are regenerable
+film/frames/
+film/node_modules/
+film/probe/

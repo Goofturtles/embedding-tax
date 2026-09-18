@@ -1,0 +1,160 @@
+{
+  "run": "r1",
+  "steps_completed": 14495,
+  "params_total": 49296896,
+  "vocab_size": 16384,
+  "block_size": 1024,
+  "file": "model.int8.onnx",
+  "bytes": 50341006,
+  "quantization": "weight-only int8, symmetric per output channel, DequantizeLinear in front of the 52 transformer MatMuls; tied embedding/head int8 with one scale per token, stored once; activations fp32",
+  "exported_at": "2026-09-11T20:26:09Z",
+  "eot_id": 0,
+  "parity": {
+    "fp32_greedy_tokens_matching": "72 of 72",
+    "quantized_top1_agreement": 0.9722,
+    "measured_with": "onnxruntime 1.30.0 CPUExecutionProvider",
+    "self_check": {
+      "input_ids": [
+        460,
+        1979,
+        262,
+        6044,
+        3883,
+        4119,
+        311
+      ],
+      "expected_argmax": 891,
+      "expected_token": " because",
+      "fp32_argmax": 891
+    }
+  },
+  "checkpoint": "runs/r1/ckpt.pt",
+  "checkpoint_val_loss": 3.1275524348020554,
+  "steps_total": 14495,
+  "training_finished": true,
+  "sha256": "f35926384a58154983651823bd0a663b2d6656c026f242c25dbf6e626b14a49a",
+  "fp32_bytes": 197731432,
+  "quantization_mode": "qdq-int8-embed",
+  "parity_detail": {
+    "prompts": [
+      "The reason the sky appears blue is",
+      "In 1905, Albert Einstein published",
+      "A computer program is"
+    ],
+    "tokens_per_prompt": 24,
+    "positions_compared": 72,
+    "quantized_top1_hits": 70,
+    "quantized_mean_abs_dlogit": 0.029,
+    "quantized_mean_kl_nats": 0.000353,
+    "edge_length_max_abs_dlogit": {
+      "1": 3e-05,
+      "1024": 1.5e-05
+    }
+  },
+  "candidates": [
+    {
+      "mode": "dynamic-int8",
+      "file": "model.dynamic-int8.onnx",
+      "bytes": 75535509,
+      "initializer_mb": {
+        "int8": 40.9,
+        "float": 33.9
+      },
+      "hits": 64,
+      "of": 72,
+      "agreement": 0.888889,
+      "mean_abs_dlogit": 0.256672,
+      "kl": 0.0263
+    },
+    {
+      "mode": "dynamic-int8-gather",
+      "file": "model.dynamic-int8-gather.onnx",
+      "bytes": 50370082,
+      "initializer_mb": {
+        "int8": 40.9,
+        "uint8": 8.4,
+        "float": 0.3
+      },
+      "hits": 62,
+      "of": 72,
+      "agreement": 0.861111,
+      "mean_abs_dlogit": 0.254916,
+      "kl": 0.026919
+    },
+    {
+      "mode": "qdq-int8",
+      "file": "model.qdq-int8.onnx",
+      "session": {
+        "session.disable_quant_qdq": "1"
+      },
+      "bytes": 75358939,
+      "initializer_mb": {
+        "int8": 41.0,
+        "float": 34.1
+      },
+      "hits": 69,
+      "of": 72,
+      "agreement": 0.958333,
+      "mean_abs_dlogit": 0.025014,
+      "kl": 0.000264
+    },
+    {
+      "mode": "qdq-int8 (x64 fused kernel)",
+      "file": "model.qdq-int8.onnx",
+      "bytes": 75358939,
+      "secondary": true,
+      "hits": 69,
+      "of": 72,
+      "agreement": 0.958333,
+      "mean_abs_dlogit": 0.030887,
+      "kl": 0.000405
+    },
+    {
+      "mode": "qdq-int8-embed",
+      "file": "model.qdq-int8-embed.onnx",
+      "session": {
+        "session.disable_quant_qdq": "1"
+      },
+      "bytes": 50341006,
+      "initializer_mb": {
+        "int8": 49.4,
+        "float": 0.7
+      },
+      "hits": 70,
+      "of": 72,
+      "agreement": 0.972222,
+      "mean_abs_dlogit": 0.029004,
+      "kl": 0.000353
+    },
+    {
+      "mode": "qdq-int8-embed (x64 fused kernel)",
+      "file": "model.qdq-int8-embed.onnx",
+      "bytes": 50341006,
+      "secondary": true,
+      "hits": 70,
+      "of": 72,
+      "agreement": 0.972222,
+      "mean_abs_dlogit": 0.035361,
+      "kl": 0.000511
+    }
+  ],
+  "graph": {
+    "opset": 17,
+    "ir_version": 8,
+    "input": "input_ids int64 [1, T]",
+    "output": "logits float32 [1, vocab] (last position)",
+    "kv_cache": false
+  },
+  "runtime": {
+    "session_options": {
+      "session.disable_quant_qdq": "1"
+    },
+    "hint": "create the onnxruntime-web session with extra: {session: {disable_quant_qdq: '1'}} (graphOptimizationLevel 'all'): the int8 weights are dequantised once at load, which in Chrome's wasm build made session creation ~10x and each forward ~3x faster with identical logits; without it the same fp32 arithmetic is redone every run"
+  },
+  "tool": {
+    "script": "tools/export_web.py",
+    "torch": "2.6.0+cu124",
+    "onnx": "1.22.0",
+    "onnxruntime": "1.30.0"
+  }
+}

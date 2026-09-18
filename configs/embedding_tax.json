@@ -1,0 +1,10 @@
+{
+  "vocab_size": 16384,
+  "n_layer": 13,
+  "n_head": 8,
+  "n_embd": 512,
+  "block_size": 1024,
+  "mlp_ratio": 4,
+  "tie_embeddings": true,
+  "rope": true
+}

@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Embedding Tax · a 50M-parameter model you can run in your browser</title>
+<meta name="description" content="A 49,296,896-parameter language model trained from scratch under a 50 million parameter cap that counts the embeddings. Run it on your device." />
+<meta name="theme-color" content="#cfe3f3" />
+<link rel="icon" href="favicon.svg" type="image/svg+xml" />
+<!-- zt-pending: motion allowed and a tall enough screen, so the chapters stay unpainted until home.js
+     decides between the zoom-through and the static page (never longer than 2.5s) -->
+<script>(function(d){try{if(matchMedia('(prefers-reduced-motion: no-preference)').matches&&CSS.supports('position','sticky')&&innerHeight>=560){d.classList.add('zt-pending');setTimeout(function(){if(!d.classList.contains('zt-on'))d.classList.remove('zt-pending')},2500)}}catch(e){}})(document.documentElement)</script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=Instrument+Sans:wght@400..600&family=JetBrains+Mono:wght@400;500&display=swap" />
+<link rel="stylesheet" href="shared.css" />
+<link rel="stylesheet" href="playground.css" />
+<link rel="stylesheet" href="home.css" />
+<link rel="stylesheet" href="composer3d.css" />
+<!-- infer.js runs the real weights (onnxruntime-web, WebGPU then WASM); playground.js drives the
+     composer through data-pg hooks; home.js owns the tabs, the budget arithmetic and the
+     zoom-through camera. -->
+<script src="infer.js" defer></script>
+<script src="presets.js" defer></script>
+<script src="playground.js" defer></script>
+<script src="home.js" defer></script>
+<script src="composer3d.js" defer></script>
+</head>
+<body class="home">
+<a class="skip-link" href="#main">Skip to content</a>
+
+<!-- THE SCENE: the hotlinked Mostar layers (the story page's own images) inside one 16:9 camera
+     box that covers the viewport. home.js scales every layer about one point inside the arch
+     opening, nearer layers faster, so scrolling flies the camera through the bridge. Transform
+     and opacity only; a still first frame without JS or under reduced motion. Portrait phones
+     never see the towers, so <picture> hands them a 1px GIF instead of the two tower PNGs.
+     Each camera-driven layer sits in a .par wrapper that composer3d.js slides with the pointer (the
+     viewer's eye) by the same depths; the camera owns .cam's transform, the pointer owns .par's. -->
+<div class="scene" aria-hidden="true">
+  <div class="par par--sky"><div class="cam cam--sky"><img alt="" width="3840" height="2160" fetchpriority="high" decoding="async" src="https://raft-blast-61784561.figma.site/_assets/v11/16b5007d9c93971e26ffe4e0e3e37946f6bd538c.png" /></div></div>
+  <div class="par par--four"><div class="cam cam--four"><img class="sc-late" alt="" width="3840" height="2160" fetchpriority="low" decoding="async" src="https://raft-blast-61784561.figma.site/_assets/v11/8a7f8af50e0ce92ec2e228e7b0b4112178c51cf1.png" /></div></div>
+  <div class="par par--town"><div class="cam cam--town"><img class="sc-late" alt="" width="3840" height="2160" fetchpriority="low" decoding="async" src="https://raft-blast-61784561.figma.site/_assets/v11/864afe00e41e2fa20a5aa546e15cb807e0f81384.png" /></div></div>
+  <!-- the tower pair again, as a gate between the budget and the last stop: it fades in near the camera and parts past it (home.js) -->
+  <div class="cam cam--door cam--door-l"><picture><source media="(max-aspect-ratio: 5/8)" srcset="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" /><img alt="" width="2880" height="1620" fetchpriority="low" decoding="async" src="https://raft-blast-61784561.figma.site/_assets/v11/7536d7b60a1fce482cf6edf3f0bffd3bad5d0f8a.png" /></picture></div>
+  <div class="cam cam--door cam--door-r"><picture><source media="(max-aspect-ratio: 5/8)" srcset="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" /><img alt="" width="2880" height="1620" fetchpriority="low" decoding="async" src="https://raft-blast-61784561.figma.site/_assets/v11/392db6a6a6b98e868bd7f8d3f55bb719d51e5028.png" /></picture></div>
+  <div class="par par--bridge"><div class="cam cam--bridge"><img alt="" width="2880" height="1620" fetchpriority="high" decoding="async" src="https://raft-blast-61784561.figma.site/_assets/v11/c6a6d8ef49bca43f708aa852692942c45ec950d4.png" /></div></div>
+  <div class="par par--tw">
+    <div class="cam cam--split cam--split-l"><picture><source media="(max-aspect-ratio: 5/8)" srcset="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" /><img class="sc-late sc-split" alt="" width="2880" height="1620" fetchpriority="low" decoding="async" src="https://raft-blast-61784561.figma.site/_assets/v11/7536d7b60a1fce482cf6edf3f0bffd3bad5d0f8a.png" /></picture></div>
+    <div class="cam cam--split cam--split-r"><picture><source media="(max-aspect-ratio: 5/8)" srcset="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" /><img class="sc-late sc-split" alt="" width="2880" height="1620" fetchpriority="low" decoding="async" src="https://raft-blast-61784561.figma.site/_assets/v11/392db6a6a6b98e868bd7f8d3f55bb719d51e5028.png" /></picture></div>
+  </div>
+  <div class="scene-veil"></div>
+  <div class="scene-scrim"></div>
+</div>
+
+<header class="site-header">
+  <div class="site-header-inner">
+    <a class="site-brand" href="index.html" aria-label="The Embedding Tax, home"><svg class="site-mark" viewBox="0 0 64 64" width="24" height="24" aria-hidden="true"><path d="M12 19 L52 19 L52 45 L44 45 L44 37 A12 12 0 0 0 20 37 L20 45 L12 45 Z" fill="currentColor"/></svg><span class="site-word" aria-hidden="true">The Embedding Tax</span></a>
+    <nav class="site-links" aria-label="Main menu">
+      <a class="site-link" href="index.html" aria-current="page">Model</a>
+      <a class="site-link" href="app.html">Explorer</a>
+      <a class="site-link" href="app.html#results">Research</a>
+      <a class="site-link" href="story.html">Story</a>
+    </nav>
+    <div class="site-actions">
+      <a class="btn btn--primary" href="app.html#results"><i class="btn-mark" aria-hidden="true"></i><span class="btn-label">Read the research</span></a>
+    </div>
+  </div>
+</header>
+
+<main class="home-main" id="main" tabindex="-1">
+  <!-- THE ZOOM-THROUGH: .zt is the scroll track, .zt-view pins while the camera moves forward
+       through the first screen. Without html.zt-on (no JS, reduced motion, short screens) it is a
+       plain stacked page: the hero, then the three chapters, then the footer. -->
+  <div class="zt" id="zt">
+    <div class="zt-probe" aria-hidden="true"></div>
+    <div class="zt-view">
+
+      <!-- NEAREST LAYER: the whole first screen. It swells about the arch point and fades as it
+           passes the camera. Headline in the calm sky above the arch, Contra Labs
+           https://mobbin.com/sites/sections/1fe3ee5e-7997-463c-83f0-33a40878dd35 -->
+      <div class="zt-hero">
+        <p class="hero-pill glass-chip"><span class="hero-pill-dot" aria-hidden="true"></span><span>49,296,896 parameters · trained from scratch<span class="pill-tail"> · runs on your device</span></span></p>
+        <h1 class="hero-title" id="heroTitle">A language model that fits in fifty million parameters.</h1>
+
+        <!-- HERO = THE PRODUCT. Emergent's first screen, a headline over a tabbed prompt card with
+             "Try these" chips under it https://mobbin.com/screens/07e39fe5-7c24-4970-afb7-3331e27c7ab0 and
+             https://mobbin.com/screens/fbf2c1c1-346d-454d-a496-8320bf3b80fe;
+             Base44's centred composer with category chips https://mobbin.com/screens/e9909e9a-b452-4cc0-9d04-f5684f9aedb6;
+             Claude's composer with its action chips https://mobbin.com/screens/99067951-15dc-4fba-8ca8-94686a70985c;
+             Mistral's prompt box over a photograph https://mobbin.com/sites/sections/880db9fc-5ec5-4d6c-ae16-aaacbdc46979. -->
+        <section class="hero" id="try" data-playground data-tab="write" aria-labelledby="heroTitle">
+          <p class="lg hero-sub">Trained on one GPU and running right here in your browser. Give it an opening line and watch it write.</p>
+
+          <div class="composer-wrap">
+            <!-- the composer as a glass object standing in the scene (composer3d.css/js): .c3d is the
+                 never-transformed stage that holds the shadows cast on the photo; .c3d-tilt is the only
+                 element that turns with the pointer; each panel carries the sun's sheen. -->
+            <div class="c3d" data-c3d>
+            <div class="c3d-tilt">
+            <div class="c-tabs" role="tablist" aria-label="What to try">
+              <button class="c-tab" type="button" role="tab" id="tabWrite" aria-controls="panelWrite" aria-selected="true"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M3 13h3l7-7-3-3-7 7v3Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>Write</button>
+              <button class="c-tab" type="button" role="tab" id="tabBudget" aria-controls="panelBudget" aria-selected="false" tabindex="-1"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M2.5 13.5h11M4 11V7M8 11V3.5M12 11V9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Budget</button>
+            </div>
+
+            <div class="glass composer" role="tabpanel" id="panelWrite" aria-labelledby="tabWrite">
+              <span class="c3d-sheen" aria-hidden="true"></span>
+              <label class="sr-only" for="hPrompt">Your opening sentence</label>
+              <textarea class="c-prompt" id="hPrompt" data-pg="prompt" rows="3" placeholder="Start a sentence and the model finishes it…" autocomplete="off" spellcheck="true" maxlength="2000"></textarea>
+              <div class="c-bar">
+                <details class="c-settings">
+                  <summary aria-label="Sampling settings"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M2.5 4.5h7M12.5 4.5h1M2.5 11.5h1M6.5 11.5h7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="11" cy="4.5" r="1.6" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="5" cy="11.5" r="1.6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></summary>
+                  <!-- the decoding preset first, then the sliders (tested ranges; locked for Published), then
+                       Unlimited, the guards as a compact disclosure, the seed, the summary and the reset.
+                       Two columns on a wide screen; home.js opens it above the knob when it fits, else below.
+                       Google AI Studio run settings https://mobbin.com/screens/21eaf968-ab99-4627-a962-2953f4672f5c;
+                       Adaline model settings https://mobbin.com/screens/4dfc9453-f26c-42f0-a75f-03b941cc1386 -->
+                  <div class="glass c-pop">
+                    <div class="c-pop-col">
+                      <div class="pg-set pg-mode">
+                        <div class="pg-set-row"><span class="pg-set-lbl" id="hModeLbl">Preset</span><span class="pg-mode-name" data-pg="preset-name">Focused</span></div>
+                        <div class="pg-seg" role="radiogroup" aria-labelledby="hModeLbl" aria-describedby="hModeDesc">
+                          <label class="pg-seg-opt"><input type="radio" name="hMode" value="balanced" data-pg="preset-mode" /><span>Balanced</span></label>
+                          <label class="pg-seg-opt"><input type="radio" name="hMode" value="focused" data-pg="preset-mode" checked /><span>Focused</span></label>
+                          <label class="pg-seg-opt"><input type="radio" name="hMode" value="creative" data-pg="preset-mode" /><span>Creative</span></label>
+                          <label class="pg-seg-opt"><input type="radio" name="hMode" value="published" data-pg="preset-mode" /><span>Published</span></label>
+                        </div>
+                        <p class="pg-set-help" id="hModeDesc" data-pg="preset-desc">Uses Balanced's sampler but stops at the end of the first finished passage (about 55 tokens). Shorter, faster, and with less room to drift off topic.</p>
+                      </div>
+                      <p class="pg-set-help pg-locknote" data-pg="locknote" hidden>Published keeps temperature, top-k and length at its fixed values. Pick another preset to change them.</p>
+                      <div class="pg-set">
+                        <div class="pg-set-row"><label class="pg-set-lbl" for="hTemp">Temperature</label><input class="pg-num" id="hTempN" data-pg="tempN" type="text" inputmode="decimal" autocomplete="off" aria-label="Temperature, exact value" value="0.7" /></div>
+                        <input type="range" id="hTemp" data-pg="temp" min="0.6" max="1.4" step="0.05" value="0.7" />
+                      </div>
+                      <div class="pg-set">
+                        <div class="pg-set-row"><label class="pg-set-lbl" for="hTopk">Top-k</label><input class="pg-num" id="hTopkN" data-pg="topkN" type="text" inputmode="numeric" autocomplete="off" aria-label="Top-k, exact value" value="40" /></div>
+                        <input type="range" id="hTopk" data-pg="topk" min="40" max="200" step="1" value="40" />
+                      </div>
+                      <div class="pg-set">
+                        <div class="pg-set-row"><label class="pg-set-lbl" for="hMax">Max new tokens</label><input class="pg-num" id="hMaxN" data-pg="maxN" type="text" inputmode="numeric" autocomplete="off" aria-label="Max new tokens, exact value" value="90" /></div>
+                        <input type="range" id="hMax" data-pg="max" min="8" max="90" step="1" value="90" />
+                        <p class="pg-set-help">Ranges are the ones tested with the guards on. Longer runs drift further from the prompt.</p>
+                      </div>
+                    </div>
+                    <div class="c-pop-col">
+                      <div class="pg-set">
+                        <label class="tg"><span class="tg-title">Unlimited <span class="pg-badge" data-pg="unlimitedbadge" hidden>Not recommended</span></span><input type="checkbox" data-pg="unlimited" role="switch" aria-describedby="hUnlimitedHelp" /><span class="tg-state" aria-hidden="true"></span><span class="tg-track" aria-hidden="true"></span></label>
+                        <p class="pg-set-help" id="hUnlimitedHelp">At most 256 new tokens. It stops sooner at the end of the first finished passage, when it starts repeating, or if a very long prompt fills its 1,024-token context. Focused is Balanced with this on. Published with this on was not tested, so it is not recommended there.</p>
+                      </div>
+                      <details class="pg-set pg-guards c-guards">
+                        <summary><span class="pg-set-lbl">Guards</span><span class="pg-mode-name" data-pg="guardstate">On</span></summary>
+                        <p class="pg-set-help">Every preset but Published adds these rules. They only change which token can come next; the model's words are never edited.</p>
+                        <ul class="pg-guard-list">
+                          <li><strong>Stays on your prompt.</strong> Each step also runs the model with no prompt, then favours tokens your prompt made likelier (context-aware decoding, strength 1). About half the speed.</li>
+                          <li><strong>Skips long shots.</strong> Drops tokens less than about a tenth as likely as the top choice (min-p).</li>
+                          <li><strong>Repeats less.</strong> Tokens in the last 64 are made less likely (repetition penalty 1.2).</li>
+                          <li><strong>No blank start</strong>, and line breaks only after a finished sentence.</li>
+                        </ul>
+                      </details>
+                      <div class="pg-set">
+                        <div class="pg-set-row"><label class="pg-set-lbl" for="hSeed">Seed</label><input class="pg-num" id="hSeed" data-pg="seed" type="text" inputmode="numeric" autocomplete="off" value="1337" /></div>
+                      </div>
+                      <div class="pg-set">
+                        <label class="tg"><span class="tg-title">Same seed each time</span><input type="checkbox" data-pg="seedlock" role="switch" /><span class="tg-state" aria-hidden="true"></span><span class="tg-track" aria-hidden="true"></span></label>
+                      </div>
+                      <p class="pg-summary" data-pg="summary">Focused · temperature 0.7 · top-k 40 · until done, at most 256 tokens · guards on, min-p 0.1 · seed 1337</p>
+                      <button class="btn btn--secondary btn--sm c-reset" data-pg="reset" type="button" aria-disabled="true">Reset to Focused</button>
+                    </div>
+                  </div>
+                </details>
+                <p class="c-status"><span class="pg-dot" aria-hidden="true"></span><span data-pg="statusline">Not loaded</span></p>
+                <p class="c-note" data-pg="loadnote">One 50 MB download, kept by your browser. Nothing you type leaves the page.</p>
+                <div class="c-progress" data-pg="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-labelledby="hBarText" hidden><i data-pg="barfill"></i></div>
+                <span class="c-bartext" id="hBarText" data-pg="bartext" hidden></span>
+                <p class="c-note" data-pg="hint" hidden><kbd>Enter</kbd> to write</p>
+                <span class="c-tokens" data-pg="tokens"></span>
+                <button class="btn btn--primary c-go" data-pg="load" type="button" disabled>Load the model</button>
+                <button class="btn btn--primary c-go" data-pg="write" type="button" hidden disabled>Write</button>
+                <button class="btn btn--secondary c-go" data-pg="stop" type="button" hidden><span class="pg-stop-glyph" aria-hidden="true"></span>Stop</button>
+              </div>
+            </div>
+
+            <!-- BUDGET TAB: the whole argument as one control. Pure arithmetic on the cap (home.js). -->
+            <div class="glass composer b-panel" role="tabpanel" id="panelBudget" aria-labelledby="tabBudget" hidden>
+              <span class="c3d-sheen" aria-hidden="true"></span>
+              <div class="b-head">
+                <label class="b-lbl" for="bVocab">Vocabulary size</label>
+                <output class="b-val" id="bVocabOut" for="bVocab">16,384 tokens</output>
+              </div>
+              <input class="b-range" type="range" id="bVocab" min="0" max="7" step="1" value="4" aria-valuetext="16,384 tokens" />
+              <div class="b-result">
+                <p class="b-big"><span id="bLayers">13</span> <span class="b-unit" id="bLayersUnit">layers fit</span></p>
+                <p class="b-line">The word list costs <b id="bEmb">16.8%</b> of the 50,000,000 cap before a single layer exists.</p>
+              </div>
+              <div class="b-bar" aria-hidden="true"><i class="b-emb" id="bBarEmb"></i><i class="b-lay" id="bBarLay"></i></div>
+              <ul class="b-legend"><li><i class="sw-emb" aria-hidden="true"></i>Embeddings</li><li><i class="sw-lay" aria-hidden="true"></i>Layers</li><li><i class="sw-free" aria-hidden="true"></i>Unused</li></ul>
+              <p class="b-foot">Width 512, tied embeddings, 3,146,752 parameters per layer. <a href="app.html">Open the full explorer</a></p>
+            </div>
+            </div>
+            </div>
+          </div>
+
+          <!-- the output: glass, only once the model has written something; long text scrolls inside it.
+               A response card: the model's mark, name and a base-model tag, Copy as a pill, Base44
+               https://mobbin.com/screens/1af86cad-8541-40c6-9999-c6d7e4147660; one passage, the prompt in
+               grey running into the model's words in ink; this run as small labels over larger values with
+               thin dividers, Braintrust https://mobbin.com/screens/a5c47246-f508-4ead-9cb6-5489c6bd9dec;
+               a quiet line with an info icon, ManyChat https://mobbin.com/screens/1545f393-6813-4733-86f4-61de1f4d6ddd -->
+          <div class="glass h-out" data-pg="out">
+            <div class="pg-out-head">
+              <span class="pg-mark pg-out-mark" aria-hidden="true"></span>
+              <p class="pg-out-model"><span class="pg-out-name">embedding-tax-50m</span> <span class="pg-out-tag">base model</span></p>
+              <button class="pg-copy" data-pg="copy" type="button" hidden><svg class="pg-copy-ico" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><rect x="5.25" y="5.25" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10.75 3.25A1.5 1.5 0 0 0 9.25 2h-5A1.5 1.5 0 0 0 2.75 3.5v5A1.5 1.5 0 0 0 4 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><svg class="pg-copy-done" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-pg="copylabel">Copy</span></button>
+            </div>
+            <p class="pg-cont h-cont" data-pg="cont" tabindex="0" role="region" aria-label="Model output" hidden><span class="pg-echo" data-pg="echo" hidden></span><span class="pg-gen" data-pg="conttext"></span><span class="pg-caret" data-pg="caret" aria-hidden="true" hidden></span></p>
+            <dl class="pg-run h-run" data-pg="run" hidden>
+              <div><dt>Preset</dt><dd data-pg="runpreset"></dd></div>
+              <div><dt>New tokens</dt><dd data-pg="runtokens"></dd></div>
+              <div><dt>Speed</dt><dd data-pg="runspeed"></dd></div>
+              <div><dt>First token</dt><dd data-pg="runfirst"></dd></div>
+              <div><dt>Stopped by</dt><dd data-pg="runstop"></dd></div>
+              <div><dt>Backend</dt><dd data-pg="runbackend"></dd></div>
+            </dl>
+            <p class="pg-out-kind h-kind"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="6.25" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 7.25v4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="4.9" r=".95" fill="currentColor"/></svg><span>A base model, not a chat assistant: it continues whatever you type. It writes fluently and is often wrong.</span></p>
+          </div>
+
+          <div class="glass h-state" data-pg="packaging" hidden>
+            <p class="h-state-title">The model is being packaged.</p>
+            <p>This panel runs the real weights as soon as they land; nothing is simulated in the meantime.</p>
+          </div>
+          <div class="glass h-state" data-pg="failure" hidden>
+            <p class="h-state-title">The model could not run on this device. Try a current Chrome, Edge or Firefox.</p>
+            <p class="h-state-detail" data-pg="failuredetail"></p>
+            <button class="btn btn--secondary btn--sm" data-pg="retry" type="button">Try again</button>
+          </div>
+
+          <div class="try" id="tryWrite">
+            <p class="lg try-label">Not sure where to start? Try these</p>
+            <div class="try-chips" role="group" aria-label="Openings to try">
+              <button class="try-chip" type="button" data-pg="preset" style="--a:#f6a77d;--b:#f3c6de">The reason the sky appears blue is</button>
+              <button class="try-chip" type="button" data-pg="preset" style="--a:#7fdcd0;--b:#8fc3f5">The most important step in making bread is</button>
+              <button class="try-chip" type="button" data-pg="preset" style="--a:#c7a2f2;--b:#f2a7c5">In 1905, Albert Einstein published</button>
+              <button class="try-chip" type="button" data-pg="preset" style="--a:#9fb6f7;--b:#b9f0d8">A computer program is</button>
+              <button class="try-chip" type="button" data-pg="preset" style="--a:#6fe0a3;--b:#9ad5f0">The old bridge over the river was built</button>
+            </div>
+          </div>
+          <div class="try" id="tryBudget" hidden>
+            <p class="lg try-label">Compare vocabularies</p>
+            <div class="try-chips" role="group" aria-label="Vocabulary presets">
+              <button class="try-chip" type="button" data-vocab="4" aria-pressed="true" style="--a:#f6a77d;--b:#f3c6de">16,384 · ours</button>
+              <button class="try-chip" type="button" data-vocab="5" aria-pressed="false" style="--a:#7fdcd0;--b:#8fc3f5">32,000 · Llama 2</button>
+              <button class="try-chip" type="button" data-vocab="6" aria-pressed="false" style="--a:#c7a2f2;--b:#f2a7c5">50,257 · GPT-2</button>
+              <button class="try-chip" type="button" data-vocab="3" aria-pressed="false" style="--a:#9fb6f7;--b:#b9f0d8">8,192</button>
+            </div>
+          </div>
+
+          <p class="sr-only" data-pg="status" role="status" aria-live="polite" aria-atomic="true"></p>
+        </section>
+      </div>
+
+      <!-- BEYOND THE ARCH: the chapters wait in depth in the valley, grow into place, hold, then pass
+           the camera. Glass tinted by the scene behind it, General Intelligence Company
+           https://mobbin.com/sites/sections/e8ed96cb-45ff-445c-ac4a-13557adfb563
+           Text kept away from the growing centre, Robot.com https://mobbin.com/sites/sections/5bbc90c2-05e6-4626-a10c-3da9e38830ce -->
+      <div class="zt-stage">
+        <section class="zt-chap" id="device" aria-labelledby="deviceHead">
+          <div class="lg chap-panel">
+            <p class="chap-kicker"><i class="chap-dot" aria-hidden="true"></i>Runs on your device</p>
+            <h2 class="chap-title" id="deviceHead" tabindex="-1">No server runs this model.</h2>
+            <p class="chap-body">The weights are one 50 MB file. Your browser downloads it once and keeps it. The page times WebAssembly against WebGPU, if your browser has it, and runs on the faster one.</p>
+            <div class="chap-actions"><button class="btn btn--primary" type="button" data-ask>Try the model</button></div>
+          </div>
+        </section>
+
+        <!-- the budget as exact arithmetic: home.js rewrites these values from the same formula as the tab -->
+        <section class="zt-chap" id="budget" aria-labelledby="budgetHead">
+          <div class="lg chap-panel chap-panel--budget">
+            <div>
+              <p class="chap-kicker"><i class="chap-dot" aria-hidden="true"></i>The budget</p>
+              <h2 class="chap-title" id="budgetHead" tabindex="-1">Every parameter counts, including the word list.</h2>
+              <p class="chap-body">The fifty million cap includes the table that turns tokens into numbers: 512 parameters for every token in the vocabulary. Each layer costs another 3,146,752, so a smaller word list leaves room for more layers.</p>
+            </div>
+            <div>
+              <ul class="bud" role="list">
+                <li data-bud="50257">
+                  <p class="bud-line"><span>GPT-2's 50,257 tokens</span><span class="bud-val"><b data-bud-l>7</b> layers fit</span></p>
+                  <div class="b-bar bud-bar" aria-hidden="true" style="--emb:.5146;--lay:.4405"><i class="b-emb"></i><i class="b-lay"></i></div>
+                  <p class="bud-sub">Word list: <b data-bud-e>51.5%</b> of the cap</p>
+                </li>
+                <li data-bud="16384">
+                  <p class="bud-line"><span>Ours, 16,384 tokens</span><span class="bud-val"><b data-bud-l>13</b> layers fit</span></p>
+                  <div class="b-bar bud-bar" aria-hidden="true" style="--emb:.1678;--lay:.8182"><i class="b-emb"></i><i class="b-lay"></i></div>
+                  <p class="bud-sub">Word list: <b data-bud-e>16.8%</b> of the cap</p>
+                </li>
+              </ul>
+              <ul class="b-legend bud-legend"><li><i class="sw-emb" aria-hidden="true"></i>Word list</li><li><i class="sw-lay" aria-hidden="true"></i>Layers</li><li><i class="sw-free" aria-hidden="true"></i>Unused</li></ul>
+              <p class="bud-foot">Same cap, same width of 512: 13 layers instead of 7. <a href="app.html">Open the explorer</a></p>
+            </div>
+          </div>
+        </section>
+
+        <!-- EVERYTHING ELSE, ONE CLICK AWAY: the last stop of the camera.
+             Destination cards, label top-left, arrow top-right, title and line bottom-left,
+             FLORA https://mobbin.com/sites/sections/27fbff58-42db-49e5-84c9-0a9ff1bcca07 -->
+        <section class="zt-chap zt-chap--pages" id="pages" aria-labelledby="pagesHead">
+          <div class="lg pages-head"><p class="chap-kicker"><i class="chap-dot" aria-hidden="true"></i>Go deeper</p><h2 class="chap-title" id="pagesHead" tabindex="-1">Everything else, one click away</h2></div>
+          <div class="pages-grid">
+            <a class="lg dest" href="app.html#results"><span class="dest-top"><span class="chap-kicker">Research</span><span class="dest-go" aria-hidden="true">→</span></span><span class="dest-title">The training run and its scores</span><span class="dest-body">Loss curve, benchmark results against GPT-2 Small, and published samples, as measured.</span></a>
+            <a class="lg dest" href="app.html"><span class="dest-top"><span class="chap-kicker">Explorer</span><span class="dest-go" aria-hidden="true">→</span></span><span class="dest-title">Where fifty million parameters go</span><span class="dest-body">Move the vocabulary, the width and the tying, and see how many layers still fit.</span></a>
+            <a class="lg dest" href="story.html"><span class="dest-top"><span class="chap-kicker">Story</span><span class="dest-go" aria-hidden="true">→</span></span><span class="dest-title">The embedding tax, told over a bridge</span><span class="dest-body">The scroll story that walks through the budget, one decision at a time.</span></a>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- General Intelligence Company footer https://mobbin.com/sites/sections/0222c241-b0da-45eb-a95e-7ba703270a5d -->
+<footer class="lg home-foot">
+  <p class="home-foot-brand">The Embedding Tax</p>
+  <p class="home-foot-note">A GIBC V2 Track 01 entry. Trained from scratch on one RTX 4090.</p>
+  <nav class="home-foot-links" aria-label="Footer"><a href="app.html">Explorer</a><a href="app.html#results">Research</a><a href="story.html">Story</a></nav>
+</footer>
+
+<!-- return path to the composer, Lightship https://mobbin.com/sites/sections/019d6f74-42f5-492b-9cca-31fecb99dac2 -->
+<button class="lg ask is-out" type="button" data-ask hidden>
+  <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M3 13h3l7-7-3-3-7 7v3Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>Ask the model
+</button>
+<!-- #c3d-lens: the composer's frosted body with a clear, bent, colour-split rim, for backdrop-filter:url()
+     (Chromium with GPU compositing, at rest only; composer3d.js sizes #c3d-lens-map to the visible panel:
+     R,G = inward displacement, B = rim band weight). The frost matches .composer: blur 28, saturate 1.2.
+     The milk is inside the filter, under the rim band, so the band stays clear; composer3d.css then
+     paints only the rest of the frost's top-to-bottom gradient over the whole box. -->
+<svg class="c3d-defs" width="0" height="0" aria-hidden="true" focusable="false" style="position:absolute">
+  <filter id="c3d-lens" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+    <feImage id="c3d-lens-map" x="0" y="0" width="780" height="198" preserveAspectRatio="none" result="map"/>
+    <feGaussianBlur in="SourceGraphic" stdDeviation="28" edgeMode="duplicate" result="frost"/>
+    <feGaussianBlur in="SourceGraphic" stdDeviation="1.2" edgeMode="duplicate" result="clear"/>
+    <feDisplacementMap in="clear" in2="map" scale="34" xChannelSelector="R" yChannelSelector="G" result="dr"/>
+    <feColorMatrix in="dr" type="matrix" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="r"/>
+    <feDisplacementMap in="clear" in2="map" scale="30" xChannelSelector="R" yChannelSelector="G" result="dg"/>
+    <feColorMatrix in="dg" type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0" result="g"/>
+    <feDisplacementMap in="clear" in2="map" scale="26" xChannelSelector="R" yChannelSelector="G" result="db"/>
+    <feColorMatrix in="db" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" result="b"/>
+    <feComposite in="r" in2="g" operator="arithmetic" k1="0" k2="1" k3="1" k4="0" result="rg"/>
+    <feComposite in="rg" in2="b" operator="arithmetic" k1="0" k2="1" k3="1" k4="0" result="rim"/>
+    <feColorMatrix in="map" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 1 0 0" result="band"/>
+    <feComposite in="rim" in2="band" operator="in" result="rimBand"/>
+    <feFlood flood-color="#fff" flood-opacity=".58" result="milk"/>
+    <feComposite in="milk" in2="frost" operator="over" result="milky"/>
+    <feComposite in="rimBand" in2="milky" operator="over" result="glass"/>
+    <feColorMatrix in="glass" type="saturate" values="1.2"/>
+  </filter>
+</svg>
+</body>
+</html>

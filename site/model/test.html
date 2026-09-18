@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>infer.js test — The Embedding Tax</title>
+<link rel="icon" href="../favicon.svg">
+<style>
+  body { font: 14px/1.5 system-ui, sans-serif; max-width: 820px; margin: 2em auto; padding: 0 1em; }
+  pre { white-space: pre-wrap; overflow-wrap: anywhere; border: 1px solid #999; padding: .6em; min-height: 6em; }
+  label { display: inline-block; margin-right: 1em; }
+  input[type=number] { width: 5em; }
+  textarea { width: 100%; box-sizing: border-box; }
+  progress { width: 16em; vertical-align: middle; }
+  #facts { color: #333; }
+  .warn { color: #a40; }
+</style>
+<h1>infer.js test page</h1>
+<p>Plain harness for <code>../infer.js</code>. Open with <code>?backend=wasm</code>, <code>?backend=webgpu</code> or
+<code>?backend=auto</code> to load on arrival; with no parameter, press Load (the page then uses "auto").</p>
+<p id="facts">Model facts appear here once the manifest is read.</p>
+<p>
+  <button id="load">Load model</button>
+  <button id="unload" disabled>Unload</button>
+  <progress id="prog" max="1" value="0" aria-label="Weights download"></progress>
+  <span id="status" role="status" aria-live="polite">not loaded</span>
+</p>
+<p><label for="prompt">Prompt</label><br><textarea id="prompt" rows="3">The reason the sky appears blue is</textarea></p>
+<p>
+  <label>max new tokens <input id="maxNew" type="number" value="60" min="1" max="1023"></label>
+  <label>temperature <input id="temp" type="number" value="0.8" step="0.1" min="0"></label>
+  <label>top-k <input id="topk" type="number" value="40" min="0"></label>
+  <label>seed <input id="seed" type="number" value="1337"></label>
+</p>
+<p>
+  <button id="gen" disabled>Generate</button>
+  <button id="stop" disabled>Stop</button>
+  <span id="tokinfo" aria-live="polite"></span>
+</p>
+<pre id="out" aria-live="polite" aria-label="Generated text"></pre>
+<p id="stats" aria-live="polite"></p>
+<script src="../infer.js"></script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var params = new URLSearchParams(location.search);
+  var backend = params.get('backend');
+  var controller = null;
+
+  function fmtMB(b) { return (b / 1e6).toFixed(1) + ' MB'; }   // decimal MB, as the manifest and export_web.py report sizes
+
+  // Disabling the focused button drops focus to <body>; hand it to the control that now applies first.
+  function disable(btn, fallback) {
+    if (document.activeElement === btn) fallback.focus();
+    btn.disabled = true;
+  }
+
+  function showFacts() {
+    var m = EmbeddingTax.manifest;
+    if (!m) return;
+    var lines = [
+      'Weights: run ' + m.run + ', checkpoint after step ' + m.steps_completed + ' of ' + m.steps_total +
+        (m.training_finished ? ' (training finished)' : ' (training NOT finished: interim checkpoint)'),
+      'Parameters: ' + m.params_total.toLocaleString() + ' | vocab ' + m.vocab_size + ' | block ' + m.block_size,
+      'Download: ' + fmtMB(m.bytes) + ' (' + m.file + '), ' + m.quantization_mode + '; exported ' + m.exported_at,
+      'Parity: fp32 greedy ' + m.parity.fp32_greedy_tokens_matching + ', quantised top-1 agreement ' + m.parity.quantized_top1_agreement,
+      'Runs entirely on this device. A ' + Math.round(m.params_total / 1e6) + 'M-parameter model writes fluently and is often wrong.'
+    ];
+    $('facts').textContent = lines.join('\n');
+    $('facts').style.whiteSpace = 'pre-line';
+    $('maxNew').max = m.block_size - 1;   // what generate() clamps to
+  }
+
+  function load() {
+    disable($('load'), $('prompt'));
+    $('status').textContent = 'loading…';
+    $('status').className = '';
+    var t0 = performance.now();
+    EmbeddingTax.load({
+      backend: backend || 'auto',
+      onProgress: function (loaded, total) {
+        $('prog').value = total ? loaded / total : 0;
+        $('status').textContent = 'downloading ' + fmtMB(loaded) + ' / ' + fmtMB(total);
+        showFacts();
+      }
+    }).then(function (r) {
+      showFacts();
+      var st = EmbeddingTax.stats;
+      $('status').textContent = 'ready on ' + r.backend + ' in ' + ((performance.now() - t0) / 1000).toFixed(1) + ' s' +
+        (st.fromCache ? ' (weights from Cache Storage)' : st.cached ? ' (weights now cached)' : '') +
+        ' | sha256 ' + st.sha256 +
+        ' | self-check ' + (st.selfCheck ? (st.selfCheck.pass ? 'pass' : 'FAIL') + ' (argmax ' + st.selfCheck.got + ', expected ' + st.selfCheck.expected + ')' : 'not in manifest') +
+        (st.wasmWorker ? ' | wasm in a worker, ' + st.wasmThreads + ' thread(s)' : '') +
+        (st.ortScriptIntegrity ? ' | page runtime script ' + st.ortScriptIntegrity : '') +
+        ' | candidates: ' + candidatesLine(st);
+      $('gen').disabled = false;
+      $('unload').disabled = false;
+      updateTokInfo();
+    }).catch(function (err) {
+      var st = EmbeddingTax.stats;
+      $('status').textContent = 'load failed: ' + (err && err.message || err) +
+        (st && st.candidates && st.candidates.length ? ' | candidates: ' + candidatesLine(st) : '');
+      $('status').className = 'warn';
+      $('load').disabled = false;
+    });
+  }
+
+  function unload() {
+    $('load').disabled = false;
+    disable($('unload'), $('load'));
+    disable($('gen'), $('load'));
+    EmbeddingTax.unload().then(function () {
+      $('prog').value = 0;
+      $('status').textContent = 'unloaded (the weights stay in Cache Storage; Load rebuilds from them)';
+      $('status').className = '';
+    });
+  }
+
+  function candidatesLine(st) {
+    return st.candidates.map(function (c) {
+      return c.backend + (c.error ? ' failed (' + c.error + ')' : ' create ' + c.createMs.toFixed(0) + ' ms, forward@' + c.benchTokens + ' ' + c.forwardMs.toFixed(0) + ' ms') +
+        (c.ortIntegrity ? ', runtime ' + c.ortIntegrity : '');
+    }).join('; ');
+  }
+
+  function updateTokInfo() {
+    if (!EmbeddingTax.tokenizer) return;
+    var t0 = performance.now();
+    var n = EmbeddingTax.tokenCount($('prompt').value);
+    $('tokinfo').textContent = n + ' prompt token' + (n === 1 ? '' : 's') + ' (' + (performance.now() - t0).toFixed(1) + ' ms)';
+  }
+
+  function generate() {
+    controller = new AbortController();
+    $('stop').disabled = false;
+    disable($('gen'), $('stop'));
+    $('out').textContent = '';
+    $('stats').textContent = '';
+    $('stats').className = '';
+    var prompt = $('prompt').value;
+    var failed = false;
+    EmbeddingTax.generate(prompt, {
+      maxNewTokens: Number($('maxNew').value),
+      temperature: Number($('temp').value),
+      topK: Number($('topk').value),
+      seed: Number($('seed').value),
+      signal: controller.signal,
+      onTruncate: function (info) {
+        $('stats').textContent = 'prompt truncated from the left: kept ' + info.keptTokens + ' of ' + info.promptTokens + ' tokens' +
+          (info.droppedChars ? ' (' + info.droppedChars + ' of ' + info.promptChars + ' characters were cut before tokenizing)' : '');
+      },
+      onToken: function (text) {
+        $('out').textContent += text;
+      }
+    }).then(function (text) {
+      var l = EmbeddingTax.last;
+      $('stats').textContent += (l.truncated ? ' | ' : '') + l.newTokens + ' tokens in ' + (l.ms / 1000).toFixed(2) + ' s = ' +
+        l.tokensPerSecond.toFixed(2) + ' tok/s on ' + l.backend + ' (first token ' + l.msToFirstToken.toFixed(0) + ' ms), stopped by ' + l.stoppedBy;
+      $('out').textContent = text;
+    }).catch(function (err) {
+      failed = true;
+      $('stats').textContent = 'generate failed: ' + (err && err.message || err);
+      $('stats').className = 'warn';
+    }).then(function () {
+      controller = null;
+      if (EmbeddingTax.ready) {
+        $('gen').disabled = false;
+        disable($('stop'), $('gen'));
+      } else {
+        // A runtime failure (or Unload) took the model down: back to the Load button.
+        $('load').disabled = false;
+        $('unload').disabled = true;
+        disable($('stop'), $('load'));
+        if (failed) {
+          $('status').textContent = 'not loaded: the backend failed, press Load to rebuild it';
+          $('status').className = 'warn';
+        }
+      }
+    });
+  }
+
+  $('load').onclick = load;
+  $('unload').onclick = unload;
+  $('gen').onclick = generate;
+  $('stop').onclick = function () { if (controller) controller.abort(); };
+  $('prompt').oninput = updateTokInfo;
+  if (backend) load();
+})();
+</script>
+</html>

@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The story · The Embedding Tax</title>
+<meta name="description" content="A scroll story about where a 50-million-parameter budget goes when the cap counts the token embeddings, and the model itself, running on your device." />
+<meta name="theme-color" content="#faf9f5" />
+<link rel="icon" href="favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<!-- The type trio (shared.css): Newsreader 400 / 400 italic / 500 on its optical-size axis
+     (the licensed stand-in for Anthropic Serif), Instrument Sans 400..600 as one variable face
+     so the anchor's 480 button weight renders (the stand-in for Anthropic Sans), JetBrains Mono
+     400 / 500 (1:1 with the anchor). Only the weights in use. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=Instrument+Sans:wght@400..600&family=JetBrains+Mono:wght@400;500&display=swap" />
+<!-- Set before the stylesheets so every .js entrance state exists at first paint; a visitor
+     without scripts never gets the class and sees every element in its final state. -->
+<script>document.documentElement.classList.add("js")</script>
+<link rel="stylesheet" href="shared.css" />
+<link rel="stylesheet" href="styles.css" />
+<!-- presets.js: the decoding presets, one table for this panel, the explorer and the home composer -->
+<script src="presets.js" defer></script>
+<script src="script.js" defer></script>
+<!-- The model in the browser (built by the model workflow): window.EmbeddingTax. A missing
+     file is a 404 and the Watch-it-write panel shows its packaging state; nothing simulates. -->
+<script src="infer.js" defer></script>
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<!-- Header capsule (shared.css, "HEADER CAPSULE"): a fixed glass capsule over the photo, the
+     same markup as app.html's. Chip sub-nav after Anthropic's research chip sub-nav
+     https://mobbin.com/sites/sections/5d90eadd-ec0b-4ec1-9729-d315afe8d366 and the Claude
+     marketing header https://mobbin.com/sites/sections/6eb09dee-d3e2-4c6c-aa87-3346999a6d3c;
+     the glass is the research ScrollIntroGlobe control
+     https://mobbin.com/sites/sections/d0ea8855-f290-486c-a4ba-7a1f9515d308; the floating
+     capsule after Sana https://mobbin.com/sites/sections/024243a5-db5f-4042-be7a-40f7e87a3bee
+     and Zaro https://mobbin.com/sites/sections/1504b865-76c3-4681-8079-da52475e6e58.
+     script.js positions .cap-pill under the current chapter (it measures .cap-links
+     a[data-sec]), writes --seg0..2 on #capNav for the 2px chapter strip, and may add .hidden
+     while the reader scrolls down inside the stage. -->
+<header class="site-header site-header--story" id="capNav">
+  <div class="site-header-inner">
+    <a class="site-brand" href="index.html" aria-label="The Embedding Tax, home"><svg class="site-mark" viewBox="0 0 64 64" width="24" height="24" aria-hidden="true"><path d="M12 19 L52 19 L52 45 L44 45 L44 37 A12 12 0 0 0 20 37 L20 45 L12 45 Z" fill="currentColor"/></svg><span class="site-word" aria-hidden="true">The Embedding Tax</span></a>
+    <nav class="site-links cap-links" aria-label="Main menu">
+      <span class="site-pill cap-pill" aria-hidden="true"></span>
+      <a class="site-link" href="#cinema" data-sec="0">Intro</a>
+      <a class="site-link" href="#budget" data-sec="1">Budget</a>
+      <a class="site-link" href="#depth" data-sec="2">Depth</a>
+      <a class="site-link" href="app.html">Explorer</a>
+    </nav>
+    <div class="site-actions">
+      <a class="btn btn--primary" href="app.html"><i class="btn-mark" aria-hidden="true"></i><span class="btn-label">Open the explorer</span></a>
+    </div>
+  </div>
+  <div class="cap-strip" aria-hidden="true"><i></i><i></i><i></i></div>
+</header>
+
+<!-- Section rail: the anchor's tooltip card material (styles.css). The sliding thumb and the
+     per-chapter side track follow Grain's story segments
+     https://mobbin.com/flows/db4bb068-692f-4f90-8aad-fe2007493106 and OpenAI's left rail with a
+     filled current slot https://mobbin.com/sites/sections/ce8344a8-9e58-49db-b909-db3b5576679d.
+     The labels are the research tooltip. -->
+<nav class="sec-rail" id="secRail" aria-label="Sections">
+  <span class="rail-thumb" aria-hidden="true"></span>
+  <!-- aria-label: the visible word sits in a tooltip that is visibility:hidden at rest,
+       which the accessible-name computation drops, so the links read as "01".."04". -->
+  <a href="#cinema" data-sec="0" aria-label="Intro"><span>01</span><em>Intro</em></a>
+  <a href="#budget" data-sec="1" aria-label="Budget"><span>02</span><em>Budget</em></a>
+  <a href="#depth" data-sec="2" aria-label="Depth"><span>03</span><em>Depth</em></a>
+  <a href="app.html" aria-label="Explorer"><span>04</span><em>Explorer</em></a>
+</nav>
+
+<!-- Chapter flag: Raw Materials' "Now entering" bar
+     https://mobbin.com/sites/sections/e5ec35b6-1d56-4131-a532-b8390ff5373d on the anchor's
+     tooltip material. Decorative: the rail and the header already say which chapter is
+     current, so it is hidden from assistive tech. -->
+<div class="chap-flag" id="chapFlag" aria-hidden="true"><span class="chap-flag-k">Now entering</span><span class="chap-flag-mask"><span class="chap-flag-word" id="chapFlagWord">Budget</span></span><span class="chap-flag-n" id="chapFlagNum">02</span></div>
+
+<main class="site-shell" id="main" tabindex="-1">
+  <section class="cinema-scroll" id="cinema" aria-label="The Embedding Tax scroll story">
+    <div class="stage">
+
+      <!-- Band 1, the cap. Hero figure first in the DOM so the page's h1 precedes every other
+           heading. Reducto's numeral proportion
+           https://mobbin.com/sites/sections/9242cefa-a95b-48df-82e1-5aac6046250c rolled as
+           Vercel's per-digit reels https://mobbin.com/sites/sections/0215f066-0f95-45b2-bccb-3eaae4db2404.
+           Kicker bullet and qualifier chip: Browserbase
+           https://mobbin.com/sites/sections/109e6297-d973-4b59-a1d2-3861ec60acd0; the kicker and
+           the tax row are GLASS (the research ScrollIntroGlobe control), the qualifier a
+           FeatureGrid chip. Ink over the sky carries --tshadow-ink; the tax fill is the cost,
+           coloured after Zendesk's figure = segment colour
+           https://mobbin.com/sites/sections/07b3e72a-a6f5-4a0e-97a3-d9bdd5a4a478. -->
+      <h1 class="hero-title" aria-label="The parameter cap, embeddings included: 50,000,000"><span class="hero-kicker"><span class="hk-glass glass"><i class="k-sq" aria-hidden="true"></i>The parameter cap</span> <span class="hk-chip chip chip--embedding">Embeddings included</span></span> <span class="hero-fig"><span class="hero-num" id="heroNum">50,000,000</span><span class="hero-tax glass" aria-hidden="true"><span class="hero-tax-track"><span class="hero-tax-fill"></span></span><span class="hero-tax-label"><b>51.5%</b> is GPT-2's word list</span></span></span></h1>
+
+      <!-- The intro card: one sentence on CARD material, word by word off the load ramp, with
+           two drawn phrase marks (clay for the tax, olive for the depth); the facts as the
+           research chip tabs https://mobbin.com/sites/sections/5456030e-9762-4284-a0de-76b4907fc9de,
+           each tied to its phrase. Mistral's input over warm dusk mountains is the register
+           https://mobbin.com/sites/sections/880db9fc-5ec5-4d6c-ae16-aaacbdc46979. -->
+      <section class="intro-copy" aria-label="Overview">
+        <div class="intro-card card">
+          <p class="intro-line">A fixed budget, a word list that quietly <span data-mark="tax">eats half of it</span>, and one decision that buys <span data-mark="depth">six more layers</span> of thinking.</p>
+          <ul class="hero-tags" aria-label="Model highlights">
+            <li><a class="tag chip chip--tab" href="#budget" data-link="tax">16,384 tokens<span class="sr-only">, the budget</span></a></li>
+            <li><a class="tag chip chip--tab" href="#depth" data-link="depth">13 layers<span class="sr-only">, the depth</span></a></li>
+            <li><a class="tag chip chip--tab" href="app.html#results" data-link="run">One consumer GPU<span class="sr-only">, the training run</span></a></li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Band 2, the budget card: one floating CARD, right, facts as two tiles. The kicker and
+           the h2 part from the centre line as the split frames part (halves parting, off --k2).
+           Cursor's stats cards (figure top-left, caption bottom-left)
+           https://mobbin.com/sites/sections/49475026-9a62-4dc4-b12d-98a280bee047; the clay
+           figure after Zendesk's figure colour = segment colour
+           https://mobbin.com/sites/sections/07b3e72a-a6f5-4a0e-97a3-d9bdd5a4a478; the Claude
+           model-family chart's clay pills https://mobbin.com/sites/sections/9f87ad1b-0695-4225-9dfb-a70e0b1dffb5.
+           script.js positions .story-panel-bridge (the rig) and adds .is-entered / .is-shown /
+           .is-counted; the CSS animates only the children. -->
+      <section class="story-panel story-panel-bridge" id="budget" aria-labelledby="budgetHead">
+        <div class="panel-in card card--floating">
+          <p class="panel-kicker"><i class="k-sq" aria-hidden="true"></i>01 · The budget</p>
+          <h2 id="budgetHead">The cap counts the <em>embeddings.</em></h2>
+          <p class="panel-body">Fifty million parameters, and the rules include the token table and the output head. That one sentence decides the architecture before a single layer exists.</p>
+          <dl class="facts">
+            <div class="fact is-theirs">
+              <dt><span class="fact-fig"><span class="fact-num" data-to="51.5">51.5</span><span class="fact-pct">%</span></span><span class="fact-track" aria-hidden="true"><i class="fact-fill" style="--w:.515"></i></span></dt>
+              <dd>Of the cap is a word list at GPT-2's vocabulary</dd>
+            </div>
+            <div class="fact is-ours">
+              <dt><span class="fact-fig"><span class="fact-num" data-to="16.8">16.8</span><span class="fact-pct">%</span></span><span class="fact-track" aria-hidden="true"><i class="fact-ghost"></i><i class="fact-fill" style="--w:.168"></i></span></dt>
+              <dd>Of the cap is a word list at 16,384 tokens, ours</dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+
+      <!-- Band 3, the depth card: one floating CARD, left, figure-led (a different interior
+           from band 2). Approach-from-depth: the card scales .82 to 1 off --k3 as the split
+           frames push past the camera, with a static-blur soft copy of the h2 crossfading under
+           the sharp one. Mercury's exploded layer stack with hairline callouts
+           https://mobbin.com/sites/sections/3a483a4e-ab5c-494e-9db9-c6d41660be22 on Goldsand's
+           shared baseline https://mobbin.com/sites/sections/4f4b87d7-f4d3-4da8-a11b-847e61f8eaf2;
+           Linear's discrete slabs on hairline leaders
+           https://mobbin.com/sites/sections/f8b93019-f62b-4e58-8f0d-e577baa204f3; the CTA is
+           the Claude research hero black button
+           https://mobbin.com/sites/sections/d0ea8855-f290-486c-a4ba-7a1f9515d308. -->
+      <section class="story-panel story-panel-bazaar" id="depth" aria-labelledby="depthHead">
+        <div class="panel-in card card--floating">
+          <p class="panel-kicker"><i class="k-sq k-sq--depth" aria-hidden="true"></i>02 · The depth</p>
+          <div class="h2-wrap">
+            <h2 id="depthHead">Depth is what it <em>buys.</em></h2>
+            <span class="h2-soft" aria-hidden="true">Depth is what it <em>buys.</em></span>
+          </div>
+          <p class="panel-body">The parameters a smaller vocabulary frees go straight into layers: seven becomes thirteen, at the same cap and the same width.</p>
+          <!-- The stack's arithmetic is explorer.js budget() at width 512, tied embeddings, rotary
+               positions: one layer = 12 x 512^2 + 2 x 512 = 3,146,752 = 6.2935% of 50,000,000.
+               50,257 x 512 = 25,731,584 = 51.46% (7 layers fit; 8 would be 50,906,112).
+               16,384 x 512 = 8,388,608 = 16.78%; 13 layers + a 512 final norm = 49,296,896. -->
+          <figure class="depth-stack" role="img" aria-label="Drawn to scale against the 50,000,000-parameter cap. At GPT-2's 50,257-token vocabulary the word list takes 51.5% and 7 layers fit. At 16,384 tokens it takes 16.8% and 13 layers fit, six more.">
+            <div class="ds-head"><span>To scale · 50M cap</span><span class="ds-key"><i class="k-embed"></i>Word list<i class="k-layer"></i>Layers</span></div>
+            <div class="ds-cols">
+              <div class="ds-col is-theirs">
+                <div class="ds-frame">
+                  <span class="ds-embed" style="--h:51.46%"><b>51.5%</b></span>
+                  <span class="ds-layer" style="--i:0"></span><span class="ds-layer" style="--i:1"></span><span class="ds-layer" style="--i:2"></span><span class="ds-layer" style="--i:3"></span><span class="ds-layer" style="--i:4"></span><span class="ds-layer" style="--i:5"></span><span class="ds-layer" style="--i:6"></span>
+                </div>
+                <p class="ds-cap"><span>50,257 tokens</span><strong>7 layers</strong></p>
+              </div>
+              <div class="ds-col is-ours">
+                <div class="ds-frame">
+                  <span class="ds-embed" style="--h:16.78%"><b>16.8%</b></span>
+                  <span class="ds-layer" style="--i:0"></span><span class="ds-layer" style="--i:1"></span><span class="ds-layer" style="--i:2"></span><span class="ds-layer" style="--i:3"></span><span class="ds-layer" style="--i:4"></span><span class="ds-layer" style="--i:5"></span><span class="ds-layer" style="--i:6"></span><span class="ds-layer" style="--i:7"></span><span class="ds-layer" style="--i:8"></span><span class="ds-layer" style="--i:9"></span><span class="ds-layer" style="--i:10"></span><span class="ds-layer" style="--i:11"></span><span class="ds-layer ds-top" style="--i:12"></span>
+                  <!-- The +6 bracket: a 1px olive line drawn by stroke-dashoffset after the layers land. -->
+                  <span class="ds-extra" aria-hidden="true"><svg viewBox="0 0 8 100" preserveAspectRatio="none" focusable="false"><path pathLength="1" d="M0 0.5 H7 V99.5 H0"/></svg><em>+6</em></span>
+                </div>
+                <p class="ds-cap"><span>16,384 tokens</span><strong>13 layers</strong></p>
+              </div>
+            </div>
+          </figure>
+          <a class="btn btn--primary btn--lg note-button" href="app.html">Open the budget explorer</a>
+        </div>
+      </section>
+
+      <!-- Band scrims [K]: ivory radials riding the opacities the rig writes, dying out by 76%
+           so the corners stay live. Budget: the right ellipse only (the card sits right, the
+           bridge stays bright on the left); depth: the left ellipse only. -->
+      <div class="band-scrim band-scrim--hero" aria-hidden="true"></div>
+      <div class="band-scrim band-scrim--budget" aria-hidden="true"></div>
+      <div class="band-scrim band-scrim--depth" aria-hidden="true"></div>
+
+      <div class="world">
+        <img class="scene-img sky-img" alt="" width="3840" height="2160" fetchpriority="high" decoding="async" src="https://raft-blast-61784561.figma.site/_assets/v11/16b5007d9c93971e26ffe4e0e3e37946f6bd538c.png" />
+
+        <div class="back-stack">
+          <img class="scene-img back-img back-four" alt="" width="3840" height="2160" decoding="async" src="https://raft-blast-61784561.figma.site/_assets/v11/8a7f8af50e0ce92ec2e228e7b0b4112178c51cf1.png" />
+
+          <!-- Band 4, five spec cards: the page's one row layout. CARD material, the active one
+               white and full size, its neighbours receded to the tertiary ground. OpenAI's card
+               carousel with chevrons https://mobbin.com/sites/sections/c0316181-fcbf-4ab5-89ec-24323d999f44,
+               Claude's model ledger cards https://mobbin.com/sites/sections/9a8549ad-56b6-4aee-8ceb-8064929f7e9a
+               and capabilities row https://mobbin.com/sites/sections/e3dc86d1-cea3-4f7b-9864-46230a89e735.
+               The figures snap into place in reading order off --k4 (grid snap-align). The cards
+               are not controls: the arrows, dots, keys and a drag move them. -->
+          <section class="sights-slider" aria-roledescription="carousel" aria-labelledby="specsHead">
+            <h2 class="sr-only" id="specsHead">The model in five numbers</h2>
+            <div class="sights-track">
+              <article class="sight-card tone-cost" style="--n:0">
+                <div class="sight-top">
+                  <span class="sight-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 9.5h16M4 14.5h16M9.5 4v16M14.5 4v16"/></svg></span>
+                  <span class="sight-kicker chip">Token table</span>
+                </div>
+                <h3><span class="sight-num" data-to="16384">16,384</span> tokens</h3>
+                <p>A byte-level BPE fitted on the same corpus the model trains on.</p>
+              </article>
+              <article class="sight-card tone-depth" style="--n:1">
+                <div class="sight-top">
+                  <span class="sight-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 3 8l9 5 9-5-9-5z"/><path d="m3 12 9 5 9-5"/><path d="m3 16 9 5 9-5"/></svg></span>
+                  <span class="sight-kicker chip">Depth</span>
+                </div>
+                <h3><span class="sight-num" data-to="13">13</span> layers</h3>
+                <p>Where GPT-2's vocabulary would leave room for only seven.</p>
+              </article>
+              <article class="sight-card" style="--n:2">
+                <div class="sight-top">
+                  <span class="sight-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/></svg></span>
+                  <span class="sight-kicker chip">Attention</span>
+                </div>
+                <h3><span class="sight-num" data-to="8">8</span> attention heads</h3>
+                <p>Four matrices a layer: query, key, value, and the output projection.</p>
+              </article>
+              <article class="sight-card" style="--n:3">
+                <div class="sight-top">
+                  <span class="sight-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v4h-4"/></svg></span>
+                  <span class="sight-kicker chip">Positions</span>
+                </div>
+                <h3><span class="sight-num" data-to="0">0</span> position parameters</h3>
+                <p>Rotary, not learned: no position table to pay for.</p>
+              </article>
+              <article class="sight-card" style="--n:4">
+                <div class="sight-top">
+                  <span class="sight-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="1.5"/><path d="M9.5 9.5h5v5h-5z"/><path d="M9 2.5V6M15 2.5V6M9 18v3.5M15 18v3.5M2.5 9H6M2.5 15H6M18 9h3.5M18 15h3.5"/></svg></span>
+                  <span class="sight-kicker chip">Hardware</span>
+                </div>
+                <h3><span class="sight-num" data-to="1">1</span> RTX 4090</h3>
+                <p>From scratch: no pretrained weights, no fine-tuning, no distillation.</p>
+              </article>
+            </div>
+          </section>
+
+          <img class="scene-img back-img back-bazaar" alt="" width="3840" height="2160" decoding="async" src="https://raft-blast-61784561.figma.site/_assets/v11/864afe00e41e2fa20a5aa546e15cb807e0f81384.png" />
+        </div>
+
+        <!-- Carousel controls: Prev / Next as Button tertiary size-large, Mistral's dash
+             pagination https://mobbin.com/sites/sections/fc0d02b9-2df2-4539-8819-51c2d1e0bf64
+             whose 6.5s fill is the autoplay clock, the count in mono, and Pause / Play as a GLASS
+             control with a visible label (required: the cards rotate on their own, WCAG 2.2.2). -->
+        <div class="sights-controls" role="group" aria-label="Card controls">
+          <button class="btn btn--tertiary btn--lg sight-nav sight-prev" type="button" aria-label="Previous card" data-tip="Previous card"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M10 3.5 5.5 8l4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <div class="sight-dots">
+            <span class="sight-dot-set" id="sightDots"></span>
+            <span class="sight-count" id="sightCount" aria-live="polite" aria-atomic="true"><span class="sight-count-vis" id="sightCountVis" aria-hidden="true">01 / 05</span><span class="sr-only" id="sightCountSr">Card 1 of 5</span></span>
+          </div>
+          <button class="btn btn--tertiary btn--lg sight-nav sight-next" type="button" aria-label="Next card" data-tip="Next card"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <button class="sight-play glass" id="sightPlay" type="button" aria-label="Pause card rotation" data-state="playing" hidden><svg class="ico-pause" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M5 3.5v9M11 3.5v9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><svg class="ico-play" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M5 3.2v9.6L12.6 8z" fill="currentColor"/></svg><span class="sight-play-l sight-play-l--pause" aria-hidden="true">Pause</span><span class="sight-play-l sight-play-l--play" aria-hidden="true">Play</span></button>
+        </div>
+
+        <img class="scene-img splitframe-img splitframe-left" alt="" width="2880" height="1620" decoding="async" src="https://raft-blast-61784561.figma.site/_assets/v11/7536d7b60a1fce482cf6edf3f0bffd3bad5d0f8a.png" />
+        <img class="scene-img splitframe-img splitframe-right" alt="" width="2880" height="1620" decoding="async" src="https://raft-blast-61784561.figma.site/_assets/v11/392db6a6a6b98e868bd7f8d3f55bb719d51e5028.png" />
+        <img class="scene-img bridge-img" alt="" width="2880" height="1620" fetchpriority="high" decoding="async" src="https://raft-blast-61784561.figma.site/_assets/v11/c6a6d8ef49bca43f708aa852692942c45ec950d4.png" />
+        <img class="scene-img frame-two-img" alt="" width="3854" height="2160" decoding="async" src="https://raft-blast-61784561.figma.site/_assets/v11/ba75252bab2b1c510987b74837770f7bc8a6b2d4.png" />
+
+        <!-- Whisper motes: eighteen 2 to 3px dust motes (ivory, four in clay) above the bridge
+             and the split frames, below the veil, on 14 to 22s transform loops with negative
+             delays. Scoped to .stage.is-onstage (script.js's observer) and paused by body.paused;
+             display none under reduced motion. -->
+        <svg class="motes" aria-hidden="true" focusable="false">
+          <circle cx="79.6%" cy="22.7%" r="1.25" style="--t:19s;--d:-7s;--dx:-22px;--dy:-16px"/>
+          <circle cx="71.7%" cy="74.3%" r="1" style="--t:14s;--d:-4s;--dx:24px;--dy:-20px"/>
+          <circle cx="13.3%" cy="8.7%" r="1.25" style="--t:21s;--d:-10s;--dx:13px;--dy:-35px"/>
+          <circle class="m-clay" cx="21.7%" cy="36.3%" r="1" style="--t:19s;--d:-3s;--dx:3px;--dy:-19px"/>
+          <circle cx="30.6%" cy="54.1%" r="1.5" style="--t:16s;--d:-13s;--dx:8px;--dy:-15px"/>
+          <circle cx="7.0%" cy="19.8%" r="1.25" style="--t:16s;--d:-16s;--dx:15px;--dy:-20px"/>
+          <circle cx="93.7%" cy="58.9%" r="1" style="--t:14s;--d:-11s;--dx:-8px;--dy:-22px"/>
+          <circle class="m-clay" cx="80.9%" cy="49.7%" r="1" style="--t:20s;--d:-8s;--dx:-14px;--dy:-29px"/>
+          <circle cx="78.1%" cy="34.0%" r="1" style="--t:19s;--d:-6s;--dx:-1px;--dy:-40px"/>
+          <circle cx="12.0%" cy="46.8%" r="1.25" style="--t:21s;--d:-10s;--dx:-5px;--dy:-20px"/>
+          <circle cx="84.1%" cy="9.1%" r="1" style="--t:16s;--d:-18s;--dx:-3px;--dy:-37px"/>
+          <circle class="m-clay" cx="5.2%" cy="10.8%" r="1.5" style="--t:18s;--d:-19s;--dx:2px;--dy:-35px"/>
+          <circle cx="78.0%" cy="15.8%" r="1" style="--t:16s;--d:-10s;--dx:-25px;--dy:-15px"/>
+          <circle cx="74.9%" cy="69.0%" r="1.25" style="--t:16s;--d:-18s;--dx:-25px;--dy:-26px"/>
+          <circle cx="91.0%" cy="72.4%" r="1.5" style="--t:14s;--d:-7s;--dx:23px;--dy:-40px"/>
+          <circle class="m-clay" cx="40.7%" cy="23.8%" r="1.25" style="--t:19s;--d:-2s;--dx:-26px;--dy:-27px"/>
+          <circle cx="13.0%" cy="10.2%" r="1" style="--t:14s;--d:-7s;--dx:-18px;--dy:-18px"/>
+          <circle cx="90.5%" cy="40.2%" r="1.5" style="--t:19s;--d:-16s;--dx:-14px;--dy:-18px"/>
+        </svg>
+
+        <div class="shade"></div>
+        <!-- Arrival: the photo emerges from a paper haze, after Paraform
+             https://mobbin.com/sites/sections/f8ae1344-754c-4efa-9563-604a5d7306ff. Ivory, never
+             dark, and gone within about two seconds. -->
+        <div class="dawn-veil" aria-hidden="true"></div>
+      </div>
+
+      <!-- The stage's own grain sheet (4%, overlay) above the photo layers, so the photo and the
+           paper share one grain with the environment layer (shared.css). -->
+      <div class="stage-grain" aria-hidden="true"></div>
+
+      <!-- Scroll cue: AI in Design Report 2026's "Scroll to read"
+           https://mobbin.com/sites/sections/2da0d1b2-6107-40bd-a82d-e6ec7805141c on GLASS; gone
+           on the first scroll. -->
+      <div class="scroll-cue" id="scrollCue" aria-hidden="true"><span class="scroll-cue-pill glass">Scroll to explore<i><svg viewBox="0 0 16 16" width="12" height="12"><path d="M8 3v10M4 9l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></i></span></div>
+      <!-- Two GLASS controls on the stage's bottom edge, after the research floating skip
+           control https://mobbin.com/sites/sections/d0ea8855-f290-486c-a4ba-7a1f9515d308:
+           "Skip the story" (WCAG 2.4.1) and "Pause motion" (WCAG 2.2.2, for the motes and the
+           glows). Hidden under 640px, where the static layout has nothing to skip. -->
+      <button class="skip-story glass" id="skipStory" type="button">Skip the story</button>
+      <button class="pause-motion glass" id="pauseMotion" type="button">Pause motion</button>
+    </div>
+  </section>
+
+  <!-- Band 5, under the arch: WATCH IT WRITE. The signature arch draws itself (shared.css's
+       .arch utility, off this section's data-reveal) and the panel sits under its crown: what
+       fits under the cap gets up and writes. A 5/7 split, the one split on the page.
+       ElevenLabs' inline try-it panel https://mobbin.com/sites/sections/81b76dd7-5da7-4ac6-9292-c87381d07dc0;
+       Cartesia's inline live demo with a prompt suggestion
+       https://mobbin.com/sites/sections/80ad413d-fe11-4cde-b784-2732fea74a89; Descript's
+       "Try a live demo" https://mobbin.com/sites/sections/ed5cea87-d748-4ed3-ab0d-502cfd70b495;
+       Claude's "Talk to Claude" card pair https://mobbin.com/sites/sections/4f7ea41a-06c5-4e55-9100-774fc0fc6d18;
+       Grok's light beam behind giant type, the crown glow's restraint
+       https://mobbin.com/sites/sections/6d1d2671-6a8f-4bd9-868d-0f03dab5e519. -->
+  <section class="watch" id="watch" aria-labelledby="watchHead" data-reveal>
+    <div class="watch-inner">
+      <div class="watch-copy">
+        <p class="watch-kicker"><span class="chip">03 · In use</span></p>
+        <h2 class="watch-head" id="watchHead">Watch it write.</h2>
+        <p class="watch-lede">The 49,296,896-parameter model, running on your device. Load it once, give it an opening, and read what a model this size does with it.</p>
+        <!-- The step and the run's state are bound to the model manifest (script.js); until it
+             loads the line says "a step not yet published". -->
+        <p class="watch-honest">It writes fluently and is often wrong. This checkpoint is from <span id="lpStep">a step not yet published</span> of <span id="lpRun">a training run that is still going</span>.</p>
+        <p class="watch-link"><a href="app.html#results">See the run so far</a></p>
+      </div>
+
+      <div class="watch-stage">
+        <div class="arch-wrap watch-arch" id="watchArch" aria-hidden="true">
+          <svg class="arch" viewBox="0 0 1200 300" preserveAspectRatio="none" focusable="false"><path pathLength="1" d="M0 300 C 120 96, 330 40, 600 40 C 870 40, 1080 96, 1200 300"/><path class="arch-tick" d="M600 33v14"/></svg>
+          <span class="arch-label">50,000,000</span>
+        </div>
+
+        <!-- The compact playground. script.js ("WATCH IT WRITE") drives it against
+             window.EmbeddingTax: manifest first (a small fetch), the weights only on the click.
+             States on data-state: packaging / idle / loading / ready / writing / done / failed.
+             OpenAI Platform playground with the square stop control
+             https://mobbin.com/screens/426f08ac-3a48-46e9-bbc3-b7082e12beea and its settings
+             header line https://mobbin.com/screens/1b2b9ede-7021-48a5-8d33-3543c3adbc11; Cohere
+             Generate playground (Examples chips, INPUT / OUTPUT split)
+             https://mobbin.com/screens/8d4c63cf-4598-4ef4-9af6-52e5d598cba8; Google AI Studio run
+             settings (slider plus numeric box) https://mobbin.com/screens/21eaf968-ab99-4627-a962-2953f4672f5c;
+             AWS upload status bar with bytes and percent (the progress state)
+             https://mobbin.com/screens/d0b2a1fa-99a9-4c29-ba83-f77a3f850d40; Mistral AI Studio's
+             one-line settings summary https://mobbin.com/screens/f978c18e-888c-4e5d-a344-d9bf0a77febe;
+             Zaro's mono on-device note https://mobbin.com/sites/sections/5e931e7f-8ece-4c4f-a343-bd97a23875fd. -->
+        <div class="watch-panel card" id="lpRoot" data-watch data-state="packaging">
+          <div class="wp-head">
+            <h3 class="wp-title">Try the model</h3>
+            <span class="chip wp-backend" id="lpBackend" hidden></span>
+          </div>
+          <p class="wp-kind">Not a chat assistant: it continues whatever you type, word by word.</p>
+
+          <div class="wp-presets" id="lpPresets" role="group" aria-label="Openings to try">
+            <button class="chip chip--tab" type="button" data-preset disabled>The reason the sky appears blue is</button>
+            <button class="chip chip--tab" type="button" data-preset disabled>The most important step in making bread is</button>
+            <button class="chip chip--tab" type="button" data-preset disabled>In 1905, Albert Einstein published</button>
+            <button class="chip chip--tab" type="button" data-preset disabled>A computer program is</button>
+          </div>
+
+          <!-- the composer: the box and its controls are one object, the send control in the corner -->
+          <div class="wp-composer">
+          <label class="sr-only" for="lpPrompt">Your opening sentence</label>
+          <textarea class="wp-prompt" id="lpPrompt" rows="2" placeholder="Start a sentence and the model finishes it" disabled></textarea>
+
+          <div class="wp-controls">
+            <button class="btn btn--primary" id="lpLoad" type="button" hidden><span>Load the model (<span id="lpMb">?</span> MB)</span></button>
+            <div class="wp-progress" id="lpProgress" hidden>
+              <div class="wp-bar" id="lpBar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-labelledby="lpBarText"><i id="lpBarFill"></i></div>
+              <span class="wp-bar-text" id="lpBarText">0 of ? MB</span>
+            </div>
+            <button class="btn btn--primary" id="lpWrite" type="button" hidden disabled>Write</button>
+            <button class="btn btn--secondary" id="lpStop" type="button" hidden>Stop</button>
+            <span class="wp-tokens" id="lpTokens" aria-hidden="true"></span>
+          </div>
+          </div>
+
+          <div class="wp-note wp-note--pack" id="lpPack">
+            <p class="wp-note-title">The model is being packaged.</p>
+            <p>The weights are being exported for the browser. This panel will run them here as soon as they land; nothing is simulated in the meantime. <a href="app.html#results">See the run so far</a></p>
+          </div>
+          <div class="wp-note wp-note--idle" id="lpIdle" hidden>
+            <p>One download, kept by your browser. Nothing you type leaves this page.</p>
+            <p class="wp-model" id="lpModel">49,296,896 parameters</p>
+          </div>
+          <div class="wp-note wp-note--fail" id="lpFail" hidden>
+            <p class="wp-note-title">The model could not load on this device. Try a current Chrome, Edge or Firefox.</p>
+            <p><button class="btn btn--secondary btn--sm" id="lpRetry" type="button">Try again</button></p>
+          </div>
+
+          <div class="wp-out" id="lpOut" hidden>
+            <span class="wp-out-label">Output</span>
+            <pre class="wp-echo" id="lpEcho" hidden></pre>
+            <p class="wp-cont" id="lpCont"><span class="wp-empty">The words the model writes are highlighted as they arrive.</span></p>
+            <button class="btn btn--tertiary btn--sm wp-copy" id="lpCopy" type="button" hidden>Copy</button>
+          </div>
+
+          <!-- settings: the decoding preset (the same table as the explorer's, script.js WATCH_PRESETS),
+               sliders limited to the ranges tested with the guards on and locked for Published, the
+               Unlimited switch and the guards in plain words; the summary line names the preset -->
+          <div class="wp-foot">
+            <p class="wp-summary" id="lpSummary">Focused · temperature 0.7 · top-k 40 · until done, at most 256 tokens · guards on, min-p 0.1 · seed 1337</p>
+            <details class="wp-settings" id="lpSettings">
+              <summary>Settings</summary>
+              <div class="wp-fields">
+                <div class="wp-mode">
+                  <div class="wp-mode-head"><span class="wp-mode-lbl" id="lpModeLbl">Preset</span><span class="wp-mode-name" id="lpModeName">Focused</span></div>
+                  <div class="wp-seg" role="radiogroup" aria-labelledby="lpModeLbl" aria-describedby="lpModeDesc">
+                    <label class="wp-seg-opt"><input type="radio" name="lpMode" value="balanced" /><span>Balanced</span></label>
+                    <label class="wp-seg-opt"><input type="radio" name="lpMode" value="focused" checked /><span>Focused</span></label>
+                    <label class="wp-seg-opt"><input type="radio" name="lpMode" value="creative" /><span>Creative</span></label>
+                    <label class="wp-seg-opt"><input type="radio" name="lpMode" value="published" /><span>Published</span></label>
+                  </div>
+                  <p class="wp-help" id="lpModeDesc">Uses Balanced's sampler but stops at the end of the first finished passage (about 55 tokens). Shorter, faster, and with less room to drift off topic.</p>
+                </div>
+                <p class="wp-help wp-locknote" id="lpLockNote" hidden>Published keeps temperature, top-k and length at its fixed values. Pick another preset to change them.</p>
+                <div class="wp-field">
+                  <label for="lpTemp">Temperature</label>
+                  <input type="range" id="lpTemp" min="0.6" max="1.4" step="0.05" value="0.7" />
+                  <input type="number" id="lpTempN" min="0.6" max="1.4" step="0.05" value="0.7" aria-label="Temperature, typed" />
+                </div>
+                <div class="wp-field">
+                  <label for="lpTopk">Top-k</label>
+                  <input type="range" id="lpTopk" min="40" max="200" step="1" value="40" />
+                  <input type="number" id="lpTopkN" min="40" max="200" step="1" value="40" aria-label="Top-k, typed" />
+                </div>
+                <div class="wp-field">
+                  <label for="lpMax">Max new tokens</label>
+                  <input type="range" id="lpMax" min="8" max="90" step="1" value="90" />
+                  <input type="number" id="lpMaxN" min="8" max="90" step="1" value="90" aria-label="Max new tokens, typed" />
+                </div>
+                <p class="wp-help">Ranges are the ones tested with the guards on: temperature 0.6 to 1.4, top-k 40 to 200, up to 90 tokens (longer runs drift further from the prompt).</p>
+                <div class="wp-unlimited">
+                  <label class="wp-switch"><input type="checkbox" id="lpUnlimited" role="switch" aria-describedby="lpUnlimitedHelp" /><span class="wp-switch-track" aria-hidden="true"></span>Unlimited <span class="wp-badge" id="lpUnlimitedBadge" hidden>Not recommended</span></label>
+                  <p class="wp-help" id="lpUnlimitedHelp">At most 256 new tokens. It stops sooner at the end of the first finished passage, when it starts repeating, or if a very long prompt fills its 1,024-token context. With the guards on, stopping at the end of the passage scored more coherent in blind tests than running to 90 tokens: Focused is Balanced with this on. Published with this on was not part of those tests, so it is not recommended there.</p>
+                </div>
+                <div class="wp-guards">
+                  <p class="wp-help"><span class="wp-guards-head">Guards: <span id="lpGuardState">on</span>.</span> Every preset except Published adds these rules, and so do your own settings made from one of them; Published, with or without Unlimited, has none. They only change which token can come next; the model's words are never edited.</p>
+                  <ul class="wp-guard-list">
+                    <li><strong>Stays on your prompt.</strong> Each step also runs the model with no prompt at all, then favours tokens your prompt made likelier (context-aware decoding, strength 1). Two passes per token, so about half the speed.</li>
+                    <li><strong>Skips long shots.</strong> Drops any token less than about a tenth as likely as the top choice (min-p, set from the temperature; stricter below 1).</li>
+                    <li><strong>Repeats less.</strong> Tokens already in the last 64, your prompt included, are made less likely (repetition penalty 1.2).</li>
+                    <li><strong>No blank start.</strong> The first 3 tokens cannot be a line break or the end of the text.</li>
+                    <li><strong>Breaks after sentences.</strong> A line break can only follow a finished sentence.</li>
+                  </ul>
+                </div>
+                <div class="wp-field wp-field--seed">
+                  <label for="lpSeed">Seed</label>
+                  <input type="number" id="lpSeed" min="0" max="2147483647" step="1" value="1337" />
+                  <label class="wp-switch"><input type="checkbox" id="lpSeedLock" role="switch" /><span class="wp-switch-track" aria-hidden="true"></span>Same seed</label>
+                </div>
+                <p><button class="btn btn--secondary" id="lpReset" type="button" aria-disabled="true">Reset to Focused</button></p>
+              </div>
+            </details>
+          </div>
+          <p class="sr-only" id="lpStatus" role="status" aria-live="polite"></p>
+        </div>
+        <p class="watch-prov" id="lpProv">Weights and settings are read from the model manifest as it loads.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Closing band on slate: a centred statement over an inset media card, the photo returning
+       once. Claude's closing band https://mobbin.com/sites/sections/b57caba5-806d-4586-9fcb-8867e90f6186
+       and stacked CTA cards https://mobbin.com/sites/sections/6b3858df-ac1a-489c-b3bf-295a4e0f9fc1;
+       OpenAI's inset media card hero https://mobbin.com/sites/sections/1a607132-9eb2-493e-961b-39c4f67eb3fb;
+       Superpower's soft glow behind one CTA, the restraint reference
+       https://mobbin.com/sites/sections/3617832f-d369-4c64-9020-45c126b67e25. The headline
+       assembles per word after Readymag https://mobbin.com/flows/47045b77-2ab9-4fa6-8262-b549e6504577.
+       script.js keeps writing --close-sky-y / --close-city-y on .closing while it is near. -->
+  <section class="closing theme-dark" id="closing" aria-labelledby="closeHead" data-reveal>
+    <svg class="motes motes--slate" aria-hidden="true" focusable="false">
+      <circle cx="89.1%" cy="23.2%" r="1" style="--t:21s;--d:-17s;--dx:-14px;--dy:-29px"/>
+      <circle cx="69.7%" cy="55.9%" r="1.5" style="--t:18s;--d:-10s;--dx:24px;--dy:-23px"/>
+      <circle cx="37.6%" cy="67.3%" r="1" style="--t:14s;--d:-12s;--dx:-8px;--dy:-31px"/>
+      <circle cx="36.6%" cy="66.0%" r="1.5" style="--t:20s;--d:-2s;--dx:-28px;--dy:-37px"/>
+      <circle cx="95.6%" cy="74.2%" r="1.25" style="--t:18s;--d:-20s;--dx:-27px;--dy:-34px"/>
+      <circle cx="75.8%" cy="45.4%" r="1" style="--t:16s;--d:-16s;--dx:-2px;--dy:-30px"/>
+      <circle cx="77.4%" cy="46.3%" r="1.5" style="--t:17s;--d:-17s;--dx:15px;--dy:-21px"/>
+      <circle cx="34.8%" cy="16.8%" r="1.25" style="--t:15s;--d:-13s;--dx:-28px;--dy:-20px"/>
+      <circle cx="73.1%" cy="50.3%" r="1" style="--t:22s;--d:-8s;--dx:-27px;--dy:-35px"/>
+      <circle cx="75.4%" cy="27.4%" r="1.25" style="--t:22s;--d:-2s;--dx:-9px;--dy:-22px"/>
+      <circle cx="82.1%" cy="22.3%" r="1.5" style="--t:21s;--d:-16s;--dx:28px;--dy:-16px"/>
+      <circle cx="67.6%" cy="75.6%" r="1.5" style="--t:20s;--d:-9s;--dx:-19px;--dy:-29px"/>
+    </svg>
+    <div class="closing-copy">
+      <h2 id="closeHead">Fifty million parameters. Spend them on <em data-mark="depth">depth.</em></h2>
+      <p>Slide the vocabulary and watch the word list trade against layers, or follow the 13-layer model through its training run.</p>
+      <div class="closing-actions">
+        <a class="btn btn--primary btn--lg" href="app.html">Explore the budget</a>
+        <a class="btn btn--secondary btn--lg" href="app.html#results">See the training run<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      </div>
+    </div>
+    <div class="closing-scene" aria-hidden="true">
+      <img class="closing-sky" alt="" width="3840" height="2160" decoding="async" loading="lazy" src="https://raft-blast-61784561.figma.site/_assets/v11/16b5007d9c93971e26ffe4e0e3e37946f6bd538c.png" />
+      <img class="closing-city" alt="" width="3840" height="2160" decoding="async" loading="lazy" src="https://raft-blast-61784561.figma.site/_assets/v11/8a7f8af50e0ce92ec2e228e7b0b4112178c51cf1.png" />
+      <img class="closing-bridge" alt="" width="2880" height="1620" decoding="async" loading="lazy" src="https://raft-blast-61784561.figma.site/_assets/v11/c6a6d8ef49bca43f708aa852692942c45ec950d4.png" />
+    </div>
+    <ul class="closing-chips" aria-label="The model in numbers">
+      <li class="chip"><b>49,296,896</b> of <b>50,000,000</b> parameters</li>
+      <li class="chip chip--embedding"><b>16,384</b> tokens · <b>16.8%</b> of the cap</li>
+      <li class="chip chip--layers"><b>13</b> layers</li>
+      <li class="chip"><b>1 ×</b> RTX 4090</li>
+    </ul>
+  </section>
+</main>
+
+<!-- Site footer (shared.css, "FOOTER"): the anchor's slate ending, the same markup as
+     app.html's plus the arch and the giant wordmark. Harvey dark CTA + footer
+     https://mobbin.com/sites/sections/3479c6e6-96b2-428f-9142-f47d07c94134; OpenAI footer
+     columns https://mobbin.com/sites/sections/2a7bd006-b64c-468d-be1e-8e1440c7ad7e; "Back to
+     top" in the baseline row after Vucko
+     https://mobbin.com/sites/sections/325d9889-5eae-493d-926a-a959e8e99005; the giant wordmark
+     with its baseline fully visible
+     https://mobbin.com/sites/sections/cf954a98-4f2e-41d3-b2a1-168e4ba0108d, set as separate
+     letters by script.js (.bfw-l). The arch above it draws when script.js's observer adds
+     .is-in; the wordmark sits under its crown. -->
+<footer class="site-footer big-foot theme-dark">
+  <div class="site-footer-inner">
+    <p class="site-footer-brand"><svg viewBox="0 0 64 64" width="24" height="24" aria-hidden="true"><path d="M12 19 L52 19 L52 45 L44 45 L44 37 A12 12 0 0 0 20 37 L20 45 L12 45 Z" fill="currentColor"/></svg>The Embedding Tax</p>
+    <nav class="site-footer-nav" aria-label="Footer">
+      <div>
+        <h2 class="site-footer-head">Story</h2>
+        <ul class="site-footer-list">
+          <li><a class="site-footer-link" href="#cinema">Intro</a></li>
+          <li><a class="site-footer-link" href="#budget">Budget</a></li>
+          <li><a class="site-footer-link" href="#depth">Depth</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2 class="site-footer-head">Explorer</h2>
+        <ul class="site-footer-list">
+          <li><a class="site-footer-link" href="app.html">Budget explorer</a></li>
+          <li><a class="site-footer-link" href="app.html#try">Try the model</a></li>
+          <li><a class="site-footer-link" href="app.html#results">Training run</a></li>
+          <li><a class="site-footer-link" href="app.html#benchmarks">Benchmarks</a></li>
+          <li><a class="site-footer-link" href="app.html#playground">Published samples</a></li>
+        </ul>
+      </div>
+    </nav>
+    <div class="site-footer-bar">
+      <p>© 2026 The Embedding Tax. Built by Arjun Sharma for GIBC V2, Track 01.</p>
+      <p>Training from scratch on one RTX 4090: no pretrained weights, no fine-tuning, no distillation.</p>
+      <p><a class="site-footer-link foot-up" href="#cinema">Back to top<svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M6 10V2.5M2.5 6 6 2.5 9.5 6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></a></p>
+    </div>
+  </div>
+  <div class="foot-arch arch-wrap arch-wrap--ivory" aria-hidden="true" data-reveal>
+    <svg class="arch" viewBox="0 0 1200 300" preserveAspectRatio="none" focusable="false"><path pathLength="1" d="M0 300 C 120 96, 330 40, 600 40 C 870 40, 1080 96, 1200 300"/><path class="arch-tick" d="M600 33v14"/></svg>
+    <span class="arch-label">50,000,000</span>
+  </div>
+  <p class="big-foot-word" aria-hidden="true" data-reveal><span class="bfw">Embedding Tax</span></p>
+</footer>
+
+</body>
+</html>

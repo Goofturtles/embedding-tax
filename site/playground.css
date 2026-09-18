@@ -1,0 +1,270 @@
+/* =========================================================================================
+   playground.css: the model-in-use panel, one component for both pages, loaded after the
+   page stylesheet. Self-contained (it does not rely on explorer.css), so the home composer
+   (index.html, restyled by home.css) renders the same controls from shared.css tokens alone.
+
+   Anatomy: a CARD (shared.css .card) holding the writing surface (preset chip-tabs, one
+   textarea, the load / write / stop control row, the continuation) and, on the explorer, a
+   settings rail (a sunken well: the decoding preset as a segmented radio group, the
+   slider-plus-box rows, the Unlimited switch, the guards list, the Same seed switch, the
+   summary line, the reset, the model card). The home puts the rail inside the composer's
+   settings popover. Sources are cited above the markup in app.html.
+
+   The living element: the card's clay edge glow (a pseudo-element, opacity only, 6s) once
+   the model is loaded. The stream itself is the motion: no typing animation, ever.
+   ========================================================================================= */
+
+.pg-card {
+  position: relative; isolation: isolate;
+  display: grid; gap: var(--gap-lg);
+  max-width: var(--container-medium); margin: 0 auto;
+  padding: var(--card-pad-md) var(--card-pad-lg);
+}
+@media (min-width: 1024px) { .pg-card { grid-template-columns: minmax(0, 7fr) minmax(300px, 5fr); } }
+@media (max-width: 832px) { .pg-card { padding: var(--card-pad-md); } }
+@media (max-width: 640px) { .pg-card { padding: var(--sp-24) var(--sp-16); border-radius: var(--br-12); } }
+.pg-card::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none;
+  box-shadow: var(--glow-accent); opacity: 0;
+}
+.pg-card.is-lit::before { animation: pg-breathe var(--living-cycle, 6s) ease-in-out -2s infinite alternate; }
+@keyframes pg-breathe { from { opacity: .35; } to { opacity: 1; } }
+
+/* ---------- the model bar: name, checkpoint, and a status pill whose dot follows data-state ---------- */
+.pg-bar {
+  grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: var(--sp-8) var(--sp-16); padding-bottom: var(--sp-20); border-bottom: 1px solid var(--border-tertiary);
+}
+.pg-bar-model { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-4) var(--sp-12); min-width: 0; }
+/* the brand mark: an ink tile carrying the clay square (shared.css .btn-mark) */
+.pg-mark { position: relative; flex: none; width: 28px; height: 28px; border-radius: var(--br-8); background: var(--color-gray-950); }
+.pg-mark::after { content: ""; position: absolute; left: 10px; top: 10px; width: 8px; height: 8px; border-radius: 1px; background: var(--accent); }
+.pg-bar-name { color: var(--text-primary); font: 500 16px/1.3 var(--font-sans); }
+.pg-bar-meta { color: var(--text-tertiary); font: 400 12px/1.5 var(--font-mono); font-variant-numeric: var(--num); }
+.pg-bar-status {
+  margin: 0; display: inline-flex; align-items: center; gap: var(--sp-8); padding: 4px 12px 4px 10px;
+  border-radius: 999px; background: var(--well); color: var(--text-secondary); font: 500 13px/1.5 var(--font-sans); white-space: nowrap;
+}
+.pg-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--color-gray-450); }
+[data-state="ready"] .pg-dot, [data-state="done"] .pg-dot { background: var(--depth); box-shadow: 0 0 0 3px #788c5d33; }
+[data-state="loading"] .pg-dot, [data-state="writing"] .pg-dot { background: var(--accent); animation: pg-pulse 1s ease-in-out infinite alternate; }
+[data-state="failed"] .pg-dot { background: var(--over-cap); }
+@keyframes pg-pulse { from { box-shadow: 0 0 0 0 #d9775700; } to { box-shadow: 0 0 0 4px #d9775740; } }
+
+/* ---------- the writing surface ---------- */
+.pg-write { min-width: 0; display: grid; gap: var(--sp-16); align-content: start; }
+/* beside the rail the column is its content's height and rides along (playground.js sets data-stick and --stick-top),
+   so the output never sits next to a screen of blank card: under the header while it fits, the explorer calculator's
+   top; taller than the screen, by its bottom (a negative top), so it never jumps away mid-run */
+@media (min-width: 1024px) {
+  .pg-card > .pg-write { align-self: start; }
+  .pg-card > .pg-write[data-stick] { position: sticky; top: var(--stick-top, var(--sticky-top, 84px)); }
+}
+.pg-presets { display: flex; flex-wrap: wrap; gap: var(--sp-8); }
+.pg-preset { text-align: left; white-space: normal; }
+.pg-preset.is-lit { background: var(--color-gray-950); color: var(--color-gray-050); }
+
+/* the composer: box and controls are one raised object; the focus ring sits on the object */
+.pg-composer {
+  border: 1px solid transparent;   /* the edge that survives forced-colors, where box-shadow is dropped */
+  border-radius: var(--br-16); background: var(--panel);
+  box-shadow: 0 0 0 1px var(--border-secondary), 0 1px 2px #0000000a, 0 12px 28px -16px #00000029;
+  transition: box-shadow var(--dur-hover) ease-in-out;
+}
+.pg-composer:hover { box-shadow: 0 0 0 1px var(--border-primary), 0 1px 2px #0000000a, 0 12px 28px -16px #00000029; }
+.pg-composer:focus-within { box-shadow: 0 0 0 1px var(--border-strong), 0 1px 2px #0000000a, 0 16px 32px -16px #00000033; }
+.pg-composer:has(.pg-prompt:focus-visible) { outline: 2px solid var(--accent-focus); outline-offset: 3px; }
+.pg-composer:has(.pg-prompt:disabled) { background: var(--well); box-shadow: 0 0 0 1px var(--border-tertiary); }
+.pg-prompt {
+  display: block; width: 100%; min-height: calc(2 * 1.6 * 17px + 20px); padding: var(--sp-16) var(--sp-20) var(--sp-4); box-sizing: border-box;
+  border: 0; border-radius: var(--br-16) var(--br-16) 0 0; background: transparent;
+  color: var(--text-primary); font: 400 17px/1.6 var(--font-sans); resize: none; field-sizing: content; max-height: 14em;
+}
+.pg-prompt::placeholder { color: var(--text-tertiary); opacity: 1; }
+@supports selector(:has(*)) { .pg-prompt:focus-visible { outline: none; } }   /* the ring moves to the composer only where :has can draw it */
+.pg-prompt:disabled { color: var(--text-disabled); cursor: not-allowed; }
+
+.pg-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--sp-8) var(--sp-12); min-height: 40px; padding: var(--sp-8) var(--sp-8) var(--sp-8) var(--sp-20); }
+.pg-controls > .pg-note, .pg-controls > .pg-hint { flex: 1 1 16rem; }
+.pg-load, .pg-go { flex: none; }
+.pg-stop-glyph { display: inline-block; width: 10px; height: 10px; margin-right: var(--sp-8); border-radius: 2px; background: currentColor; }
+/* the download: an 8px track that only fills, in ink; the bytes in mono beside it */
+.pg-progress { position: relative; flex: 1 1 160px; min-width: 120px; height: 8px; border-radius: 999px; background: var(--color-gray-200); }
+.pg-progress-fill { display: block; height: 100%; border-radius: inherit; background: var(--border-strong); transform-origin: left center; transform: scaleX(var(--p, 0)); transition: transform var(--dur-hover) ease-in-out; }
+.pg-progress-text { color: var(--text-tertiary); font: 400 12px/1.6 var(--font-mono); font-variant-numeric: var(--num); }
+.pg-tokens { color: var(--text-tertiary); font: 400 13px/1.6 var(--font-mono); font-variant-numeric: var(--num); white-space: nowrap; }
+.pg-tokens:empty { display: none; }
+.pg-note, .pg-hint { margin: 0; color: var(--text-tertiary); font: 400 13px/1.5 var(--font-sans); }
+.pg-hint kbd { display: inline-block; padding: 0 5px; border-radius: 4px; background: var(--well); box-shadow: inset 0 -1px 0 var(--border-secondary); color: var(--text-secondary); font: 500 11px/1.6 var(--font-mono); }
+[data-state="writing"] .pg-controls > .pg-tokens { flex: 1 1 auto; }
+
+/* ---------- the output: a response card ----------
+   Header: the model's mark (the ink tile with the clay square), its name, a quiet "base model" tag,
+   and Copy as a pill with an icon that turns into a check, Base44 response card
+   https://mobbin.com/screens/1af86cad-8541-40c6-9999-c6d7e4147660.
+   Body: one passage with no highlight bars. The prompt is soft grey (#666662: 5.8:1 on the white panel)
+   and runs straight into the model's words in ink; grey and ink differ by 3.2:1 in lightness, so the
+   boundary between your words and the model's never rests on hue alone (WCAG 1.4.1).
+   The home composer (home.css) retints all of this for glass. The card is a size container for the tray. */
+.pg-out { container: pg-out / inline-size; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-12); padding: var(--sp-16) var(--sp-20) var(--sp-16); border-radius: var(--br-16); background: var(--panel); box-shadow: 0 0 0 1px var(--border-tertiary), 0 1px 2px #0000000a; }
+.pg-out-head { display: flex; align-items: center; gap: var(--sp-8) var(--sp-12); min-height: 32px; }
+.pg-out-mark { width: 24px; height: 24px; border-radius: 7px; }
+.pg-out-mark::after { left: 8px; top: 8px; }
+.pg-out-model { flex: 1 1 auto; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 2px var(--sp-8); margin: 0; }
+.pg-out-name { color: var(--text-primary); font: 500 15px/1.4 var(--font-sans); letter-spacing: -.005em; white-space: nowrap; }
+@container pg-out (max-width: 255px) { .pg-out-name { white-space: normal; } }   /* only where the name and Copy cannot share a line */
+/* the explorer's card is already the card: the response sits in it under a hairline, full width, and the model bar
+   above already carries the mark and the name, so the response head does not repeat the mark */
+.pg-card .pg-out { padding: var(--sp-16) 0 0; border-radius: 0; background: none; box-shadow: inset 0 1px 0 var(--border-tertiary); }
+.pg-card .pg-out-mark { display: none; }
+@media (max-width: 400px) { .pg-out-head { column-gap: var(--sp-8); } .pg-out-name { font-size: 14px; } }
+.pg-out-tag { padding: 1px 8px; border-radius: 999px; background: var(--well); box-shadow: inset 0 0 0 1px var(--border-tertiary); color: var(--text-secondary); font: 500 12px/1.5 var(--font-sans); white-space: nowrap; }
+.pg-copy {
+  flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 32px; margin: 0; padding: 0 12px 0 10px; box-sizing: border-box;
+  border: 1px solid var(--border-secondary); border-radius: 999px; background: var(--panel); color: var(--text-primary);
+  font: 500 13px/1.25 var(--font-sans); cursor: pointer; transition: background-color var(--dur-hover) ease-in-out, border-color var(--dur-hover) ease-in-out;
+}
+.pg-copy:hover { background: var(--well); border-color: var(--border-primary); }
+.pg-copy:focus-visible { outline: 2px solid var(--accent-focus); outline-offset: 2px; }
+.pg-copy svg { flex: none; display: block; }
+.pg-copy [data-pg="copylabel"] { display: inline-block; min-width: 3.3em; text-align: center; }   /* as wide as "Copied": the pill never changes size under the name */
+.pg-copy .pg-copy-done, .pg-copy[data-copied] .pg-copy-ico { display: none; }
+.pg-copy[data-copied] .pg-copy-done { display: block; color: var(--depth); }
+/* a phone-width card: name, tag and a labelled pill do not fit one line (372px of 271), so the pill keeps its icon
+   (the check still confirms, and the label stays its accessible name) and the tag goes (the disclaimer says it) */
+@container pg-out (max-width: 340px) {
+  .pg-copy { padding: 0 9px; }
+  .pg-copy [data-pg="copylabel"] { position: absolute; width: 1px; height: 1px; min-width: 0; clip-path: inset(50%); white-space: nowrap; }
+  .pg-out-tag { display: none; }
+}
+@media (pointer: coarse) { .pg-copy { min-height: 40px; } }
+.pg-cont { margin: 0; min-height: 3.3em; color: var(--text-primary); font: 400 var(--body-large-2)/1.65 var(--font-display); white-space: pre-wrap; overflow-wrap: anywhere; }
+/* no lone last word: only once the run is done (while it streams, re-breaking the last lines would make them jump); breaks only, never the words */
+[data-playground][data-state="done"] .pg-cont, .pg-out-kind span { text-wrap: pretty; }
+.pg-echo { color: #666662; }
+.pg-gen { color: var(--text-primary); }
+/* a 1ch ink caret while writing: opacity only, a 1s step; hidden under reduced motion */
+.pg-caret { display: inline-block; width: .55ch; height: 1em; margin-left: 2px; vertical-align: -.15em; background: var(--accent); animation: pg-caret 1s steps(2, jump-none) infinite; }
+@keyframes pg-caret { from { opacity: 1; } to { opacity: 0; } }
+.pg-empty { margin: 0; padding: var(--sp-16) 0; color: var(--text-tertiary); font: 400 15px/1.6 var(--font-sans); }
+
+/* this run, measured: a tidy tray of small labels over larger values in the sans face, thin dividers
+   between the cells, Braintrust metrics https://mobbin.com/screens/a5c47246-f508-4ead-9cb6-5489c6bd9dec.
+   One row while the card is wide, then three columns, then two (container queries on the card). Each
+   cell draws its divider on its left edge and sits 1px left of its slot; the tray clips that 1px column
+   (overflow-x only), so no row starts with a divider. Values may wrap; nothing is cut. */
+.pg-run { margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 10px; padding: 10px 0; border-radius: var(--br-12); background: var(--well); box-shadow: inset 0 0 0 1px var(--border-tertiary); overflow-x: clip; }
+.pg-run > div { min-width: 0; display: grid; align-content: start; gap: 2px; margin-left: -1px; padding: 2px 14px; border-left: 1px solid var(--border-secondary); }
+@container pg-out (max-width: 300px) { .pg-run > div { padding-inline: 12px; } .pg-run dd { font-size: 15px; } }
+@container pg-out (min-width: 460px) { .pg-run { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@container pg-out (min-width: 720px) { .pg-run { display: flex; } .pg-run > div { flex: 1 1 auto; } }
+.pg-run dt { color: var(--text-tertiary); font: 500 12px/1.4 var(--font-sans); }
+.pg-run dd { margin: 0; color: var(--text-primary); font: 500 16px/1.35 var(--font-sans); letter-spacing: -.01em; font-variant-numeric: var(--num); overflow-wrap: anywhere; }
+/* the disclaimer: one quiet line behind an info icon, ManyChat https://mobbin.com/screens/1545f393-6813-4733-86f4-61de1f4d6ddd */
+.pg-out-kind { display: flex; align-items: flex-start; gap: var(--sp-8); margin: 0; color: var(--text-tertiary); font: 400 13px/1.5 var(--font-sans); }
+.pg-out-kind svg { flex: none; margin-top: 1.5px; }
+
+.pg-state { display: grid; gap: var(--sp-8); justify-items: start; padding: var(--sp-16) var(--sp-20); border: 1px solid var(--border-tertiary); border-radius: var(--br-12); background: var(--canvas); }
+.pg-state-title { margin: 0; max-width: 45ch; color: var(--text-primary); font: 500 var(--headline-6)/1.3 var(--font-sans); }
+.pg-state-body, .pg-state-link { margin: 0; max-width: 60ch; color: var(--text-tertiary); font: 400 15px/1.6 var(--font-sans); }
+.pg-state-link a { color: var(--text-primary); text-underline-offset: .15em; }
+.pg-state-detail { margin: 0; max-width: 60ch; color: var(--text-tertiary); font: 400 12px/1.6 var(--font-mono); overflow-wrap: anywhere; }
+.pg-state-detail:empty { display: none; }
+
+/* ---------- the settings rail: a sunken well ---------- */
+.pg-rail {
+  min-width: 0; display: grid; gap: var(--sp-20); align-content: start; align-self: start;
+  padding: var(--sp-24); border: 1px solid var(--border-tertiary); border-radius: var(--br-12); background: var(--canvas);
+}
+.pg-rail-head { margin: 0; color: var(--text-primary); font: 500 var(--headline-6)/1.2 var(--font-sans); }
+.pg-model { margin: 0; display: grid; gap: var(--sp-8); padding-top: var(--sp-20); border-top: 1px solid var(--border-tertiary); }
+.pg-model > div { display: grid; grid-template-columns: 6.5rem minmax(0, 1fr); gap: var(--sp-8); font: 400 13px/1.6 var(--font-sans); }
+.pg-model dt { color: var(--text-tertiary); }
+.pg-model dd { margin: 0; color: var(--text-primary); overflow-wrap: anywhere; }
+.pg-mono { font-family: var(--font-mono); font-size: 12px; font-variant-numeric: var(--num); }
+
+.pg-set { display: block; }
+.pg-set-row { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-12); }
+.pg-set-lbl { color: var(--text-primary); font: 500 15px/1.6 var(--font-sans); }
+.pg-num {
+  width: 9ch; height: 36px; padding: 0 var(--sp-12); box-sizing: border-box;
+  border: 0; border-radius: var(--br-8); background: var(--panel); box-shadow: 0 0 0 1px var(--border-primary);
+  color: var(--text-primary); font: 400 15px/1.6 var(--font-mono); font-variant-numeric: var(--num); text-align: right;
+  transition: box-shadow var(--dur-hover) ease-in-out;
+}
+.pg-num:hover { box-shadow: 0 0 0 1px var(--border-strong); }
+.pg-num:focus-visible { outline: 2px solid var(--accent-focus); outline-offset: 2px; }
+.pg-set-help { margin: var(--sp-4) 0 0; color: var(--text-tertiary); font: 400 13px/1.6 var(--font-sans); }
+/* Unlimited: an honest warning badge on the switch, and the length controls visibly standing down */
+.pg-badge { display: inline-block; margin-left: var(--sp-8); padding: 0 8px; border-radius: 999px; background: var(--color-oat); color: var(--text-primary); font: 500 11px/1.7 var(--font-sans); letter-spacing: .02em; vertical-align: 1px; white-space: nowrap; }
+.pg-set input[type="range"]:disabled { opacity: .35; cursor: not-allowed; }
+.pg-num:disabled { opacity: .45; cursor: not-allowed; }
+/* the decoding preset: four segments in a sunken track, the checked one raised; the name of what
+   runs (a preset or Custom) at the right of the label row; the guards as a short plain list */
+.pg-mode-name { color: var(--text-secondary); font: 500 13px/1.6 var(--font-sans); }
+.pg-seg { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2px; margin-top: var(--sp-8); padding: 3px; border-radius: var(--br-8); background: var(--well); box-shadow: inset 0 0 0 1px var(--border-tertiary); }
+.pg-seg-opt { position: relative; display: block; min-width: 0; cursor: pointer; }
+.pg-seg-opt input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.pg-seg-opt span { display: block; padding: 6px 0; border-radius: 6px; color: var(--text-tertiary); font: 500 13px/1.4 var(--font-sans); text-align: center; white-space: nowrap; transition: background-color var(--dur-hover) ease-in-out, color var(--dur-hover) ease-in-out; }
+.pg-seg-opt:hover span { color: var(--text-primary); }
+.pg-seg-opt input:checked + span { background: var(--panel); color: var(--text-primary); box-shadow: 0 0 0 1.5px var(--border-strong), 0 1px 2px #0000000f; }   /* ink ring: the white pill alone was 1.1:1 on the well (WCAG 1.4.11) */
+/* keyboard focus is its own mark, apart from the selection's ring: a ring 3px out over a white gap (the home's halo rule) */
+.pg-seg-opt input:focus-visible + span { outline: 2px solid var(--accent-focus); outline-offset: 3px; box-shadow: 0 0 0 5px rgba(255,255,255,.95); }
+.pg-seg-opt input:checked:focus-visible + span { box-shadow: 0 0 0 1.5px var(--border-strong), 0 0 0 5px rgba(255,255,255,.95); }
+@media (pointer: coarse) { .pg-seg-opt span { padding: 11px 0; } }
+@media (forced-colors: active) { .pg-seg-opt input:checked + span { outline: 2px solid Highlight; outline-offset: -2px; } }
+@media (max-width: 520px) { .pg-seg { grid-template-columns: repeat(2, minmax(0, 1fr)); } }   /* a phone rail is too narrow for four labels */
+.pg-locknote { margin: 0; }
+.pg-guard-list { margin: var(--sp-8) 0 0; padding-left: 1.1em; color: var(--text-tertiary); font: 400 13px/1.6 var(--font-sans); }
+.pg-guard-list li + li { margin-top: var(--sp-4); }
+.pg-guard-list strong { color: var(--text-primary); font-weight: 500; }
+.pg-summary { margin: 0; color: var(--text-tertiary); font: 400 12px/1.6 var(--font-mono); font-variant-numeric: var(--num); }
+.pg-reset { justify-self: start; }
+
+/* range: a 4px track filled to --pct in ink, a 16px white thumb with a 1.5px ink ring */
+.pg-set input[type="range"] {
+  -webkit-appearance: none; appearance: none; display: block;
+  width: 100%; height: 24px; margin: var(--sp-8) 0 0; background: transparent; cursor: pointer;
+}
+.pg-set input[type="range"]:focus { outline: none; }
+.pg-set input[type="range"]::-webkit-slider-runnable-track { height: 4px; border-radius: 1000px; background: linear-gradient(90deg, var(--border-strong) var(--pct, 50%), var(--color-gray-250) var(--pct, 50%)); }
+.pg-set input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; margin-top: -6px; border-radius: 50%; background: var(--panel); box-shadow: 0 0 0 1.5px var(--border-strong); transition: transform var(--dur-hover) var(--ease-out-quart); }
+.pg-set input[type="range"]:hover::-webkit-slider-thumb { transform: scale(1.2); }
+.pg-set input[type="range"]:focus-visible::-webkit-slider-thumb { transform: scale(1.2); outline: 2px solid var(--accent-focus); outline-offset: 4px; }
+.pg-set input[type="range"]::-moz-range-track { height: 4px; border-radius: 1000px; background: var(--color-gray-250); }
+.pg-set input[type="range"]::-moz-range-progress { height: 4px; border-radius: 1000px; background: var(--border-strong); }
+.pg-set input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; border: 0; border-radius: 50%; background: var(--panel); box-shadow: 0 0 0 1.5px var(--border-strong); }
+.pg-set input[type="range"]:focus-visible::-moz-range-thumb { outline: 2px solid var(--accent-focus); outline-offset: 4px; }
+@media (pointer: coarse) {
+  .pg-set input[type="range"]::-webkit-slider-thumb { width: 24px; height: 24px; margin-top: -10px; }
+  .pg-set input[type="range"]::-moz-range-thumb { width: 24px; height: 24px; }
+}
+
+/* the Same seed switch: 36 x 20 track, 16px knob, the spelled state beside it (the same
+   anatomy as the explorer's option switches, declared here so the landing has it too) */
+[data-playground] .tg { display: flex; align-items: center; gap: var(--sp-12); min-height: 24px; cursor: pointer; }
+[data-playground] .tg-title { flex: 1; color: var(--text-primary); font: 500 15px/1.6 var(--font-sans); }
+[data-playground] .tg input { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; clip-path: inset(50%); }
+[data-playground] .tg-state { min-width: 3ch; text-align: right; color: var(--text-tertiary); font: 500 12px/1.6 var(--font-sans); }
+[data-playground] .tg-state::before { content: "Off"; }
+[data-playground] .tg input:checked ~ .tg-state::before { content: "On"; }
+[data-playground] .tg input:checked ~ .tg-state { color: var(--text-primary); }
+[data-playground] .tg-track { position: relative; flex: none; width: 36px; height: 20px; border-radius: 1000px; background: var(--panel-tint); box-shadow: inset 0 0 0 1px var(--border-primary); transition: background-color var(--dur-hover) ease-in-out, box-shadow var(--dur-hover) ease-in-out; }
+[data-playground] .tg:hover .tg-track { background: var(--color-gray-200); }
+[data-playground] .tg-track::after { content: ""; position: absolute; left: 2px; top: 2px; width: 16px; height: 16px; border-radius: 50%; background: var(--panel); box-shadow: var(--shadow-hairline); transition: transform var(--dur-hover) var(--ease-out-quart); }
+[data-playground] .tg input:checked ~ .tg-track { background: var(--border-strong); box-shadow: none; }
+[data-playground] .tg input:checked ~ .tg-track::after { transform: translateX(16px); }
+[data-playground] .tg input:focus-visible ~ .tg-track { outline: 2px solid var(--accent-focus); outline-offset: 2px; }
+@media (pointer: coarse) { [data-playground] .tg { min-height: 44px; } }
+
+/* ---------- reduced motion: nothing breathes, nothing blinks, nothing scales ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .pg-card.is-lit::before { animation: none; opacity: .6; }
+  .pg-caret { display: none; }
+  [data-state] .pg-dot { animation: none; }
+  .pg-progress-fill, .pg-prompt, .pg-num, .pg-preset, .pg-seg-opt span, .pg-copy { transition: none; }
+  .pg-set input[type="range"]::-webkit-slider-thumb { transition: none; }
+  .pg-set input[type="range"]:hover::-webkit-slider-thumb { transform: none; }
+  [data-playground] .tg-track, [data-playground] .tg-track::after { transition: none; }
+  [data-playground] .tg input:checked ~ .tg-track::after { transform: none; left: 18px; }
+}

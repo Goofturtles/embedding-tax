@@ -1,0 +1,1230 @@
+/* =========================================================================================
+   styles.css: the landing page (index.html) only. Loaded after shared.css and built on its
+   tokens (the anchor's ivory system laid onto the Mostar world; see shared.css's legend).
+   In order: the rig defaults, the rail and the chapter flag, the scroll rig, the legibility
+   system, band 1 (the cap), band 2 (the budget card), band 3 (the depth card), band 4 (the
+   spec cards), the stage controls, the Watch-it-write section, the closing band, the footer
+   wordmark letters, responsive tiers, the short-screen mode, reduced motion last.
+
+   THE ONE IDEA: under the arch. 50,000,000 is the arch; the word list is the toll; depth is
+   what fits under the span once the toll is small; the model writing on the visitor's own
+   device is the proof. The arch (shared.css .arch) is the signature; everything else is quiet.
+
+   MOTION GRAMMAR: the scroll rig is the one expressive layer. Every entrance is transform +
+   opacity, scrubbed off a per-band --k (0..1) that script.js writes on .stage (--k1..--k4)
+   and fully reversible on scroll-up; band 1's --k1 is the one-time load ramp (k = max(scrollK,
+   loadK)). Off the rig the anchor's reveal grammar only: opacity + translateY(20px) .75s
+   --ease-out-power2 at 80ms stagger, draws .55s --ease-grid-in, hovers .2s ease-in-out.
+   Nothing lifts, tilts or springs; no CSS transition sits on any property the rig writes.
+
+   LEGIBILITY: ink type over the bright photo gets a light halo, never a dark scrim: a soft
+   global base scrim (.stage::before), a per-band ivory scrim riding the opacity the rig
+   already writes (.band-scrim), --tshadow-ink on the numeral only, GLASS chips for small text,
+   and CARD material under every paragraph. No scrim darkens the photo anywhere.
+
+   Colour meaning (shared.css): clay = the word list / the embedding cost (the protagonist);
+   olive = layers; ink = neutral. Error red is reserved for "over the cap" and never appears
+   here, because nothing on this page is over the cap.
+   ========================================================================================= */
+
+:root {
+  /* ---------- scroll-rig variables: defaults only. script.js writes the live values on
+     .stage (not :root), so a scroll frame restyles the stage subtree and nothing else. */
+  --mx: 0; --my: 0;
+  --back-opacity: 1; --back-x: 0px; --back-y: 0px; --back-scale: 0.76;
+  --four-y: 10vh; --four-scale: 0.78;
+  --bazaar-y: 20vh;
+  --blur-px: 0px; --back-brightness: 1;
+  --bazaar-blur-px: 0px; --bazaar-brightness: 1; --bazaar-saturation: 1;
+  --shade-z: 2;
+  --shade-top-alpha: 0; --shade-mid-alpha: 0; --shade-bottom-alpha: 0;
+  --sky-settle: 1;
+  --title-y: 0px; --title-scale: 1; --title-opacity: 1;
+  --bridge-x: -50%; --bridge-y: 0px; --bridge-bottom: 5vh;
+  --bridge-width: 67.2vw; --bridge-scale: 1.02;
+  --split-left-x: -50%;  --split-left-y: 0px;  --split-left-scale: 1;
+  --split-right-x: -50%; --split-right-y: 0px; --split-right-scale: 1;
+  --frame2-opacity: 0; --frame2-x: -50%; --frame2-y: -50%; --frame2-scale: 1.06;
+  --intro-copy-y: 0px; --intro-copy-opacity: 1;
+  --panel2-opacity: 0; --panel2-y: calc(-50% + 58px);
+  --panel3-opacity: 0; --panel3-y: calc(-50% + 58px);
+  --sights-opacity: 0; --sights-controls-opacity: 0;
+  --sights-enter-x: 130vw; --sights-visibility: hidden;
+  --sights-scale: 1;
+  --sights-top: clamp(112px, 19vh, 220px);
+  --sights-screen-top: clamp(112px, 19vh, 220px);
+  /* Per-band assembly progress 0..1 [K]: --k1 the cap (the load ramp), --k2 the budget card,
+     --k3 the depth card, --k4 the spec cards. Assembled by default so a visitor without
+     scripts reads everything; .js .stage starts them at 0 until the first frame writes. */
+  --k1: 1; --k2: 1; --k3: 1; --k4: 1;
+  /* Chapter progress 0..1. script.js writes these on #capNav and #secRail only. */
+  --seg0: 0; --seg1: 0; --seg2: 0;
+}
+.js .stage { --k1: 0; --k2: 0; --k3: 0; --k4: 0; }
+
+/* ---------- base ---------- */
+button { border: 0; font: inherit; color: inherit; background: none; }
+.site-shell { position: relative; z-index: 1; min-height: 100vh; }
+.site-shell:focus { outline: none; }
+/* Anchor links move focus to these headings (tabindex -1) so screen readers follow the
+   jump. They are not controls, so no ring is drawn on them. */
+.hero-title:focus, .story-panel h2:focus { outline: none; }
+/* The 8px clay square with a 1px ink inset: the cost's glyph (the header CTA carries the
+   same square). Olive for the depth kicker. */
+.k-sq { display: inline-block; flex: none; width: 8px; height: 8px; border-radius: 1px; background: var(--cost); box-shadow: inset 0 0 0 1px var(--cost-edge); }
+.k-sq--depth { background: var(--depth); box-shadow: none; }
+
+/* =========================================================================================
+   SECTION RAIL: the anchor's tooltip card material holding the chapter numbers in mono. The
+   current slot is a sliding ink thumb, each chapter has a 2px side track filled in its tone,
+   and the labels are the research tooltip. Living element: the current slot's fill breathes
+   at whisper level (6s) while the rail is on stage.
+   Grain story segments https://mobbin.com/flows/db4bb068-692f-4f90-8aad-fe2007493106
+   OpenAI left rail with a filled current slot https://mobbin.com/sites/sections/ce8344a8-9e58-49db-b909-db3b5576679d
+   ========================================================================================= */
+.sec-rail {
+  position: fixed; z-index: 60; right: 20px; top: 50%;
+  display: flex; flex-direction: column; gap: 4px; padding: 4px;
+  background: var(--canvas); border: 1px solid var(--border-tertiary); border-radius: var(--br-12);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-50%);
+  transition: opacity var(--dur-slide) ease-in-out, visibility var(--dur-slide);
+  /* backwards, not both: a `both` fill pinned opacity at 1 over .is-away. */
+  animation: rail-in var(--reveal-duration) var(--ease-out-power2) .45s backwards;
+}
+@keyframes rail-in { from { opacity: 0; transform: translate(14px, -50%); } to { opacity: 1; transform: translate(0, -50%); } }
+.sec-rail.is-away { opacity: 0; visibility: hidden; }
+.sec-rail a {
+  position: relative; z-index: 1; display: grid; place-items: center;
+  width: 32px; height: 32px; border-radius: var(--br-8);
+  color: var(--text-tertiary); text-decoration: none;
+  font: 400 12px/1.6 var(--font-mono); font-variant-numeric: var(--num);
+  transition: background-color var(--dur-hover) ease-in-out, color var(--dur-text) ease-in-out;
+}
+.sec-rail a:hover { background: var(--well); color: var(--text-primary); }
+.sec-rail a.is-current, .sec-rail a.is-current:hover { background: transparent; color: var(--color-gray-050); transition-delay: 0ms, 140ms; }
+.rail-thumb {
+  position: absolute; left: 4px; top: 4px; width: 32px; height: 32px;
+  border-radius: var(--br-8); background: var(--color-gray-950);
+  opacity: 0; transform: translateY(calc(var(--rail-idx, 0) * 36px));
+}
+.sec-rail.has-current .rail-thumb { opacity: 1; }
+.sec-rail.is-settled .rail-thumb { transition: transform .25s var(--ease-tabs), opacity var(--dur-transform) ease-in-out; }
+.sec-rail.has-current:not(.is-away) .rail-thumb { animation: rail-breathe var(--living-cycle) ease-in-out -2s infinite alternate; }
+@keyframes rail-breathe { from { opacity: .85; } to { opacity: 1; } }
+.sec-rail a[data-sec="0"] { --tone: var(--tone-0); --p: var(--seg0); }
+.sec-rail a[data-sec="1"] { --tone: var(--tone-1); --p: var(--seg1); }
+.sec-rail a[data-sec="2"] { --tone: var(--tone-2); --p: var(--seg2); }
+.sec-rail a[data-sec]::before, .sec-rail a[data-sec]::after {
+  content: ""; position: absolute; left: -3px; top: 4px; bottom: 4px; width: 2px; border-radius: 2px;
+}
+.sec-rail a[data-sec]::before { background: var(--border-tertiary); }
+/* No transition: the rig's 0.14 lerp already eases the value. */
+.sec-rail a[data-sec]::after { background: var(--tone); transform: scaleY(var(--p)); transform-origin: 50% 0; }
+/* The label: the research tooltip (#f5f4ed, 1px #dedcd1, 4px, 10px 14px, 13px/1.35 600). */
+.sec-rail em {
+  position: absolute; right: calc(100% + 12px); top: 50%;
+  padding: 10px 14px; border: 1px solid var(--color-gray-250); border-radius: var(--br-4);
+  background: var(--well); box-shadow: var(--shadow-md);
+  color: var(--text-primary); font: 600 13px/1.35 var(--font-sans); font-style: normal; white-space: nowrap;
+  transform: translateY(-50%); translate: 4px 0;
+  opacity: 0; visibility: hidden;
+  transition: opacity var(--dur-hover) var(--ease-out-power2), translate var(--dur-hover) var(--ease-out-power2), visibility 0s var(--dur-hover);
+}
+/* A transparent bridge across the 12px gap, so the pointer can travel onto the label. */
+.sec-rail em::after { content: ""; position: absolute; left: 100%; top: 0; bottom: 0; width: 14px; }
+.sec-rail a:hover em, .sec-rail a:focus-visible em {
+  opacity: 1; visibility: visible; translate: 0 0;
+  transition: opacity var(--dur-hover) var(--ease-out-power2), translate var(--dur-hover) var(--ease-out-power2), visibility 0s;
+}
+.tips-off .sec-rail a em { opacity: 0 !important; visibility: hidden !important; }
+
+/* =========================================================================================
+   CHAPTER FLAG: Raw Materials' "Now entering" on the tooltip material. Decorative
+   (aria-hidden); script.js runs its WAAPI timing; off under 900px.
+   https://mobbin.com/sites/sections/e5ec35b6-1d56-4131-a532-b8390ff5373d
+   ========================================================================================= */
+.chap-flag {
+  position: fixed; z-index: 55; left: 24px; bottom: 76px;
+  display: flex; align-items: baseline; gap: 10px; min-height: 44px; padding: 10px 14px;
+  border: 1px solid var(--color-gray-250); border-radius: var(--br-4);
+  background: var(--well); box-shadow: var(--shadow-md); color: var(--text-primary);
+  opacity: 0; pointer-events: none;
+}
+.chap-flag-k { color: #14141399; font: 400 13px/1.35 var(--font-sans); }
+/* A line mask: overflow clip with 0.15em of room under the line for the descenders. */
+.chap-flag-mask { display: inline-block; overflow: hidden; overflow: clip; padding-bottom: .15em; margin-bottom: -.15em; }
+.chap-flag-word { display: inline-block; font: 600 13px/1.35 var(--font-sans); }
+.chap-flag-n { color: var(--text-tertiary); font: 400 12px/1.35 var(--font-mono); font-variant-numeric: var(--num); }
+@media (max-width: 900px) { .chap-flag { display: none; } }
+
+/* =========================================================================================
+   SCROLL RIG: unchanged mechanics. 100svh so iOS toolbars never cover the intro.
+   The +6300px is TIMING.STAGE_LENGTH in script.js: change both together.
+   overflow: clip, not hidden: it trims the zoomed photo layers without making the stage a
+   scroll container (so focus can never scroll it, and the clip probe does not flag it).
+   Layer order inside .stage (isolation: isolate): sky 0, back-stack 1 (far city, the spec
+   cards, the bazaar), shade 2 (the rig drives --shade-z), bridge 4, frame two 5, split frames
+   and motes 6, veil 7, base scrim and band scrims 8, hero 10, intro card 11, story panels 12,
+   controls 13, cue / skip / pause 14, the stage grain 15.
+   ========================================================================================= */
+.cinema-scroll { position: relative; height: calc(100vh + 6300px); height: calc(100svh + 6300px); }
+.stage {
+  position: sticky; top: 0; height: 100vh; height: 100svh; min-height: 560px;
+  overflow: hidden; overflow: clip; isolation: isolate; background: #7fb4d4; /* [P] sampled sky, shows only before the photo paints */
+}
+.world, .back-stack, .sky-img, .shade, .scene-img, .band-scrim, .motes,
+.sights-slider, .sights-controls, .hero-title, .intro-copy, .story-panel { position: absolute; }
+.world { inset: 0; overflow: hidden; overflow: clip; background: #79b7dd; /* [P] sampled sky */ }
+
+/* ---------- scene images; the rig writes every custom property, the CSS only consumes ---------- */
+.scene-img {
+  display: block; max-width: none;   /* shared.css caps img at 100%; the scene layers run past the viewport by design */
+  user-select: none; -webkit-user-drag: none;
+  will-change: transform, opacity, filter; pointer-events: none;
+}
+/* The blur is composed down to 3px at its peak (8px x .375): the photo softens instead of
+   turning to mush behind the cards. */
+.sky-img {
+  z-index: 0; inset: 0; width: 100%; height: 100%; object-fit: cover;
+  transform: scale(var(--sky-settle)); transform-origin: 50% 35%;
+  filter: blur(calc(var(--blur-px) * .375)) brightness(var(--back-brightness));
+}
+.back-stack {
+  z-index: 1; top: 0; bottom: 0; left: -3vw; right: -3vw;
+  opacity: var(--back-opacity);
+  transform: translate3d(var(--back-x), var(--back-y), 0) scale(var(--back-scale));
+  transform-origin: 50% 100%;
+  will-change: transform, filter, opacity;
+}
+.back-img {
+  inset: 0; width: 100%; height: 100%; object-fit: cover;
+  filter: blur(calc(var(--blur-px) * .375)) brightness(var(--back-brightness));
+}
+.back-bazaar, .back-four {
+  top: auto; bottom: 0; left: 48%; right: auto;
+  width: 112%; height: auto; object-fit: contain;
+}
+.back-bazaar {
+  z-index: 3; opacity: 1;
+  filter: blur(calc(var(--bazaar-blur-px) * .5)) brightness(var(--bazaar-brightness)) saturate(var(--bazaar-saturation));
+  transform: translate3d(-50%, var(--bazaar-y), 0) scale(0.86);
+}
+.back-four {
+  z-index: 1; opacity: 0.72; mix-blend-mode: screen;
+  transform: translate3d(-50%, calc(var(--four-y) - 110px), 0) scale(var(--four-scale));
+}
+.bridge-img {
+  z-index: 4; left: 50%; bottom: var(--bridge-bottom);
+  width: min(var(--bridge-width), 2140px); height: auto;
+  transform: translate3d(var(--bridge-x), var(--bridge-y), 0) scale(var(--bridge-scale));
+  transform-origin: 50% 48%;
+}
+.splitframe-img { z-index: 6; left: 50%; bottom: -2vh; width: min(118vw, 2240px); height: auto; pointer-events: none; }
+.splitframe-left {
+  transform: translate3d(var(--split-left-x), var(--split-left-y), 0) scale(var(--split-left-scale));
+  transform-origin: 21% 52%;
+}
+.splitframe-right {
+  transform: translate3d(var(--split-right-x), var(--split-right-y), 0) scale(var(--split-right-scale));
+  transform-origin: 79% 52%;
+}
+.frame-two-img {
+  z-index: 5; filter: none !important;
+  left: 50%; top: 50%; width: min(122vw, 2160px); height: auto;
+  opacity: var(--frame2-opacity);
+  transform: translate3d(var(--frame2-x), var(--frame2-y), 0) scale(var(--frame2-scale));
+  transform-origin: 50% 48%;
+}
+/* The frame-transition wash: toward paper (--blur-tint is the anchor's ivory), never black. */
+.shade {
+  inset: 0; z-index: var(--shade-z); pointer-events: none;
+  background: linear-gradient(180deg,
+    rgba(var(--blur-tint), var(--shade-top-alpha)) 0%,
+    rgba(var(--blur-tint), var(--shade-mid-alpha)) 48%,
+    rgba(var(--blur-tint), var(--shade-bottom-alpha)) 100%);
+}
+/* Arrival: the photo emerges from a paper haze, after Paraform
+   https://mobbin.com/sites/sections/f8ae1344-754c-4efa-9563-604a5d7306ff. Ivory stops, never
+   dark; gone within about two seconds. */
+.dawn-veil {
+  position: absolute; inset: 0; z-index: 7; pointer-events: none; opacity: 0;
+  background: linear-gradient(180deg, rgba(250, 249, 245, .94), rgba(245, 244, 237, .9) 55%, rgba(240, 238, 230, .82));
+}
+.js .dawn-veil { animation: veil-lift .9s ease 1.8s both; }                       /* fail-safe */
+.js.scene-open .dawn-veil { animation: veil-lift-go 1s ease-in-out both; }
+.js.no-veil .dawn-veil { display: none; }
+@keyframes veil-lift { from { opacity: 1; } to { opacity: 0; } }
+@keyframes veil-lift-go { from { opacity: 1; } to { opacity: 0; } }
+
+/* ---------- whisper motes [K]: one SVG, 18 circles, transform-only loops, mid-cycle at first
+   paint (negative delays), scoped to .is-onstage / .is-near from script.js's observers and
+   paused by body.paused. Never on data surfaces. ---------- */
+.motes { inset: 0; z-index: 6; width: 100%; height: 100%; overflow: visible; pointer-events: none; opacity: 0; transition: opacity 1.2s ease-in-out; }
+.motes circle { fill: var(--color-gray-050); opacity: .18; transform-box: fill-box; transform-origin: center; }
+.motes .m-clay { fill: var(--color-clay); opacity: .14; }
+.stage.is-onstage .motes { opacity: 1; }
+.stage.is-onstage .motes circle, .closing.is-near .motes circle {
+  animation: mote var(--t, 18s) ease-in-out var(--d, -5s) infinite alternate;
+}
+@keyframes mote { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(var(--dx, 16px), var(--dy, -28px), 0); } }
+
+/* ---------- the legibility system [K], inverted for ink on a bright photo ----------
+   .stage::before is the global base scrim (ivory .34 at the edges, always on). Each
+   .band-scrim is a soft ivory radial that rides the opacity the rig already writes for its
+   band and dies out by 76% so the corners stay live; the budget and depth bands use the
+   two-sided variant with only the card's side on, so the bridge stays bright. Small text
+   over the photo sits on GLASS chips; paragraphs sit on CARD material. */
+.stage::before { content: ""; position: absolute; inset: 0; z-index: 8; pointer-events: none; background: var(--scrim-base); }
+.band-scrim { inset: -4%; z-index: 8; pointer-events: none; }
+.band-scrim--hero {
+  --scrim-band-peak: .35; opacity: var(--title-opacity);
+  background: radial-gradient(ellipse 60% 44% at 50% 28%, rgba(var(--scrim-rgb), var(--scrim-band-peak)) 0%, rgba(var(--scrim-rgb), calc(var(--scrim-band-peak) * .66)) 46%, rgba(var(--scrim-rgb), 0) 76%);
+}
+.band-scrim--budget {
+  --scrim-band-peak: .55; opacity: var(--panel2-opacity);
+  background: radial-gradient(ellipse 40% 64% at 76% 52%, rgba(var(--scrim-rgb), var(--scrim-band-peak)) 0%, rgba(var(--scrim-rgb), calc(var(--scrim-band-peak) * .66)) 46%, rgba(var(--scrim-rgb), 0) 76%);
+}
+.band-scrim--depth {
+  --scrim-band-peak: .55; opacity: var(--panel3-opacity);
+  background: radial-gradient(ellipse 40% 64% at 24% 52%, rgba(var(--scrim-rgb), var(--scrim-band-peak)) 0%, rgba(var(--scrim-rgb), calc(var(--scrim-band-peak) * .66)) 46%, rgba(var(--scrim-rgb), 0) 76%);
+}
+/* The stage's own grain sheet: 4% overlay above the photo layers, below nothing that reads. */
+.stage-grain {
+  position: absolute; inset: 0; z-index: 15; pointer-events: none;
+  background-image: var(--grain); background-size: 180px 180px;
+  opacity: var(--grain-opacity-stage); mix-blend-mode: overlay;
+}
+
+/* =========================================================================================
+   BAND 1, THE CAP: one centred numeral over the photo, the intro card below. Entrance: word-
+   by-word rise into a staged settle off the one-time load ramp --k1 (kicker, then the
+   odometer rolls once, the tax fill draws on .is-settled, the card lands, its chips 80ms
+   apart, the two phrase underlines last). Exit on the rig (--title-*, --intro-copy-*).
+   Reducto numeral proportion https://mobbin.com/sites/sections/9242cefa-a95b-48df-82e1-5aac6046250c
+   Browserbase kicker + qualifier chip https://mobbin.com/sites/sections/109e6297-d973-4b59-a1d2-3861ec60acd0
+   Vercel per-digit reels https://mobbin.com/sites/sections/0215f066-0f95-45b2-bccb-3eaae4db2404
+   ========================================================================================= */
+.hero-title {
+  z-index: 10; left: 50%; top: max(96px, min(12vh, 180px));
+  width: min(94vw, 1780px); margin: 0; text-align: center; color: var(--text-primary);
+  font-weight: inherit;
+  transform: translate3d(-50%, var(--title-y), 0) scale(var(--title-scale));
+  opacity: var(--title-opacity); will-change: transform, opacity;
+}
+.hero-kicker {
+  display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px 10px;
+  margin-bottom: 12px;
+}
+.hero-kicker > * {
+  --kc: clamp(0, (var(--k1, 1) - var(--th, 0)) * 4, 1);
+  opacity: var(--kc); transform: translate3d(0, calc((1 - var(--kc)) * 10px), 0);
+}
+.hk-glass { --th: .08; display: inline-flex; align-items: center; gap: 8px; }
+.hk-chip { --th: .16; }
+.hero-fig { display: flex; flex-direction: column; align-items: center; }
+.hero-num {
+  display: inline-block;
+  font: 400 var(--hero-numeral)/var(--lh-clip-floor) var(--font-display);   /* 1.25: the odometer's clip floor */
+  font-size: min(var(--hero-numeral), 16vh);   /* the numeral, the tax row and the intro card share one 900px-tall viewport */
+  font-variation-settings: var(--font-opsz); letter-spacing: 0;
+  font-variant-numeric: var(--num); font-kerning: none;
+  text-shadow: var(--tshadow-ink);
+  transform-origin: 50% 70%;
+}
+/* The odometer gate: hidden until the roll starts, with a CSS fail-safe at 1.4s. */
+.js .hero-num { opacity: 0; animation: num-in 1ms 1.4s both; }
+.js .hero-num.is-shown { opacity: 1; animation: num-in-go .28s var(--ease-out-power2) both; }
+@keyframes num-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes num-in-go { from { opacity: 0; } to { opacity: 1; } }
+/* Reels: windows are clip-path, not overflow; the line box is 1.25em (the clip floor) and
+   each reel step is 1.25em, so no digit is ever cut. The ghost digit holds each window's
+   exact width. It rolls once and never re-rolls (a moving number would imply live data). */
+.odo { white-space: nowrap; }
+.odo-win { position: relative; display: inline-block; clip-path: inset(0 -0.04em); }
+.odo-ghost { visibility: hidden; }
+.odo-reel {
+  position: absolute; left: 0; right: 0; top: 0;
+  display: flex; flex-direction: column; align-items: center; line-height: var(--lh-clip-floor);
+  transition: transform var(--d) var(--ease-out-expo) var(--w); will-change: transform;
+}
+.odo-reel > span { display: block; height: 1.25em; }
+.hero-num.is-rolling { text-shadow: none; }
+.hero-num.is-rolled .odo-reel { transform: translate3d(0, calc(var(--n) * -1.25em), 0); }
+
+/* The tax row: GLASS under the figure; an 8px track, the fill 51.5% clay with a 1px ink
+   inset drawn scaleX on .is-settled; its clay glow (on a pseudo-element, opacity only)
+   breathes 6s once settled: the band's living element.
+   Zendesk figure colour = segment colour https://mobbin.com/sites/sections/07b3e72a-a6f5-4a0e-97a3-d9bdd5a4a478 */
+.hero-tax {
+  position: relative; display: inline-flex; align-items: center; gap: 12px;
+  margin-top: clamp(8px, .8vw, 14px); padding: 8px 16px;
+  --kc: clamp(0, (var(--k1, 1) - .3) * 4, 1);
+  opacity: var(--kc); transform: translate3d(0, calc((1 - var(--kc)) * 8px), 0);
+}
+.hero-tax-track { position: relative; display: block; flex: none; width: min(420px, 60vw); height: 8px; border-radius: var(--radius-full); background: var(--color-gray-200); }
+.hero-tax-fill {
+  position: absolute; left: 0; top: 0; bottom: 0; width: 51.5%;
+  border-radius: inherit; background: var(--cost); box-shadow: inset 0 0 0 1px var(--cost-edge);
+  transform-origin: left; transition: transform var(--dur-draw) var(--ease-grid-in) .2s;
+}
+.hero-tax-fill::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit;
+  box-shadow: var(--glow-accent); opacity: 0; pointer-events: none;
+}
+.hero-title.is-settled .hero-tax-fill::after { animation: tax-glow var(--living-cycle) ease-in-out -1.5s infinite alternate; }
+@keyframes tax-glow { from { opacity: .35; } to { opacity: 1; } }
+.hero-tax-label { color: var(--color-gray-750); font: 400 13px/1.6 var(--font-sans); white-space: nowrap; }
+.hero-tax-label b { color: var(--text-primary); font-weight: var(--weight-semibold); font-variant-numeric: var(--num); }
+.js .hero-title:not(.is-settled) .hero-tax-fill { transform: scaleX(0); }
+.hero-title.no-anim .hero-tax-fill { transition: none; }
+@media (max-height: 680px) { .hero-tax { display: none; } }
+
+/* ---------- the intro card: CARD, the sentence in Newsreader with two drawn phrase marks,
+   the facts as research chip tabs linked to their chapters. Everything rides --k1. ---------- */
+.intro-copy {
+  z-index: 11; left: 50%; bottom: clamp(40px, 10vh, 200px);   /* the sentence is four lines of Newsreader now; it clears the numeral at 1366x768 and 1440x900 */
+  width: min(640px, calc(100vw - 64px)); text-align: center;
+  transform: translate3d(-50%, var(--intro-copy-y), 0);
+  opacity: var(--intro-copy-opacity); will-change: transform, opacity;
+}
+.intro-copy.is-offstage { visibility: hidden; }
+.intro-card {
+  padding: 32px;
+  --kc: clamp(0, (var(--k1, 1) - .42) * 3, 1);
+  opacity: var(--kc); transform: translate3d(0, calc((1 - var(--kc)) * 20px), 0);
+}
+.intro-line {
+  position: relative; isolation: isolate;
+  margin: 0 auto; max-width: 30ch; color: var(--text-primary);
+  font: 400 var(--headline-3)/1.3 var(--font-display); font-variation-settings: var(--font-opsz);
+  text-wrap: balance;
+}
+.wd { display: inline-block; }
+.js .intro-line .wd {
+  --th: calc(.5 + var(--i, 0) * .012);
+  --kw: clamp(0, (var(--k1, 1) - var(--th)) * 5, 1);
+  opacity: var(--kw); transform: translate3d(0, calc((1 - var(--kw)) * .42em), 0);
+}
+.wd[data-mark] { position: relative; }
+.wd[data-mark]::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: -.04em; height: 2px; border-radius: 1px;
+  background: var(--mark); transform-origin: left;
+}
+.wd[data-mark]:not(:last-child)::after { right: -.3em; }
+.wd[data-mark][data-trail]::after { right: .3em; }   /* ends before the comma it now carries */
+.js .intro-line .wd[data-mark]::after { --ku: clamp(0, (var(--k1, 1) - .86) * 8, 1); transform: scaleX(var(--ku)); }
+.wd[data-mark="tax"] { --mark: var(--cost); }
+.wd[data-mark="depth"] { --mark: var(--depth); }
+.hero-tags {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px;
+  margin: 20px 0 0; padding: 0; list-style: none;
+}
+.hero-tags .tag {
+  --kc: clamp(0, (var(--k1, 1) - var(--th, .74)) * 6, 1);
+  opacity: var(--kc); transform: translate3d(0, calc((1 - var(--kc)) * 12px), 0);
+}
+.hero-tags li:nth-child(2) .tag { --th: .775; }
+.hero-tags li:nth-child(3) .tag { --th: .81; }
+
+/* =========================================================================================
+   BANDS 2 AND 3, THE STORY PANELS. The rig positions .story-panel (top / translate /
+   opacity); the CARD is the child .panel-in, so every entrance animates children only.
+   Band 2 (right): halves parting, the kicker and the h2 sliding in from the centre line in
+   opposite directions off --k2, echoing the split frames. Band 3 (left): approach-from-depth,
+   the card scaling .82 to 1 off --k3 with a static-blur soft copy of the h2 crossfading under
+   the sharp one, echoing the push into the town. Text on white carries no shadow.
+   ========================================================================================= */
+.story-panel {
+  z-index: 12; top: calc(50% + var(--header-band) / 2); width: min(640px, calc(100vw - 64px));
+  pointer-events: none; will-change: transform, opacity;
+}
+.story-panel-bridge { --kb: var(--k2, 1); right: 64px; opacity: var(--panel2-opacity); transform: translate3d(0, var(--panel2-y), 0); }
+.story-panel-bazaar { --kb: var(--k3, 1); left: 64px; opacity: var(--panel3-opacity); transform: translate3d(0, var(--panel3-y), 0); }
+.panel-in { padding: var(--card-pad-lg); text-align: left; color: var(--text-primary); }
+.story-panel-bazaar .panel-in { transform: scale(calc(.82 + .18 * var(--kb))); transform-origin: 40% 60%; }
+.panel-kicker {
+  display: flex; align-items: center; gap: 8px; margin: 0 0 16px;
+  color: var(--text-tertiary); font: 400 12px/1.6 var(--font-mono); letter-spacing: var(--tracking-label);
+}
+.story-panel h2 {
+  margin: 0; max-width: 20ch; color: var(--text-primary);
+  font: 400 var(--headline-1)/1.2 var(--font-display); font-variation-settings: var(--font-opsz); letter-spacing: 0;
+  text-wrap: balance;
+}
+.story-panel h2 em { font-style: italic; color: var(--cost-text); }        /* >= 34px: AA large */
+.story-panel-bazaar h2 em { color: var(--depth); }
+.panel-body { margin: 16px 0 0; max-width: 60ch; color: var(--text-secondary); font: 400 var(--body-2)/1.6 var(--font-sans); }
+
+/* band 2: each part has a threshold on --k2 and a direction */
+.story-panel-bridge .panel-kicker { --th: 0; --jx: -18px; --jy: 0px; }
+.story-panel-bridge h2 { --th: .1; --jx: 18px; --jy: 0px; }
+.story-panel-bridge .panel-body { --th: .3; --jx: 0px; --jy: 12px; }
+.story-panel-bridge .facts { --th: .42; --jx: 0px; --jy: 12px; }
+.story-panel-bridge :is(.panel-kicker, h2, .panel-body, .facts) {
+  --kc: clamp(0, (var(--kb) - var(--th)) * 2.6, 1);
+  opacity: var(--kc); transform: translate3d(calc((1 - var(--kc)) * var(--jx)), calc((1 - var(--kc)) * var(--jy)), 0);
+}
+/* band 3: every part rises 10px in turn while the card approaches */
+.story-panel-bazaar .panel-kicker { --th: 0; }
+.story-panel-bazaar :is(h2, .h2-soft) { --th: .08; }
+.story-panel-bazaar .panel-body { --th: .28; }
+.story-panel-bazaar .depth-stack { --th: .4; }
+.story-panel-bazaar .note-button { --th: .5; }
+.story-panel-bazaar :is(.panel-kicker, h2, .panel-body, .depth-stack, .note-button) {
+  --kc: clamp(0, (var(--kb) - var(--th)) * 2.6, 1);
+  opacity: var(--kc); transform: translate3d(0, calc((1 - var(--kc)) * 10px), 0);
+}
+/* blur-to-sharp: the soft copy carries a STATIC blur and only its opacity moves */
+.h2-wrap { position: relative; }
+.h2-soft {
+  position: absolute; inset: 0; margin: 0; max-width: 20ch; pointer-events: none;
+  color: var(--text-primary); font: 400 var(--headline-1)/1.2 var(--font-display); font-variation-settings: var(--font-opsz);
+  text-wrap: balance; filter: blur(8px); will-change: opacity;
+  --kc: clamp(0, (var(--kb) - var(--th)) * 2.6, 1);
+  opacity: calc((1 - var(--kc)) * .9);
+}
+.h2-soft em { font-style: italic; color: var(--depth); }
+/* headline words (both panels): thresholds .05 apart on the band's --k */
+.js .story-panel h2 .wd {
+  --thw: calc(var(--th, 0) + .06 + var(--i, 0) * .05);
+  --kw: clamp(0, (var(--kb) - var(--thw)) * 3.5, 1);
+  opacity: var(--kw); transform: translate3d(0, calc((1 - var(--kw)) * .35em), 0);
+}
+
+/* ---------- band 2 facts: two tiles, figure top-left in Newsreader, a 6px track (clay fill
+   with a 1px ink inset drawn scaleX on .is-counted, the ghost of GPT-2's share in oat behind
+   ours), caption bottom-left; hover mutes the sibling to .6.
+   Cursor stats cards https://mobbin.com/sites/sections/49475026-9a62-4dc4-b12d-98a280bee047
+   Claude model-family chart's clay pills https://mobbin.com/sites/sections/9f87ad1b-0695-4225-9dfb-a70e0b1dffb5 ---------- */
+.facts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 24px 0 0; }
+.fact {
+  display: flex; flex-direction: column; gap: 10px; min-height: 132px; padding: 16px;
+  background: var(--canvas); border: 1px solid var(--border-tertiary); border-radius: var(--br-12);
+  transition: opacity var(--dur-hover) ease-in-out;
+}
+.fact dt { display: flex; flex-direction: column; gap: 10px; margin: 0; }
+.fact-fig {
+  display: inline-flex; align-items: baseline; color: var(--text-primary);
+  font: 400 var(--display-2)/1.1 var(--font-display); font-variation-settings: var(--font-opsz);
+  font-variant-numeric: var(--num);
+}
+.fact.is-ours .fact-fig { color: var(--cost-text); }
+.fact-num { display: inline-block; }
+.fact-pct { font-size: .5em; margin-left: 2px; }
+.fact dd { margin: auto 0 0; color: var(--text-tertiary); font: 400 15px/1.6 var(--font-sans); }
+.fact-track { position: relative; display: block; height: 6px; border-radius: var(--radius-full); background: var(--color-gray-200); }
+.fact-fill {
+  position: absolute; inset: 0; border-radius: inherit;
+  background: var(--cost); box-shadow: inset 0 0 0 1px var(--cost-edge);
+  transform-origin: left; transform: scaleX(var(--w));
+  transition: transform var(--dur-draw) var(--ease-grid-in);
+}
+.fact-ghost {
+  position: absolute; inset: 0 auto 0 0; width: 51.5%; border-radius: inherit;
+  background: var(--cost-tint); box-shadow: inset 0 0 0 1px var(--ghost-edge);
+  transition: opacity .28s ease-in-out .42s;
+}
+.fact.is-ours .fact-fill { transition-delay: .52s; }   /* in lockstep with countFacts' 520ms */
+.js .story-panel-bridge:not(.is-counted) .fact-fill { transform: scaleX(0); }
+.js .story-panel-bridge:not(.is-counted) .fact-ghost { opacity: 0; }
+/* the card's light edge breathes while the band is on: band 2's living element */
+.story-panel-bridge .panel-in::after {
+  content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px; border-radius: inherit;
+  background: #ffffff99; pointer-events: none;
+  animation: edge-breathe var(--living-cycle) ease-in-out -2s infinite alternate;
+}
+.story-panel-bridge .panel-in { position: relative; }
+@keyframes edge-breathe { from { opacity: .6; } to { opacity: 1; } }
+@media (hover: hover) and (pointer: fine) {
+  .story-panel-bridge.is-shown .facts { pointer-events: auto; }
+  .story-panel-bridge.is-shown .facts:has(> .fact:hover) > .fact:not(:hover) { opacity: .6; }
+}
+
+/* ---------- band 3 depth stack: to scale (explorer.js budget() at width 512), the embed
+   block clay with a 1px ink inset and its % label OUTSIDE the block, the layers olive with 2px
+   white gaps landing bottom-up 80ms apart on .is-built, the +6 bracket drawn by stroke.
+   Mercury exploded layer stack https://mobbin.com/sites/sections/3a483a4e-ab5c-494e-9db9-c6d41660be22
+   Goldsand shared-baseline columns https://mobbin.com/sites/sections/4f4b87d7-f4d3-4da8-a11b-847e61f8eaf2 ---------- */
+.depth-stack { --stack-h: 160px; --layer: 6.2935%; margin: 24px 0 0; }
+.ds-head {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px;
+  margin-bottom: 12px; color: var(--text-tertiary);
+  font: 400 12px/1.6 var(--font-mono); letter-spacing: var(--tracking-label);
+}
+.ds-key { display: inline-flex; align-items: center; gap: 6px; }
+.ds-key i { width: 8px; height: 8px; border-radius: 1px; }
+.ds-key .k-embed { background: var(--cost); box-shadow: inset 0 0 0 1px var(--cost-edge); }
+.ds-key .k-layer { background: var(--depth); margin-left: 8px; }
+.ds-cols { display: grid; grid-template-columns: 1fr 1fr; column-gap: 28px; }
+.ds-frame {
+  position: relative; display: flex; flex-direction: column-reverse;
+  height: var(--stack-h); width: min(calc(100% - 52px), 150px); padding: 0 3px;
+  border: 1px dashed var(--dashed); border-radius: var(--br-4);
+}
+.ds-embed { position: relative; flex: none; display: block; height: var(--h); }
+.ds-embed::before {
+  content: ""; position: absolute; inset: 0; border-radius: 3px;
+  background: var(--cost); box-shadow: inset 0 0 0 1px var(--cost-edge);
+  transform-origin: 50% 100%;
+}
+.ds-embed b {
+  position: absolute; left: calc(100% + 10px); top: 50%; transform: translateY(-50%);
+  color: var(--text-primary); font: 600 12px/1.6 var(--font-sans); font-variant-numeric: var(--num); white-space: nowrap;
+}
+.ds-layer { display: block; flex: none; height: var(--layer); padding-top: 2px; }
+.ds-layer::before { content: ""; display: block; height: 100%; border-radius: 2px; background: var(--depth); }
+.ds-extra {
+  position: absolute; left: calc(100% + 8px); bottom: calc(16.78% + 7 * var(--layer));
+  width: 8px; height: calc(6 * var(--layer)); color: var(--depth);
+}
+.ds-extra svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.ds-extra path {
+  fill: none; stroke: currentColor; stroke-width: 1; vector-effect: non-scaling-stroke;
+  stroke-dasharray: 1; stroke-dashoffset: 0;
+  transition: stroke-dashoffset var(--dur-draw) var(--ease-grid-in) 1.9s;
+}
+.ds-extra em {
+  position: absolute; left: calc(100% + 6px); top: 50%; transform: translateY(-50%);
+  color: var(--depth); font: 500 var(--headline-5)/1.2 var(--font-display); font-style: normal; font-variant-numeric: var(--num);
+  transition: opacity var(--dur-transform) ease-in-out 2.2s;
+}
+.ds-cap { display: flex; flex-direction: column; margin: 10px 0 0; }
+.ds-cap span { color: var(--text-tertiary); font: 400 12px/1.6 var(--font-mono); font-variant-numeric: var(--num); }
+.ds-cap strong { color: var(--text-primary); font: 500 var(--headline-5)/1.2 var(--font-sans); font-variant-numeric: var(--num); }
+/* The build, once, when the panel first shows (script.js adds .is-built). */
+.story-panel-bazaar :is(.ds-head, .ds-frame, .ds-cap span) { transition: opacity var(--dur-transform) ease-in-out .12s; }
+.ds-embed::before { transition: transform var(--dur-draw) var(--ease-grid-in) .2s; }
+.ds-embed b { transition: opacity var(--dur-transform) ease-in-out .56s; }
+.ds-layer { transition: opacity .26s var(--ease-out-quart), transform var(--dur-transform) var(--ease-out-quart); transition-delay: calc(.62s + var(--i) * var(--stagger)); }
+.ds-cap strong { transition: opacity var(--dur-transform) var(--ease-out-quart), transform var(--dur-transform) var(--ease-out-quart); }
+.ds-col.is-theirs .ds-cap strong { transition-delay: 1.3s; }
+.ds-col.is-ours .ds-cap strong { transition-delay: 1.7s; }
+.js .story-panel-bazaar:not(.is-built) :is(.ds-head, .ds-frame, .ds-cap span, .ds-embed b, .ds-extra em) { opacity: 0; }
+.js .story-panel-bazaar:not(.is-built) .ds-embed::before { transform: scaleY(0); }
+.js .story-panel-bazaar:not(.is-built) .ds-layer { opacity: 0; transform: translateY(-10px); }
+.js .story-panel-bazaar:not(.is-built) .ds-cap strong { opacity: 0; transform: translateY(6px); }
+.js .story-panel-bazaar:not(.is-built) .ds-extra path { stroke-dashoffset: 1; }
+/* the topmost olive layer breathes after the build: band 3's living element */
+.story-panel-bazaar.is-built .ds-top::before { animation: layer-breathe 5s ease-in-out -2s infinite alternate; }
+@keyframes layer-breathe { from { opacity: .8; } to { opacity: 1; } }
+.note-button { margin-top: 24px; pointer-events: auto; }
+@media (max-height: 820px) { .depth-stack { --stack-h: 120px; } }
+@media (max-height: 700px) { .depth-stack { --stack-h: 88px; margin-top: 16px; } .ds-head { margin-bottom: 8px; } }
+
+/* =========================================================================================
+   BAND 4, FIVE SPEC CARDS: the page's one row layout. Rig contract untouched (.sights-slider
+   from --sights-*, the track from --sights-shift / --sights-drag / --track-lead). Cards are
+   CARD material: the active one white at scale 1, its neighbours receded to the tertiary
+   ground at .96 with the hairline shadow; hover on a receded card is a 1px ring only. The
+   figures snap into place in reading order off --k4 (grid snap-align).
+   OpenAI card carousel https://mobbin.com/sites/sections/c0316181-fcbf-4ab5-89ec-24323d999f44
+   Claude model ledger cards https://mobbin.com/sites/sections/9a8549ad-56b6-4aee-8ceb-8064929f7e9a
+   ========================================================================================= */
+.sights-slider {
+  z-index: 4; left: 0; right: 0; top: var(--sights-top); padding: 0; isolation: isolate;
+  visibility: var(--sights-visibility);
+  transform: translate3d(var(--sights-enter-x), 0, 0) scale(var(--sights-scale));
+  transform-origin: 0 0; pointer-events: auto; will-change: transform;
+}
+/* the cards' scrim: a soft upper-centred ellipse behind the row only, riding --k4 */
+.sights-slider::before {
+  content: ""; position: absolute; left: -10vw; right: -10vw; top: -30vh; bottom: -16vh; z-index: -1; pointer-events: none;
+  background: radial-gradient(ellipse 56% 52% at 42% 44%, rgba(var(--scrim-rgb), .45) 0%, rgba(var(--scrim-rgb), .3) 46%, rgba(var(--scrim-rgb), 0) 76%);
+  opacity: var(--k4, 1);
+}
+.sights-track {
+  display: flex; gap: 24px; align-items: stretch; padding: 8px 0 12px;
+  transform: translate3d(calc(var(--sights-shift, 0px) + var(--sights-drag, 0px) + var(--track-lead)), 0, 0);
+  transition: transform var(--dur-slide) var(--ease-out-expo); will-change: transform;
+  touch-action: pan-y; cursor: grab;
+}
+.sights-track.is-jumping, .sights-track.is-dragging { transition: none; }
+.sights-track.is-dragging { cursor: grabbing; }
+
+.sight-card {
+  position: relative; flex: 0 0 clamp(320px, 22vw, 380px); min-height: 248px; padding: 32px;
+  display: flex; flex-direction: column;
+  background: var(--panel-tint); border: 1px solid transparent; border-radius: var(--br-16);
+  box-shadow: var(--shadow-hairline); color: var(--text-primary);
+  user-select: none; cursor: pointer;
+  transform: scale(.96);
+  transition: transform var(--dur-slide) var(--ease-out-expo), background-color var(--dur-hover) ease-in-out, border-color var(--dur-hover) ease-in-out, box-shadow var(--dur-hover) ease-in-out;
+}
+.sight-card.is-active {
+  transform: none; cursor: default;
+  background: var(--panel); border-color: var(--swatch-slate-faded-10); box-shadow: var(--light-edge), var(--shadow-card);
+}
+@media (hover: hover) {
+  .sight-card:not(.is-active):hover { border-color: var(--swatch-slate-faded-20); }
+}
+.sight-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: auto; }
+.sight-icon {
+  flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: var(--br-8);
+  background: var(--cost-tint); color: var(--text-primary);
+  transition: background-color var(--dur-hover) ease-in-out, color var(--dur-hover) ease-in-out;
+}
+.sight-card.is-active .sight-icon { background: var(--color-gray-950); color: var(--color-gray-050); }
+.sight-card.tone-cost.is-active .sight-icon { background: var(--cost); color: var(--color-gray-950); box-shadow: inset 0 0 0 1px var(--cost-edge); }
+.sight-card.tone-depth.is-active .sight-icon { background: var(--depth); color: var(--color-gray-050); }
+.sight-card h3 {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 8px; margin: 24px 0 0;
+  color: var(--text-secondary); font: 400 15px/1.6 var(--font-sans);
+  --th: calc(var(--n, 0) * .1);
+  --kc: clamp(0, (var(--k4, 1) - var(--th)) * 2.4, 1);
+  opacity: var(--kc); transform: translate3d(0, calc((1 - var(--kc)) * 8px), 0);
+}
+.sight-num {
+  display: inline-block; color: var(--text-primary);
+  font: 400 var(--headline-1)/1.3 var(--font-mono); font-variant-numeric: var(--num);
+}
+.sight-card p {
+  margin: 12px 0 0; padding-top: 12px; border-top: 1px solid var(--border-tertiary);
+  color: var(--text-tertiary); font: 400 15px/1.6 var(--font-sans);
+  display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2;   /* the one intentional clamp */
+}
+
+/* ---------- carousel controls: Prev / Next as Button tertiary size-large, the pagination
+   pill with 6px dots and a 28x6 ink dash whose 6.5s linear fill is the autoplay clock (band
+   4's living element; it has its Pause control), the count in mono, Pause / Play on GLASS.
+   Mistral dash pagination https://mobbin.com/sites/sections/fc0d02b9-2df2-4539-8819-51c2d1e0bf64 ---------- */
+.sights-controls {
+  z-index: 13; left: var(--track-lead); right: auto;
+  top: calc(var(--sights-screen-top) + 300px);
+  display: flex; align-items: center; gap: 10px;
+  opacity: var(--sights-controls-opacity);
+  pointer-events: none; visibility: hidden; will-change: opacity;
+}
+.sights-controls.is-ready { pointer-events: auto; visibility: visible; }
+.sight-nav { position: relative; width: 40px; min-width: 40px; padding: 0; }
+.sight-nav:focus-visible { outline: 2px solid var(--color-gray-950); outline-offset: 2px; }
+.sight-dots {
+  display: flex; align-items: center; gap: 2px; height: 40px; padding: 0 8px;
+  border-radius: var(--br-8); background: var(--canvas); box-shadow: 0 0 0 1px var(--border-secondary);
+}
+.sight-dot-set { display: flex; align-items: center; }
+/* 24x24 targets (WCAG 2.5.8) around 6px marks. */
+.sight-dot {
+  display: grid; place-items: center; width: 24px; height: 24px; padding: 0;
+  border-radius: var(--radius-full); background: none; cursor: pointer;
+}
+.sight-dot.is-on { width: 40px; }
+.sight-dot::before, .sight-dot::after { grid-area: 1 / 1; }
+.sight-dot::before {
+  content: ""; width: 6px; height: 6px; border-radius: var(--radius-full); background: var(--color-gray-500);
+  transition: width var(--dur-transform) var(--ease-out-expo), background-color var(--dur-transform);
+}
+.sight-dot:hover::before { background: var(--color-gray-950); }
+.sight-dot.is-on::before { width: 28px; background: var(--color-gray-950); }
+.sight-dot::after {
+  content: ""; width: 28px; height: 6px; border-radius: var(--radius-full); background: var(--color-gray-950);
+  transform-origin: 0 50%; opacity: 0;
+}
+.sight-dot.is-on::after { opacity: 1; }
+.sights-controls.is-playing .sight-dot.is-on::before { background: var(--color-gray-300); }
+.sights-controls.is-playing .sight-dot.is-on::after { animation: sight-dash-fill var(--t-dwell) linear both; }
+.sights-controls.is-paused .sight-dot.is-on::after { animation-play-state: paused; }
+.sights-controls:not(.is-playing) .sight-dot.is-on::after { transform: none; }
+@keyframes sight-dash-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes sight-dash-hold { from { opacity: 1; } to { opacity: 1; } }
+.sight-dot:focus-visible { outline: 2px solid var(--accent-focus); outline-offset: 0; }
+.sight-count {
+  min-width: 56px; padding: 0 2px 0 8px; color: var(--text-tertiary); text-align: right;
+  font: 400 15px/1.6 var(--font-mono); font-variant-numeric: var(--num);
+}
+.sight-count-vis { display: inline-block; }
+.sight-count-vis.is-rolling { animation: sight-count-in .32s var(--ease-out-expo); }
+@keyframes sight-count-in { from { opacity: 0; transform: translateY(45%); } }
+.sight-play { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 8px 14px; cursor: pointer; }
+.sight-play[hidden] { display: none; }
+.sight-play svg { display: block; flex: none; }
+.sight-play[data-state="playing"] :is(.ico-play, .sight-play-l--play), .sight-play[data-state="paused"] :is(.ico-pause, .sight-play-l--pause) { display: none; }
+
+/* =========================================================================================
+   TOOLTIPS on icon-only controls: the anchor's tooltip material. Hoverable (part of its
+   control), Esc dismisses (script.js).
+   ========================================================================================= */
+[data-tip]::after {
+  content: attr(data-tip); position: absolute; left: 50%; bottom: calc(100% + 8px); z-index: 20;
+  padding: 4px 8px; border: 1px solid var(--border-tertiary); border-radius: var(--br-8);
+  background: var(--canvas); box-shadow: var(--shadow-md);
+  color: var(--text-primary); font: 500 12px/1.6 var(--font-sans); white-space: nowrap; letter-spacing: 0;
+  transform: translateX(-50%); translate: 0 4px;
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transition: opacity var(--dur-hover) var(--ease-out-power2), translate var(--dur-hover) var(--ease-out-power2), visibility 0s var(--dur-hover);
+}
+@media (hover: hover) {
+  [data-tip]:hover::after {
+    opacity: 1; visibility: visible; translate: 0 0;
+    transition: opacity var(--dur-hover) var(--ease-out-power2) .25s, translate var(--dur-hover) var(--ease-out-power2) .25s, visibility 0s .25s;
+  }
+}
+[data-tip]:focus-visible::after {
+  opacity: 1; visibility: visible; translate: 0 0;
+  transition: opacity var(--dur-hover) var(--ease-out-power2), translate var(--dur-hover) var(--ease-out-power2), visibility 0s;
+}
+.tips-off [data-tip]::after { opacity: 0 !important; visibility: hidden !important; }
+
+/* =========================================================================================
+   STAGE CONTROLS on the bottom edge, all GLASS: the first-paint scroll cue (centre, gone on
+   the first scroll), "Skip the story" (right) and "Pause motion" (left). Hidden under 640px,
+   where the static layout has nothing to skip.
+   AI in Design Report 2026 "Scroll to read" https://mobbin.com/sites/sections/2da0d1b2-6107-40bd-a82d-e6ec7805141c
+   Research floating skip control https://mobbin.com/sites/sections/d0ea8855-f290-486c-a4ba-7a1f9515d308
+   ========================================================================================= */
+.scroll-cue { position: absolute; left: 0; right: 0; bottom: 20px; z-index: 14; display: flex; justify-content: center; pointer-events: none; }
+.scroll-cue-pill {
+  display: inline-flex; align-items: center; gap: 10px; padding: 8px 10px 8px 16px;
+  --kc: clamp(0, (var(--k1, 1) - .9) * 10, 1);
+  opacity: var(--kc); transform: translate3d(0, calc((1 - var(--kc)) * 8px), 0);
+}
+.scroll-cue-pill i { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; box-shadow: inset 0 0 0 1px var(--border-secondary); }
+.scroll-cue-pill svg { display: block; animation: cue-nudge 1.6s ease-in-out 3.1s 3; }
+@keyframes cue-nudge { 50% { transform: translateY(3px); } }
+.scroll-cue.is-gone { opacity: 0; visibility: hidden; transition: opacity .28s var(--ease-in-quart), visibility 0s .28s; }
+.scroll-cue.is-off { display: none; }
+.skip-story, .pause-motion { position: absolute; bottom: 20px; z-index: 14; cursor: pointer; }
+.skip-story { right: 24px; }
+.pause-motion { left: 24px; }
+@media (max-width: 640px) { .scroll-cue, .skip-story, .pause-motion { display: none; } }
+
+/* =========================================================================================
+   WATCH IT WRITE (section.watch, ivory, in normal flow): a 5/7 split under the drawn arch,
+   the panel under its crown. No opaque ground: the environment layer (grain, dusk glow,
+   river glow) shows through for the first time here. Reveal off data-reveal: the copy rises
+   20px .75s at 80ms stagger, the arch draws (shared.css), then the panel rises under the
+   crown. The crown's clay glow breathes once the model is loaded (.is-lit, script.js).
+   ElevenLabs inline try-it panel https://mobbin.com/sites/sections/81b76dd7-5da7-4ac6-9292-c87381d07dc0
+   Claude "Talk to Claude" card pair https://mobbin.com/sites/sections/4f7ea41a-06c5-4e55-9100-774fc0fc6d18
+   ========================================================================================= */
+.watch { position: relative; padding-block: var(--section-main); }
+.watch-inner {
+  display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 48px 64px; align-items: center;
+  max-width: calc(var(--container) + 2 * var(--page-margin)); margin: 0 auto; padding: 0 var(--page-margin);
+}
+.watch-kicker { margin: 0; }
+.watch-head {
+  margin: 20px 0 0; max-width: 12ch; color: var(--text-primary);
+  font: 400 var(--display-2)/1.1 var(--font-display); font-variation-settings: var(--font-opsz); letter-spacing: 0;
+}
+.watch-lede { margin: 24px 0 0; max-width: 44ch; color: var(--text-secondary); font: 400 var(--body-1)/1.6 var(--font-sans); }
+.watch-honest { margin: 16px 0 0; max-width: 44ch; color: var(--text-tertiary); font: 400 15px/1.6 var(--font-sans); }
+.watch-link { margin: 16px 0 0; font: 500 15px/1.6 var(--font-sans); }
+.watch-link a, .wp-note a { color: var(--text-primary); text-decoration: underline; text-underline-offset: .15em; text-decoration-color: var(--color-gray-400); transition: text-decoration-color var(--dur-hover) ease-in-out; }
+.watch-link a:hover, .wp-note a:hover { text-decoration-color: currentColor; }
+.js .watch .watch-copy > * { transition: opacity var(--reveal-duration) var(--ease-out-power2), transform var(--reveal-duration) var(--ease-out-power2); }
+.js .watch .watch-copy > :nth-child(2) { transition-delay: var(--stagger); }
+.js .watch .watch-copy > :nth-child(3) { transition-delay: calc(2 * var(--stagger)); }
+.js .watch .watch-copy > :nth-child(4) { transition-delay: calc(3 * var(--stagger)); }
+.js .watch .watch-copy > :nth-child(5) { transition-delay: calc(4 * var(--stagger)); }
+.js .watch:not(.is-in) .watch-copy > * { opacity: 0; transform: translate3d(0, 20px, 0); }
+/* The stagger sits on the paragraphs, not on the link inside them, so no hover ever lags. */
+
+.watch-stage { position: relative; padding-top: clamp(96px, 14vw, 180px); }
+.watch-arch { position: absolute; left: -3%; right: -3%; top: 0; z-index: 0; height: clamp(150px, 24vw, 260px); }
+.watch-panel {
+  position: relative; z-index: 1; padding: 24px;
+  transition: opacity var(--reveal-duration) var(--ease-out-power2) .9s, transform var(--reveal-duration) var(--ease-out-power2) .9s;
+}
+.js .watch:not(.is-in) .watch-panel { opacity: 0; transform: translate3d(0, 20px, 0); }
+.watch-prov { margin: 12px 4px 0; color: var(--text-tertiary); font: 400 12px/1.6 var(--font-mono); font-variant-numeric: var(--num); overflow-wrap: anywhere; }
+
+/* ---------- the compact playground ---------- */
+.wp-kind { margin: 4px 0 0; color: var(--text-tertiary); font: 400 14px/1.5 var(--font-sans); }
+.wp-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 12px; }
+.wp-title { margin: 0; color: var(--text-primary); font: 400 var(--headline-5)/1.2 var(--font-display); font-variation-settings: var(--font-opsz); }
+.wp-backend { transition: opacity var(--dur-transform) ease-in-out; }
+.wp-presets { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.wp-presets .chip--tab { flex: 0 1 auto; max-width: 100%; height: auto; min-height: 36px; padding-block: 6px; text-align: left; white-space: normal; }
+/* the four preset chips fill 80ms apart when the model is ready: the load's reward */
+.watch-panel[data-state="ready"] .wp-presets .chip--tab { animation: preset-fill .4s ease-in-out backwards; }
+.watch-panel[data-state="ready"] .wp-presets .chip--tab:nth-child(2) { animation-delay: var(--stagger); }
+.watch-panel[data-state="ready"] .wp-presets .chip--tab:nth-child(3) { animation-delay: calc(2 * var(--stagger)); }
+.watch-panel[data-state="ready"] .wp-presets .chip--tab:nth-child(4) { animation-delay: calc(3 * var(--stagger)); }
+@keyframes preset-fill { 0% { background: transparent; color: var(--text-primary); } 50% { background: var(--color-gray-950); color: var(--color-gray-050); } 100% { background: transparent; color: var(--text-primary); } }
+/* the composer: box and controls are one raised object; the focus ring sits on the object
+   (the same anatomy as playground.css .pg-composer on the explorer) */
+.wp-composer {
+  margin-top: 12px; border: 1px solid transparent; border-radius: var(--br-16); background: var(--panel);
+  box-shadow: 0 0 0 1px var(--border-secondary), 0 1px 2px #0000000a, 0 12px 28px -16px #00000029;
+  transition: box-shadow var(--dur-hover) ease-in-out;
+}
+.wp-composer:hover { box-shadow: 0 0 0 1px var(--border-primary), 0 1px 2px #0000000a, 0 12px 28px -16px #00000029; }
+.wp-composer:focus-within { box-shadow: 0 0 0 1px var(--border-strong), 0 1px 2px #0000000a, 0 16px 32px -16px #00000033; }
+.wp-composer:has(.wp-prompt:focus-visible) { outline: 2px solid var(--accent-focus); outline-offset: 3px; }
+.wp-composer:has(.wp-prompt:disabled) { background: var(--well); box-shadow: 0 0 0 1px var(--border-tertiary); }
+.wp-prompt {
+  display: block; width: 100%; margin: 0; padding: 14px 16px 4px;
+  border: 0; border-radius: var(--br-16) var(--br-16) 0 0; background: transparent;
+  color: var(--text-primary); font: 400 var(--body-2)/1.6 var(--font-sans); resize: none;
+}
+.wp-prompt::placeholder { color: var(--text-tertiary); }
+@supports selector(:has(*)) { .wp-prompt:focus-visible { outline: none; } }
+.wp-prompt:disabled { color: var(--text-disabled); cursor: not-allowed; }
+.wp-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px 12px; min-height: 40px; padding: 8px 8px 8px 16px; }
+.wp-progress { display: flex; flex: 1 1 220px; align-items: center; gap: 12px; order: -1; }
+.wp-progress[hidden] { display: none; }
+.wp-bar { position: relative; flex: 1 1 auto; height: 8px; border-radius: var(--radius-full); background: var(--color-gray-200); overflow: hidden; overflow: clip; }
+.wp-bar i { display: block; height: 100%; background: var(--color-gray-950); transform-origin: left; transform: scaleX(var(--p, 0)); }
+.wp-bar-text { flex: none; color: var(--text-tertiary); font: 400 12px/1.6 var(--font-mono); font-variant-numeric: var(--num); }
+.wp-tokens { order: -1; margin-right: auto; color: var(--text-tertiary); font: 400 13px/1.6 var(--font-mono); font-variant-numeric: var(--num); }
+.wp-note { margin-top: 12px; color: var(--text-tertiary); font: 400 13px/1.6 var(--font-sans); }
+.wp-note[hidden] { display: none; }
+.wp-note p { margin: 0; }
+.wp-note p + p { margin-top: 4px; }
+.wp-note-title { color: var(--text-primary); font-weight: 500; }
+.wp-model { font: 400 12px/1.6 var(--font-mono); font-variant-numeric: var(--num); }
+.wp-out { position: relative; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-tertiary); }
+.wp-out[hidden] { display: none; }
+.wp-out-label { display: block; color: var(--text-tertiary); font: 500 12px/1.6 var(--font-sans); letter-spacing: var(--tracking-label); }
+.wp-echo { margin: 8px 0 0; padding: 12px 16px; border-radius: var(--br-8); background: var(--well); color: var(--text-secondary); font: 400 15px/1.6 var(--font-mono); white-space: pre-wrap; overflow-wrap: anywhere; }
+.wp-echo[hidden] { display: none; }
+.wp-cont {
+  margin: 12px 0 0; min-height: 3.2em; color: var(--text-primary);
+  font: 400 var(--body-1)/1.65 var(--font-display); white-space: pre-wrap; overflow-wrap: anywhere;
+}
+.wp-empty { color: var(--text-tertiary); font: 400 15px/1.6 var(--font-sans); }
+.wp-echo-in { color: var(--text-tertiary); }
+.wp-gen { background: color-mix(in srgb, var(--color-oat) 70%, transparent); border-radius: 3px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.wp-gen:empty { background: none; }
+/* the caret: 1ch of ink at the end of the stream, opacity only, hidden under reduced motion */
+.wp-caret { display: inline-block; width: .5ch; height: 1em; margin-left: 2px; vertical-align: -.12em; background: var(--accent); animation: caret 1s steps(2, jump-none) infinite; }
+@keyframes caret { from { opacity: 1; } to { opacity: 0; } }
+.wp-copy { position: absolute; right: 0; top: 12px; }
+.wp-copy[hidden] { display: none; }
+.wp-foot { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 16px; margin-top: 16px; }
+.wp-summary { margin: 0; color: var(--text-tertiary); font: 400 12px/1.6 var(--font-mono); font-variant-numeric: var(--num); }
+.wp-settings { flex: 1 0 100%; }
+.wp-settings summary { display: inline-block; padding: 4px 0; color: var(--text-primary); font: 500 13px/1.6 var(--font-sans); cursor: pointer; }
+.wp-settings summary::marker { color: var(--text-tertiary); }
+.wp-fields { margin-top: 8px; }
+.wp-fields > p { margin: 16px 0 0; }
+.wp-field { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "label label" "range num"; align-items: center; gap: 4px 12px; margin-top: 12px; }
+.wp-field label { grid-area: label; color: var(--text-secondary); font: 500 13px/1.6 var(--font-sans); }
+.wp-field input[type="range"] { grid-area: range; }
+.wp-field input[type="number"] { grid-area: num; }
+.wp-field--seed { grid-template-areas: "label label" "num switch"; grid-template-columns: auto minmax(0, 1fr); }
+.wp-field--seed .wp-switch { grid-area: switch; }
+/* slider: 4px 1000px track, ink fill to --pct, 16px white thumb ringed 1.5px ink (24px under coarse) */
+.wp-field input[type="range"] {
+  -webkit-appearance: none; appearance: none; width: 100%; height: 4px; margin: 10px 0; border-radius: 1000px; cursor: pointer;
+  background: linear-gradient(to right, var(--color-gray-950) var(--pct, 50%), var(--color-gray-250) var(--pct, 50%));
+}
+.wp-field input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 1.5px var(--color-gray-950); border: 0; }
+.wp-field input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 1.5px var(--color-gray-950); border: 0; }
+.wp-field input[type="range"]::-moz-range-progress { background: var(--color-gray-950); height: 4px; border-radius: 1000px; }
+.wp-field input[type="number"] {
+  width: 9ch; height: 36px; padding: 6px 8px; border: 1px solid var(--border-primary); border-radius: var(--br-8);
+  background: var(--panel); color: var(--text-primary); text-align: right;
+  font: 400 15px/1.6 var(--font-mono); font-variant-numeric: var(--num);
+}
+.wp-switch { display: inline-flex; align-items: center; gap: 10px; color: var(--text-secondary); font: 500 13px/1.6 var(--font-sans); cursor: pointer; }
+.wp-switch input { position: absolute; width: 1px; height: 1px; margin: -1px; clip-path: inset(50%); }
+.wp-switch-track { position: relative; display: inline-block; flex: none; width: 36px; height: 20px; border-radius: 10px; background: var(--panel-tint); box-shadow: inset 0 0 0 1px var(--border-primary); transition: background-color var(--dur-hover) ease-in-out; }
+.wp-switch-track::after { content: ""; position: absolute; left: 2px; top: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: var(--shadow-hairline); transition: transform var(--dur-hover) ease-in-out; }
+.wp-switch input:checked + .wp-switch-track { background: var(--color-gray-950); box-shadow: none; }
+.wp-switch input:checked + .wp-switch-track::after { transform: translateX(16px); }
+.wp-switch input:focus-visible + .wp-switch-track { outline: 2px solid var(--accent-focus); outline-offset: 2px; }
+/* the decoding preset (the explorer's playground.css .pg-seg, same anatomy): four segments in a
+   sunken track, the checked one raised, two by two on a phone; then the plain-words help */
+.wp-mode { margin-top: 12px; }
+.wp-mode-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.wp-mode-lbl { color: var(--text-secondary); font: 500 13px/1.6 var(--font-sans); }
+.wp-mode-name { color: var(--text-primary); font: 500 13px/1.6 var(--font-sans); }
+.wp-seg { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2px; margin-top: 8px; padding: 3px; border-radius: var(--br-8); background: var(--well); box-shadow: inset 0 0 0 1px var(--border-tertiary); }
+.wp-seg-opt { position: relative; display: block; min-width: 0; cursor: pointer; }
+.wp-seg-opt input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.wp-seg-opt span { display: block; padding: 6px 0; border-radius: 6px; color: var(--text-tertiary); font: 500 13px/1.4 var(--font-sans); text-align: center; white-space: nowrap; transition: background-color var(--dur-hover) ease-in-out, color var(--dur-hover) ease-in-out; }
+.wp-seg-opt:hover span { color: var(--text-primary); }
+.wp-seg-opt input:checked + span { background: var(--panel); color: var(--text-primary); box-shadow: 0 0 0 1.5px var(--border-strong), 0 1px 2px #0000000f; }   /* ink ring: the white pill alone was 1.1:1 on the well (WCAG 1.4.11) */
+.wp-seg-opt input:focus-visible + span { outline: 2px solid var(--accent-focus); outline-offset: 1px; }
+@media (forced-colors: active) { .wp-seg-opt input:checked + span { outline: 2px solid Highlight; outline-offset: -2px; } }
+@media (max-width: 520px) { .wp-seg { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.wp-help { margin: 4px 0 0; color: var(--text-tertiary); font: 400 12px/1.6 var(--font-sans); }
+.wp-fields > p.wp-help { margin: 12px 0 0; }
+.wp-unlimited { margin-top: 12px; }
+.wp-badge { display: inline-block; margin-left: 4px; padding: 0 8px; border-radius: 999px; background: var(--color-oat); color: var(--text-primary); font: 500 11px/1.7 var(--font-sans); white-space: nowrap; }
+.wp-guards { margin-top: 12px; }
+.wp-guards-head { color: var(--text-primary); font-weight: 500; }
+.wp-guard-list { margin: 4px 0 0; padding-left: 1.1em; color: var(--text-tertiary); font: 400 12px/1.6 var(--font-sans); }
+.wp-guard-list li + li { margin-top: 2px; }
+.wp-guard-list strong { color: var(--text-primary); font-weight: 500; }
+.wp-field input:disabled { opacity: .45; cursor: not-allowed; }
+@media (pointer: coarse) {
+  .wp-seg-opt span { padding: 11px 0; }
+  .wp-field input[type="range"]::-webkit-slider-thumb { width: 24px; height: 24px; }
+  .wp-field input[type="range"]::-moz-range-thumb { width: 24px; height: 24px; }
+}
+
+/* =========================================================================================
+   CLOSING BAND (slate, .theme-dark from shared.css): a centred statement over an inset media
+   card where the photo returns once, its sky and city drifting on the rig; the facts as dark
+   chips under the card. The em "depth." takes a 2px olive underline drawn 600ms after the
+   words land. Twelve ivory motes over the slate at whisper level.
+   Claude closing band https://mobbin.com/sites/sections/b57caba5-806d-4586-9fcb-8867e90f6186
+   OpenAI inset media card hero https://mobbin.com/sites/sections/1a607132-9eb2-493e-961b-39c4f67eb3fb
+   ========================================================================================= */
+.closing { padding-block: var(--section-main); color: var(--dark-text); }
+.closing .motes { position: absolute; inset: 0; z-index: 0; opacity: 1; }
+.closing .motes circle { opacity: .1; }
+.closing-copy { position: relative; z-index: 1; max-width: 920px; margin: 0 auto; padding: 0 var(--page-margin); text-align: center; }
+.closing-copy h2 {
+  margin: 0 auto; max-width: 20ch; color: var(--dark-text);
+  font: 400 var(--display-2)/1.1 var(--font-display); font-variation-settings: var(--font-opsz); letter-spacing: 0;
+  text-wrap: balance;
+}
+.closing-copy h2 em { font-style: normal; }
+.closing-copy p { margin: 24px auto 0; max-width: 60ch; color: var(--dark-text-2); font: 400 var(--body-1)/1.6 var(--font-sans); }
+.closing-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
+.closing-scene {
+  position: relative; z-index: 1; width: min(1180px, calc(100% - 2 * var(--page-margin))); margin: 64px auto 0;
+  aspect-ratio: 16 / 9; border-radius: var(--br-24); overflow: hidden; overflow: clip;
+  background: var(--dark-well); box-shadow: 0 0 0 1px var(--dark-border-faint);
+}
+.closing-sky {
+  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+  transform: translate3d(0, var(--close-sky-y, 0px), 0) scale(1.16); will-change: transform;
+}
+.closing-city {
+  position: absolute; left: 50%; bottom: -2%; width: 118%; max-width: none; height: auto; opacity: .72; mix-blend-mode: screen; pointer-events: none;
+  transform: translate3d(-50%, var(--close-city-y, 0px), 0);
+}
+.closing-bridge { position: absolute; left: 50%; bottom: 0; width: 100%; height: auto; pointer-events: none; transform: translateX(-50%); }
+.closing-chips { position: relative; z-index: 1; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: 1180px; margin: 24px auto 0; padding: 0 var(--page-margin); list-style: none; }
+.closing-chips b { font-weight: 500; font-family: var(--font-mono); font-variant-numeric: var(--num); }
+.closing-chips .chip { white-space: normal; text-align: center; }
+/* Entrances (hidden only under .js). The headline words rise 40ms apart, the underline
+   draws 600ms after they land, the rest of the copy follows at the stagger, the media card
+   fades over 1s, the chips 80ms apart. */
+.js .closing .closing-copy > :not(h2) { transition: opacity var(--reveal-duration) var(--ease-out-power2), transform var(--reveal-duration) var(--ease-out-power2); }
+.js .closing .closing-copy > p { transition-delay: .36s; }
+.js .closing .closing-copy > .closing-actions { transition-delay: .44s; }
+.js .closing:not(.is-in) .closing-copy > :not(h2) { opacity: 0; transform: translate3d(0, 20px, 0); }
+.js .closing #closeHead .wd { transition: opacity var(--reveal-duration) var(--ease-out-power2), transform var(--reveal-duration) var(--ease-out-power2); transition-delay: calc(var(--i) * 40ms); }
+.js .closing:not(.is-in) #closeHead .wd { opacity: 0; transform: translate3d(0, .4em, 0); }
+.closing #closeHead .wd[data-mark]::after { bottom: -.02em; transition: transform var(--dur-draw) var(--ease-grid-in) 1s; }
+.js .closing:not(.is-in) #closeHead .wd[data-mark]::after { transform: scaleX(0); }
+.js .closing .closing-scene { transition: opacity 1s ease-in-out .3s; }
+.js .closing:not(.is-in) .closing-scene { opacity: 0; }
+.js .closing .closing-chips > * { transition: opacity var(--reveal-duration) var(--ease-out-power2), transform var(--reveal-duration) var(--ease-out-power2); }
+.js .closing .closing-chips > :nth-child(2) { transition-delay: var(--stagger); }
+.js .closing .closing-chips > :nth-child(3) { transition-delay: calc(2 * var(--stagger)); }
+.js .closing .closing-chips > :nth-child(4) { transition-delay: calc(3 * var(--stagger)); }
+.js .closing:not(.is-in) .closing-chips > * { opacity: 0; transform: translate3d(0, 12px, 0); }
+
+/* =========================================================================================
+   FOOTER: the bar, the arch and the wordmark's size live in shared.css. This page only
+   choreographs the wordmark's letters (.bfw-l, split by script.js): fade + a small rise 40ms
+   apart on entry, no mask anywhere near the g's tail.
+   ========================================================================================= */
+.bfw, .bfw-word, .bfw-l, .bfw-g { display: inline-block; }
+.bfw-l { transition: opacity var(--reveal-duration) var(--ease-out-power2), transform var(--reveal-duration) var(--ease-out-power2); transition-delay: calc(.12s + var(--i) * 40ms); }
+.js .big-foot-word:not(.is-in) .bfw-l { opacity: 0; transform: translate3d(0, .12em, 0); }
+.foot-up { gap: 6px; }
+.foot-up svg { transition: transform var(--dur-hover) var(--ease-out-power2); }
+.foot-up:hover svg, .foot-up:focus-visible svg { transform: translateY(-2px); }
+
+/* =========================================================================================
+   RESPONSIVE
+   ========================================================================================= */
+@media (max-width: 1100px) {
+  .hero-title { top: max(96px, 15vh); }
+  .bridge-img { width: 138vw; }
+  .frame-two-img { width: 132vw; }
+  .story-panel { width: min(560px, 64vw); }
+  .sight-card { flex-basis: clamp(300px, 40vw, 360px); }
+}
+@media (max-width: 1023px) {
+  .story-panel-bridge { right: 48px; }
+  .story-panel-bazaar { left: 48px; }
+  .watch-inner { grid-template-columns: minmax(0, 1fr); gap: 40px; }
+  .watch-head { max-width: 16ch; }
+}
+@media (max-width: 991px) {
+  .story-panel-bridge { right: 32px; }
+  .story-panel-bazaar { left: 32px; }
+}
+@media (max-width: 900px) {
+  .sec-rail { display: none; }
+}
+@media (max-width: 832px) {
+  .panel-in { padding: 24px; }
+  .intro-card { padding: 16px; }
+  .facts { grid-template-columns: minmax(0, 1fr); }
+  .depth-stack { --stack-h: 130px; }
+  .watch-arch { height: 180px; }
+}
+@media (max-width: 640px) {
+  :root { --track-lead: 16px; }
+  .hero-title { top: max(84px, 13vh); }
+  .bridge-img { bottom: 2vh; width: 190vw; }
+  .frame-two-img { width: 176vw; }
+  .hero-tax-track { width: min(280px, 48vw); }
+  .intro-copy { bottom: 28px; width: min(640px, calc(100vw - 24px)); }
+  .intro-line { font-size: 22px; }
+  .hero-tags { gap: 6px; margin-top: 14px; }
+  .story-panel, .story-panel-bridge, .story-panel-bazaar { left: 12px; right: 12px; width: auto; }
+  .panel-in { padding: 20px; }
+  .story-panel h2, .h2-soft { font-size: 30px; }
+  .panel-body { font-size: 15px; }
+  .fact { min-height: 0; }
+  .depth-stack { --stack-h: 96px; }
+  .ds-cols { column-gap: 16px; }
+  .sights-track { gap: 12px; }
+  .sight-card { flex-basis: min(82vw, 330px); padding: 20px; }
+  .sight-num { font-size: 40px; }
+  .sights-controls { top: calc(var(--sights-screen-top) + 290px); flex-wrap: wrap; right: 16px; }
+  .closing-actions { flex-direction: column; align-items: stretch; max-width: 320px; margin-left: auto; margin-right: auto; }
+  .closing-scene { aspect-ratio: 4 / 3; border-radius: var(--br-16); }
+  .closing-chips { gap: 6px; }
+  .watch-panel { padding: 16px; }
+  .wp-copy { position: static; margin-top: 8px; }
+}
+/* Under 400px the controls row ran past the stage's clip; the counter is the part to lose. */
+@media (max-width: 400px) { .sight-count-vis { display: none; } }
+
+/* Panels in 561 to 700px-tall viewports: the pinned stage is still on, so the depth card
+   (kicker, h2, body, the stack, captions, the CTA) has to fit between the capsule band and the
+   bottom edge. Smaller type and tighter rhythm, nothing hidden. */
+@media (max-height: 700px) and (min-height: 561px) {
+  .panel-in { padding: 24px; }
+  .story-panel h2, .h2-soft { font-size: clamp(28px, 4.4vh, 36px); }
+  .panel-body { margin-top: 10px; font-size: 15px; }
+  .panel-kicker { margin-bottom: 10px; }
+  .facts { margin-top: 16px; }
+  .fact { min-height: 0; padding: 12px; }
+  .fact-fig { font-size: clamp(32px, 6vh, 44px); }
+  .depth-stack { --stack-h: 72px; margin-top: 12px; }
+  .ds-cap { margin-top: 6px; }
+  .note-button { margin-top: 14px; }
+  .hero-title { top: max(80px, 12vh); }
+}
+/* A phone held upright but short (375x667): the two fact tiles sit side by side again so the
+   budget card clears the capsule band. */
+@media (max-width: 640px) and (max-height: 700px) {
+  .facts { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .fact dd { font-size: 13px; }
+  .fact-fig { font-size: 36px; }
+}
+
+/* =========================================================================================
+   STATIC LAYOUT (WCAG 1.4.4 / 1.4.10): under 560px of height (a landscape phone, or 1366x900
+   at 200% zoom) the pinned 100vh stage cannot show the panels before they fade, so the stage
+   unpins and every panel sits in normal flow at full opacity; the photo becomes the band's
+   background. script.js stops driving the rig in this mode. The same layout serves a visitor
+   without scripts (html:not(.js)), whose rig would otherwise never write a value.
+   ========================================================================================= */
+@media (max-height: 560px) {
+  .cinema-scroll { height: auto; }
+  .stage {
+    position: relative; height: auto; min-height: 0;
+    display: flex; flex-direction: column; align-items: center; gap: 24px;
+    padding: calc(var(--header-band) + 24px) 16px 40px;
+  }
+  .stage::before { display: none; }
+  .world, .back-stack { position: static; inset: auto; transform: none; opacity: 1; overflow: visible; }
+  .world { width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 16px; background: none; }
+  .back-stack { width: 100%; }
+  .back-four, .back-bazaar, .splitframe-img, .frame-two-img, .shade, .scroll-cue, .skip-story, .pause-motion,
+  .motes, .band-scrim, .stage-grain, .h2-soft { display: none; }
+  .sky-img { position: absolute; inset: 0; transform: none; filter: none; }
+  .bridge-img { position: absolute; bottom: 0; transform: translateX(-50%); width: min(120vw, 1400px); }
+  .hero-title, .intro-copy, .story-panel, .sights-slider, .sights-controls {
+    position: relative; left: auto; right: auto; top: auto; bottom: auto; z-index: 10;
+    transform: none; opacity: 1; visibility: visible;
+  }
+  .hero-title { width: 100%; }
+  .intro-copy { width: min(640px, 100%); }
+  .story-panel { width: min(640px, 100%); pointer-events: auto; scroll-margin-top: calc(var(--header-band) + 16px); }
+  .story-panel-bazaar .panel-in { transform: none; }
+  .sights-slider { width: 100%; }
+  .sights-slider::before { display: none; }
+  /* The reduced-motion block below sets the slider's opacity from --sights-opacity, and in
+     this mode script.js never writes it, so without this the cards were invisible for an
+     iOS Reduce Motion reader in landscape. Every --k is assembled here too. */
+  .stage { --sights-opacity: 1; --k1: 1; --k2: 1; --k3: 1; --k4: 1; }
+  .sights-track { --track-lead: 0px; }
+  .sights-controls { pointer-events: auto; }
+  .sec-rail, .chap-flag { display: none; }
+}
+html:not(.js) .cinema-scroll { height: auto; }
+html:not(.js) .stage {
+  position: relative; height: auto; min-height: 0;
+  display: flex; flex-direction: column; align-items: center; gap: 24px;
+  padding: calc(var(--header-band) + 24px) 16px 40px;
+}
+html:not(.js) .stage::before { display: none; }
+html:not(.js) :is(.world, .back-stack) { position: static; inset: auto; transform: none; opacity: 1; overflow: visible; }
+html:not(.js) .world { width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 16px; background: none; }
+html:not(.js) .back-stack { width: 100%; }
+html:not(.js) :is(.back-four, .back-bazaar, .splitframe-img, .frame-two-img, .shade, .scroll-cue, .skip-story, .pause-motion, .motes, .band-scrim, .stage-grain, .h2-soft, .sights-controls, .sec-rail, .chap-flag, .dawn-veil) { display: none; }
+html:not(.js) .sky-img { position: absolute; inset: 0; transform: none; filter: none; }
+html:not(.js) .bridge-img { position: absolute; bottom: 0; transform: translateX(-50%); width: min(120vw, 1400px); }
+html:not(.js) :is(.hero-title, .intro-copy, .story-panel, .sights-slider) {
+  position: relative; left: auto; right: auto; top: auto; bottom: auto; z-index: 10;
+  transform: none; opacity: 1; visibility: visible;
+}
+html:not(.js) .hero-title { width: 100%; }
+html:not(.js) .intro-copy { width: min(640px, 100%); }
+html:not(.js) .story-panel { width: min(640px, 100%); pointer-events: auto; }
+html:not(.js) .story-panel-bazaar .panel-in { transform: none; }
+html:not(.js) .sights-slider { width: 100%; }
+html:not(.js) .sights-slider::before { display: none; }
+html:not(.js) .sights-track { --track-lead: 0px; flex-wrap: wrap; justify-content: center; transform: none; }
+html:not(.js) .sight-card { transform: none; background: var(--panel); }
+
+/* =========================================================================================
+   REDUCED MOTION, the last block so equal-specificity overrides win (WCAG 2.3.3). Every
+   translate and scale becomes an opacity fade or the final state; colour, ring and tint
+   changes stay. The scroll-linked 2px progress fills stay (the reader drives them like a
+   scrollbar). script.js damps the rig's large moves, pins every --k at 1 and zeroes the
+   pointer parallax; the [C0] clamp in shared.css shortens everything that remains.
+   ========================================================================================= */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  /* A: the environment and the living elements rest */
+  .motes, .stage-grain { display: none; }
+  .sec-rail, .sec-rail.has-current:not(.is-away) .rail-thumb, .hero-title.is-settled .hero-tax-fill::after,
+  .story-panel-bridge .panel-in::after, .story-panel-bazaar.is-built .ds-top::before, .scroll-cue-pill svg,
+  .sight-count-vis.is-rolling, .watch-panel[data-state="ready"] .wp-presets .chip--tab, .wp-caret { animation: none; }
+  .hero-title.is-settled .hero-tax-fill::after { opacity: .6; }
+  .sec-rail { transform: translateY(-50%); }
+  .js.scene-open .dawn-veil { animation-duration: .4s; }
+  .wp-caret { display: none; }
+  /* B: every --k-driven part sits assembled and untransformed */
+  .hero-kicker > *, .hero-tax, .intro-card, .js .intro-line .wd, .hero-tags .tag,
+  .story-panel-bridge :is(.panel-kicker, h2, .panel-body, .facts),
+  .story-panel-bazaar :is(.panel-kicker, h2, .panel-body, .depth-stack, .note-button),
+  .js .story-panel h2 .wd, .sight-card h3, .scroll-cue-pill { opacity: 1; transform: none; }
+  .js .intro-line .wd[data-mark]::after { transform: none; }
+  .story-panel-bazaar .panel-in { transform: none; }
+  .h2-soft { display: none; }
+  .odo-reel { transition: none; }
+  /* C: draws and builds become fades, no stagger beyond 20ms */
+  .hero-tax-fill, .fact-fill, .fact-ghost, .ds-embed::before, .ds-layer, .ds-cap strong, .ds-extra em,
+  .story-panel-bazaar :is(.ds-head, .ds-frame, .ds-cap span, .ds-embed b) { transition: opacity .3s linear; transition-delay: 0ms; }
+  .js .hero-title:not(.is-settled) .hero-tax-fill { transform: none; opacity: 0; }
+  .js .story-panel-bridge:not(.is-counted) .fact-fill { transform: none; opacity: 0; }
+  .js .story-panel-bazaar:not(.is-built) :is(.ds-layer, .ds-cap strong) { transform: none; }
+  .js .story-panel-bazaar:not(.is-built) .ds-embed::before { transform: none; opacity: 0; }
+  .ds-extra path { transition: none; stroke-dashoffset: 0 !important; }
+  /* D: cards and controls */
+  .sight-card, .sight-card.is-active { transform: none; transition: background-color .2s, border-color .2s, box-shadow .2s; }
+  .sights-track { transition: none; }
+  .sight-dot::before, .sight-dot { transition-property: background-color, color, opacity, box-shadow; }
+  .sights-controls.is-playing .sight-dot.is-on::after { animation-name: sight-dash-hold; }
+  /* The cards fade in rather than fly 130vw (script.js writes the opacity). */
+  .sights-slider { opacity: var(--sights-opacity); }
+  [data-tip]::after, .sec-rail em { translate: none !important; }
+  .foot-up svg, .foot-up:hover svg, .foot-up:focus-visible svg { transform: none; }
+  /* E: the sections after the stage: opacity only, delays trimmed */
+  .js .watch .watch-copy > *, .watch-panel, .js .closing .closing-copy > :not(h2), .js .closing #closeHead .wd,
+  .js .closing .closing-chips > *, .bfw-l { transition: opacity .3s linear; transition-delay: 0ms; }
+  .js .watch:not(.is-in) .watch-copy > *, .js .watch:not(.is-in) .watch-panel,
+  .js .closing:not(.is-in) .closing-copy > :not(h2), .js .closing:not(.is-in) #closeHead .wd,
+  .js .closing:not(.is-in) .closing-chips > *, .js .big-foot-word:not(.is-in) .bfw-l { transform: none; }
+  .closing #closeHead .wd[data-mark]::after { transition: none; }
+  .closing-sky { transform: scale(1.16); }
+  .closing-city { transform: translateX(-50%); }
+  .wp-switch-track, .wp-switch-track::after, .wp-seg-opt span { transition: none; }
+}

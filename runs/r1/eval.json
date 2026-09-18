@@ -1,0 +1,22 @@
+{
+  "weights": "runs\\r1\\ckpt.pt",
+  "run": "r1",
+  "steps_completed": 14495,
+  "val_loss": 3.1275524348020554,
+  "params": 49296896,
+  "limit": null,
+  "harness": "lm-evaluation-harness 0.4.9",
+  "note": "wikitext word_perplexity and bits_per_byte are normalised per word and per byte, so they compare across tokenizers; per-token perplexity would not.",
+  "results": {
+    "arc_easy.acc": 0.4595959595959596,
+    "arc_easy.acc_norm": 0.4031986531986532,
+    "hellaswag.acc": 0.27813184624576776,
+    "hellaswag.acc_norm": 0.2870942043417646,
+    "piqa.acc": 0.602829162132753,
+    "piqa.acc_norm": 0.5843307943416758,
+    "wikitext.bits_per_byte": 1.1266882116016594,
+    "wikitext.byte_perplexity": 2.183569137906484,
+    "wikitext.word_perplexity": 65.11461992788433,
+    "winogrande.acc": 0.5098658247829518
+  }
+}

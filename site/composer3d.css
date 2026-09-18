@@ -1,0 +1,240 @@
+/* =========================================================================================
+   composer3d.css: the composer as a glass object standing inside the Mostar photograph.
+   Loaded after home.css. Markup: .c3d > .c3d-tilt around the tabs and both panels, one
+   .c3d-sheen span per panel, the #c3d-lens SVG at the end of <body>, and a .par wrapper around
+   each camera-driven scene layer. composer3d.js adds:
+     html.c3d-on    fine pointer + motion allowed: pointer parallax and tilt run
+     html.c3d-3d    Chromium + GPU compositing: the tilt is a real rotateX/rotateY (else 2D only)
+     html.c3d-lens  Chromium + GPU compositing: SVG edge refraction while the object is at rest
+   Without JS, on touch and under reduced motion the object is still lit, thick and shadowed;
+   it just does not move.
+
+   OWNERSHIP, so nothing fights the zoom-through camera (home.js):
+     camera   transform on .cam, .zt-hero, .zt-chap (through custom properties)
+     pointer  transform on .par and .c3d-tilt (composer3d.js writes them directly);
+              translate on the sheen, the knob, Write and the shadow (through --mx/--my)
+   The glass itself (tilt, sheen, knob, Write, shadow) moves only while the camera rests
+   (html.zt-rest): it stands straight the frame the camera starts and eases back in when the camera
+   settles on the first screen again. The scene parallax runs through the scroll before the camera
+   starts and fades to zero over the first 12% of a screen of camera travel, so by the time the
+   hero is half faded nothing of this moves any more.
+
+   SCENE LIGHT, measured from the scene layers at 1440x900:
+     key     warm sun from the upper left (surfaces facing left are 1.35-2.7x brighter than
+             surfaces facing right); on screen it arrives ~45deg above horizontal
+             sunlit stone #ddcec4, sunlit ochre drum #f1d1ae   -> rim + sheen rgba(255,248,236)
+     shade   warm brown, never navy: deep shade #403425, stone shade #504235 -> rgba(52,40,28)
+     sky     #a2c7e2 zenith, #c5cfd9 inside the arch            -> far end of the cast shadow
+     bounce  lit stone #a89486, river #0e6f67 / sunlit water #81a58d -> lower-edge tints
+     horizon ~88% down the camera box (far waterline), so the composer is ABOVE eye level:
+             its underside shows and its shadow falls below it.
+   No transform-style: preserve-3d anywhere: backdrop-filter, opacity < 1 and will-change:
+   opacity all flatten it, and .composer carries all three. Raised parts get their depth from
+   light, shadow and a 2D parallax driven by the same eye.
+   ========================================================================================= */
+
+.c3d {
+  --tabs-h: 40px;                                   /* composer3d.js writes the real height */
+  --sun: 255, 248, 236;
+  --shade: 52, 40, 28;
+  position: relative;                               /* no z-index: the shadow below must join the hero's own stacking context */
+}
+/* registered so the hover change can ease with the shadow's own transform instead of stepping */
+@property --c3d-sh { syntax: '<number>'; inherits: false; initial-value: 1; }
+
+/* ---------- the scene moves with the eye, each layer at its own depth ----------
+   Card living between two layers of the scene, Craft https://mobbin.com/screens/8905c3cd-79d8-42a7-9f72-1abf0da18920
+   Depths are home.js's camera: sky 30, mountains 5, town 2.2, bridge 1.45, towers 1.25, hero UI 1.
+   The composer is the plane the eye rests on, just in front of the bridge and the towers: it holds
+   still (nothing you click drifts) and each layer behind it slides with the eye by 16px x (1 - 1/z),
+   60% of that vertically. Measured against the sky that is sky 0 < mountains < town < bridge <
+   towers < composer, the camera's own depth order. composer3d.js writes each wrapper's transform
+   (a translate, plus a small scale only while an edge would otherwise show); the camera keeps .cam. */
+.par { position: absolute; inset: 0; }
+/* promoted while the eye eases at rest, and for the whole time the zoom camera moves (home.js promotes each .cam
+   then too, so the wrappers hold no paint of their own and their fading slide never adds or drops a layer mid-zoom) */
+.scene.is-par .par, html.zt-on:not(.zt-rest) .par { will-change: transform; }
+
+/* ---------- ground: the shadow lands on the photo, under every glass surface ----------
+   z-index -1 puts it at the bottom of the hero's stacking context (the zoom camera's transform) or of
+   the page (static): above the scene, beneath the headline, the composer, the output card and the chips,
+   whose glass then blurs it like the rest of the photograph.
+   The object floats well above the valley (nothing in the photo sits right under it), so there is no
+   contact band: one distant, large shadow thrown down-right away from the sun, in the photo's warm shade
+   colour, showing past the glass on the lower and right sides.
+   Shadow darkening the background in its own hue, Linear https://mobbin.com/sites/sections/4600d041-2634-4e63-b635-b9f48c9f3ec0
+   Soft, low-contrast shadow for a card placed between scene layers, Craft https://mobbin.com/screens/8905c3cd-79d8-42a7-9f72-1abf0da18920
+   Softened by its own box-shadow, not filter: blur(): a filter is a render surface re-filtered every frame
+   the scaling hero moves it (measured: p99 12.5ms against 8.4ms without it); a box-shadow is painted once. */
+.c3d::before {
+  content: ""; position: absolute; z-index: -1; pointer-events: none;
+  left: 4%; right: 3%; top: 48%; bottom: 0; border-radius: 48px;
+  background: rgba(var(--shade), .50);
+  box-shadow: 0 0 40px 34px rgba(var(--shade), .50);   /* spread ~ blur: the fill runs into its own soft edge without a step */
+  translate: 26px 34px;                             /* the light offset, from the measured sun */
+  transform-origin: 50% 0;
+  opacity: calc(var(--ho, 1) * var(--c3d-sh));      /* --ho: home.js fades the hero's surfaces one by one; the shadow follows */
+  transition: transform .4s cubic-bezier(.22, 1, .36, 1), --c3d-sh .4s cubic-bezier(.22, 1, .36, 1);   /* never opacity itself: it would lag the scroll fade */
+}
+/* the shadow lies on the photo, so it slides with the bridge layer (5px x 3px) while the glass holds still */
+.c3d.is-tilted::before { translate: calc(26px + var(--mx, 0) * 5px) calc(34px + var(--my, 0) * 3px); }
+
+/* ---------- the tilt: one flat plane turning about the card's centre ----------
+   Small tilt that follows the room's perspective, Apple Vision Pro https://mobbin.com/sites/sections/994a7174-0caa-42a6-afad-c6fd677e4a19
+   composer3d.js writes transform: perspective(0.75 x camera width) rotateX(eye.y x 2.5deg)
+   rotateY(-eye.x x 3.5deg), only under html.c3d-3d, identity (no transform at all) at rest.
+   z-index 1 keeps the object in front of the output card and the chips it could touch while turned. */
+.c3d-tilt { position: relative; z-index: 1; transform-origin: 50% calc(50% + var(--tabs-h) / 2); }
+
+/* lift: the object rises a little toward the viewer; its shadow grows, softens and falls further away */
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .c3d-tilt { transition: translate .4s cubic-bezier(.22, 1, .36, 1); }
+  .c3d:hover .c3d-tilt, .c3d:focus-within .c3d-tilt { translate: 0 -3px; }
+  .c3d:hover::before, .c3d:focus-within::before { transform: translate(3px, 5px) scale(1.03); --c3d-sh: .82; }
+}
+
+/* only while easing: the moving parts get their own layers, dropped at rest so text re-rasters crisp */
+.c3d.is-live .c3d-tilt, .c3d.is-live::before, .c3d.is-live .c3d-sheen::before,
+.c3d.is-live .c-go, .c3d.is-live .c-settings > summary { will-change: transform, translate; }
+
+/* ---------- the glass body ----------
+   Do not lift .c-tabs above the card with z-index: the settings popover lives inside the card and
+   opens up over the tabs (measured: z-index:1 on the tabs hid its bottom third).
+   The backdrop stays home.css's blur(28px) saturate(120%): the lower saturation keeps the photo from
+   painting colour blotches inside the glass (Emergent). */
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .c3d .composer {
+    isolation: isolate;                              /* the sheen's z-index:-1 stays inside the card */
+    border-color: transparent rgba(255, 255, 255, .30) rgba(255, 255, 255, .22) rgba(var(--sun), .70);
+    background:
+      /* top rim: bright on the sun side fading right, with a gap under the selected tab so tab and card are one piece */
+      linear-gradient(90deg, rgba(var(--sun), .95) 0, rgba(var(--sun), .9) var(--tab-l, 0px), rgba(var(--sun), 0) calc(var(--tab-l, 0px) + 1px),
+                             rgba(var(--sun), 0) calc(var(--tab-r, 0px) - 1px), rgba(var(--sun), .85) var(--tab-r, 0px), rgba(255, 255, 255, .34) 100%) border-box 0 0 / 100% 1.5px no-repeat,
+      /* frost: clearer at the top where the bright arch shows through, denser low over the dark stone and trees */
+      linear-gradient(180deg, rgba(255, 255, 255, .58) 0%, rgba(255, 255, 255, .68) 100%) border-box;
+    box-shadow:
+      /* bevel: light rim on the sun side, a darker far rim; Apple iOS 26 glass https://mobbin.com/sites/sections/737a4324-a6f1-4834-9ade-b0fc62c3b60e */
+      inset 1px 0 0 rgba(var(--sun), .45),
+      inset -1px -1px 0 rgba(84, 64, 44, .14),
+      /* chromatic fringe one pixel inside the rim: warm on the sun side, cool on the far side (Perplexity rainbow edge) */
+      inset 2px 0 0 rgba(255, 190, 150, .20),
+      inset -2px -2px 0 rgba(130, 195, 225, .20),
+      /* bounce light on the lower inside edge: warm stone, then river teal; Perplexity https://mobbin.com/sites/sections/2035e067-e560-481e-a71d-296d2de24a7a */
+      inset 0 -16px 22px -18px rgba(214, 180, 142, .42),
+      inset 0 -5px 10px -6px rgba(84, 168, 156, .22),
+      /* thickness: above eye level, so the lower face shows, lit by the stone and the water below it;
+         lighter bottom edge on tilted prompt cards, Strut https://mobbin.com/sites/sections/8070be9e-ac9f-4fec-9610-b5fe1d6b759a */
+      0 1px 0 rgba(255, 244, 228, .80),
+      0 2.5px 0 rgba(226, 208, 184, .62),
+      0 4px 0 rgba(160, 190, 180, .46),
+      0 5px 0 rgba(72, 58, 44, .26),
+      /* occlusion right under the lower face */
+      0 9px 10px -8px rgba(var(--shade), .30);
+  }
+
+  /* tabs: the same glass as the card. The unselected one is a thin frost over the photo; the selected
+     one is as dense as the card top it opens into (measured within 1.1:1), with an ink bar on its top
+     edge, so which tab is open never rests on a fill difference alone (WCAG 1.4.11). */
+  .c3d .c-tab {
+    border-color: rgba(var(--sun), .72) rgba(255, 255, 255, .30) transparent rgba(var(--sun), .60);
+    background: rgba(255, 255, 255, .30);
+    color: #2b2b29;
+    -webkit-backdrop-filter: blur(28px) saturate(120%);
+    backdrop-filter: blur(28px) saturate(120%);
+    box-shadow: inset 1px 1px 0 rgba(var(--sun), .40);
+  }
+  .c3d .c-tab:hover { background: rgba(255, 255, 255, .42); }
+  .c3d .c-tab[aria-selected="true"] { background: rgba(255, 255, 255, .74); color: #141413; box-shadow: inset 0 2px 0 #141413, inset 1px 0 0 rgba(var(--sun), .90); }
+  .c3d .c-tab:focus-visible { box-shadow: 0 0 0 6px rgba(255, 255, 255, .95); }
+  .c3d .c-tab[aria-selected="true"]:focus-visible { box-shadow: inset 0 2px 0 #141413, inset 1px 0 0 rgba(var(--sun), .90), 0 0 0 6px rgba(255, 255, 255, .95); }
+
+  /* refraction band at the rim, Chromium + GPU only and only at rest: re-filtering an SVG backdrop every
+     frame is too costly, so while anything moves the plain blur above takes over.
+     Magnified, bent rim with a colour split, Apple iOS 26 https://mobbin.com/sites/sections/737a4324-a6f1-4834-9ade-b0fc62c3b60e
+     The SVG lays a flat .58 milk over its frost and the clear rim over that; this background adds the
+     rest of the plain frost's .58 -> .68 gradient (1 - .42 x (1 - c) = .68 at the bottom gives c = .24), so the
+     body matches the plain blur and the swap between the two is invisible while the rim stays clear. */
+  html.c3d-lens:is(.zt-rest, :not(.zt-on)) .c3d.is-still:not(:focus-within) .composer {
+    backdrop-filter: url(#c3d-lens);
+    background:
+      linear-gradient(90deg, rgba(var(--sun), .95) 0, rgba(var(--sun), .9) var(--tab-l, 0px), rgba(var(--sun), 0) calc(var(--tab-l, 0px) + 1px),
+                             rgba(var(--sun), 0) calc(var(--tab-r, 0px) - 1px), rgba(var(--sun), .85) var(--tab-r, 0px), rgba(255, 255, 255, .34) 100%) border-box 0 0 / 100% 1.5px no-repeat,
+      linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, .24) 100%) border-box;
+  }
+
+  /* the output card is part of the same object: the composer's glass, bevel and thickness above (Apple iOS 26 glass,
+     Strut's lit lower edge), and no tilt of its own. It sits outside .c3d, so the sun and shade tokens are spelled out.
+     Once there is output the stack stands straight, rather than the composer turning above a flat card. */
+  .hero .h-out {
+    -webkit-backdrop-filter: blur(28px) saturate(120%);
+    backdrop-filter: blur(28px) saturate(120%);
+    border-color: rgba(255, 248, 236, .70) rgba(255, 255, 255, .30) rgba(255, 255, 255, .22) rgba(255, 248, 236, .70);
+    box-shadow:
+      inset 1px 0 0 rgba(255, 248, 236, .45),
+      inset -1px -1px 0 rgba(84, 64, 44, .14),
+      0 1px 0 rgba(255, 244, 228, .80),
+      0 2.5px 0 rgba(226, 208, 184, .62),
+      0 4px 0 rgba(160, 190, 180, .46),
+      0 5px 0 rgba(72, 58, 44, .26),
+      0 9px 10px -8px rgba(52, 40, 28, .30);
+  }
+  .hero:has(.h-cont:not([hidden])) .c3d-tilt { transform: none !important; }
+}
+
+/* the clearer top frost costs placeholder contrast where the placeholder crosses the dark stone of the arch */
+.c3d .c-prompt::placeholder { color: #474641; }
+
+/* ---------- specular sheen: the sun's reflection; it slides like a far reflection when the eye moves ----------
+   Highlights on the sky-facing upper curves, Air https://mobbin.com/sites/sections/bd3440c8-c982-485c-a62b-83147b07442d */
+.c3d-sheen { position: absolute; inset: 0; z-index: -1; border-radius: inherit; clip-path: inset(0 round 21px); pointer-events: none; }
+.c3d-sheen::before {
+  content: ""; position: absolute; inset: -32px;    /* 32 > the largest slide, so its edge never shows */
+  background:
+    radial-gradient(70% 110% at 16% 0%, rgba(var(--sun), .50) 0%, rgba(var(--sun), .16) 38%, rgba(var(--sun), 0) 70%),
+    linear-gradient(128deg, rgba(255, 255, 255, 0) 34%, rgba(255, 255, 255, .14) 45%, rgba(255, 255, 255, 0) 56%);
+}
+.c3d.is-tilted .c3d-sheen::before { translate: calc(var(--mx, 0) * 18px) calc(var(--my, 0) * 10px); }
+
+/* ---------- layered depth inside the object ----------
+   Inner planes on their own layers, the action button on top, Strut https://mobbin.com/sites/sections/8070be9e-ac9f-4fec-9610-b5fe1d6b759a
+   Depth ranks: writing face 0 < bar 1 < settings knob 2 < Write 3. Nearer than the card plane, so they
+   slide AGAINST the eye (the scene slides with it). */
+.c3d .c-bar {                                       /* rank 1: a raised glass strip with a lit lip */
+  /* full bleed: cancel shared.css .glass padding (8px 16px) so the strip meets the rim; content stays put */
+  margin: 0 -16px -8px; padding: 10px 28px 20px 30px;
+  border-radius: 0 0 21px 21px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .16), rgba(255, 255, 255, .22));
+  box-shadow: inset 0 1px 0 rgba(var(--sun), .60), 0 -1px 0 rgba(255, 255, 255, .22);
+}
+.c3d .c-status {                                    /* a sunk display well: shaded on its sun-side inner wall */
+  background: rgba(255, 255, 255, .5);
+  box-shadow: inset 1px 1px 2px rgba(var(--shade), .16), inset -1px -1px 0 rgba(255, 255, 255, .65);
+}
+.c3d .c-settings > summary {                        /* rank 2: a round glass knob */
+  border-color: rgba(var(--sun), .95) rgba(84, 64, 44, .16) rgba(84, 64, 44, .22) rgba(var(--sun), .85);
+  background: linear-gradient(155deg, rgba(255, 255, 255, .78), rgba(255, 255, 255, .44));
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .7), 1px 2px 2px -1px rgba(var(--shade), .24), 3px 6px 10px -6px rgba(var(--shade), .30);
+}
+.c3d.is-tilted .c-settings > summary { translate: calc(var(--mx, 0) * -1.5px) calc(var(--my, 0) * -1px); }
+.c3d .c-settings > summary:hover, .c3d .c-settings[open] > summary { background: linear-gradient(155deg, rgba(255, 255, 255, .94), rgba(255, 255, 255, .66)); }
+.c3d .c-settings[open] > summary { box-shadow: inset 1px 1px 2px rgba(var(--shade), .14), 0 1px 1px rgba(var(--shade), .18); }   /* pressed in while its popover is up */
+
+/* rank 3: Write. Shaded like a lit object and pressed in when held, but it never lifts:
+   shared.css [K] allows no lifts on buttons. */
+.c3d .c-go.btn--primary {
+  background: linear-gradient(172deg, #3a3935 0%, #1c1b1a 46%, #141413 100%);
+  box-shadow: inset 0 1px 0 rgba(var(--sun), .26), inset 1px 0 0 rgba(var(--sun), .10), inset 0 -1px 0 rgba(0, 0, 0, .40),
+              0 1px 1px rgba(var(--shade), .30), 3px 6px 12px -5px rgba(var(--shade), .44);
+  transition: box-shadow .16s ease;
+}
+.c3d.is-tilted .c-go { translate: calc(var(--mx, 0) * -2px) calc(var(--my, 0) * -1.5px); }
+.c3d .c-go.btn--primary:not(:disabled):hover { background: linear-gradient(172deg, #4a4944 0%, #2a2927 46%, #1f1e1d 100%); }
+.c3d .c-go.btn--primary:not(:disabled):active {
+  transition-duration: .05s;
+  box-shadow: inset 0 1px 0 rgba(var(--sun), .16), inset 0 2px 4px rgba(0, 0, 0, .35), 0 0 1px rgba(var(--shade), .30);
+}
+.c3d .c-go.btn--primary:disabled {                  /* glass, never an opaque grey sticker */
+  background: linear-gradient(172deg, rgba(255, 255, 255, .42), rgba(255, 255, 255, .26));
+  color: #5e5d59;
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .65), inset 0 0 0 1px rgba(84, 64, 44, .14);
+}

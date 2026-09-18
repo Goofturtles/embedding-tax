@@ -1,0 +1,10 @@
+# Pins for anything installed while a training run is live.
+# torch/numpy must never be re-resolved: the running job has those .pyd files open,
+# and on Windows a replace either fails halfway or corrupts the env.
+#
+# tokenizers is deliberately NOT pinned. It is used only by prepare_data.py and
+# eval_harness.py, never by train.py, so the resolver is free to move it to whatever
+# transformers needs. Pinning it here forced pip to solve for transformers 4.17 (2022),
+# which lm-eval cannot use.
+torch==2.6.0+cu124
+numpy==2.5.3

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="The Embedding Tax">
+  <title>The Embedding Tax</title>
+  <!-- Cream surface, ink glyph: the treatment every card on the site already uses
+       (#fdf1e1 ground, #111411 content). Cream is the brand's most-used colour by a
+       wide margin, so the mark reads as a piece of the site rather than one beside it.
+       An arch because the hero is a stone bridge: a span, and the depth that carries it.
+       Wide and low (40x26): taller and narrower reads as the letter n. -->
+  <defs>
+    <linearGradient id="paper" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFF8EC"/>
+      <stop offset=".55" stop-color="#FDF1E1"/>
+      <stop offset="1" stop-color="#F1E2CC"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="64" height="64" rx="15" fill="url(#paper)"/>
+
+  <path d="M12 19 L52 19 L52 45 L44 45 L44 37 A12 12 0 0 0 20 37 L20 45 L12 45 Z"
+        fill="#111411"/>
+
+  <!-- the site's own card edge colour: rgba(2, 47, 64, .12) -->
+  <rect x=".5" y=".5" width="63" height="63" rx="14.5" fill="none" stroke="#022F40" stroke-opacity=".12"/>
+</svg>

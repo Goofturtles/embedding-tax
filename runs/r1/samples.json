@@ -1,0 +1,34 @@
+{
+  "weights": "runs\\r1\\ckpt.pt",
+  "run": "r1",
+  "steps_completed": 14495,
+  "settings": {
+    "temperature": 0.8,
+    "top_k": 40,
+    "max_new_tokens": 60,
+    "seed": 1337
+  },
+  "runtime": {
+    "device": "cuda",
+    "precision": "bf16"
+  },
+  "note": "every prompt in tools/sample_spec.py PROMPTS is published; nothing is filtered",
+  "samples": [
+    {
+      "prompt": "The reason the sky appears blue is",
+      "completion": " because it is the brightest object in the sky, so it is only an object that is in contrast to the rest of the sky. Therefore, the stars in the sky are very similar to each other. However, the shape of the stars is different; they are very different, and the different"
+    },
+    {
+      "prompt": "The most important step in making bread is",
+      "completion": " to make the process as simple as possible. It is the first step in making bread. All we need is a simple ingredient like wheat flour.\nA simple ingredient is a mixture of wheat flour and wheat flour that is mixed into a large amount of flour. It is made from the husk of"
+    },
+    {
+      "prompt": "In 1905, Albert Einstein published",
+      "completion": " his famous theory of relativity in his book, The General Theory of Relativity. Einstein’s famous work was a key to the development of his theory of relativity. Einstein wrote his famous famous statement about relativity.\nI will use the following example to illustrate the book and discuss the results"
+    },
+    {
+      "prompt": "A computer program is",
+      "completion": " still widely used, and the system is the fastest growing software program on the market.\nThe application of the system is available in both Windows and Windows Server that is not used for Windows.\nDetermination of the method of computing a machine is based on the basic principle of its operations and the"
+    }
+  ]
+}

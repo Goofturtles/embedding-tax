@@ -1,0 +1,446 @@
+{
+  "_comment": "Written by tools/publish_results.py from runs/<id>/log.jsonl and runs/<id>/eval.json. Every measured field is reset to null on each publish, so a value here was measured by the run named below. The site renders null as 'not measured yet'.",
+  "model": {
+    "name": "embedding-tax-50m",
+    "params_total": 49296896,
+    "params_embedding": 8388608,
+    "params_layers": 40907776,
+    "vocab_size": 16384,
+    "n_layer": 13,
+    "n_embd": 512,
+    "n_head": 8,
+    "cap": 50000000
+  },
+  "training": {
+    "hardware": "NVIDIA GeForce RTX 4090 (24 GB)",
+    "tokens_seen": 1899888640,
+    "wall_clock_hours": 7.295,
+    "tokens_per_second": 105549,
+    "peak_vram_gb": null,
+    "final_train_loss": 3.0146,
+    "corpus": "HuggingFaceFW/fineweb-edu:sample-10BT -- 1,900,000,000 training tokens, 100,000,000 held out",
+    "steps": 14495,
+    "run_complete": true,
+    "val_curve": [
+      {
+        "step": 250,
+        "tokens": 32899072,
+        "loss": 5.69058,
+        "ppl": 296.066
+      },
+      {
+        "step": 500,
+        "tokens": 65667072,
+        "loss": 4.79751,
+        "ppl": 121.209
+      },
+      {
+        "step": 750,
+        "tokens": 98435072,
+        "loss": 4.24548,
+        "ppl": 69.79
+      },
+      {
+        "step": 1000,
+        "tokens": 131203072,
+        "loss": 3.95781,
+        "ppl": 52.342
+      },
+      {
+        "step": 1250,
+        "tokens": 163971072,
+        "loss": 3.81627,
+        "ppl": 45.435
+      },
+      {
+        "step": 1500,
+        "tokens": 196739072,
+        "loss": 3.72386,
+        "ppl": 41.424
+      },
+      {
+        "step": 1750,
+        "tokens": 229507072,
+        "loss": 3.65652,
+        "ppl": 38.726
+      },
+      {
+        "step": 2000,
+        "tokens": 262275072,
+        "loss": 3.60626,
+        "ppl": 36.828
+      },
+      {
+        "step": 2250,
+        "tokens": 295043072,
+        "loss": 3.5682,
+        "ppl": 35.453
+      },
+      {
+        "step": 2500,
+        "tokens": 327811072,
+        "loss": 3.5263,
+        "ppl": 33.998
+      },
+      {
+        "step": 2750,
+        "tokens": 360579072,
+        "loss": 3.50227,
+        "ppl": 33.191
+      },
+      {
+        "step": 3000,
+        "tokens": 393347072,
+        "loss": 3.47288,
+        "ppl": 32.23
+      },
+      {
+        "step": 3250,
+        "tokens": 426115072,
+        "loss": 3.45092,
+        "ppl": 31.529
+      },
+      {
+        "step": 3500,
+        "tokens": 458883072,
+        "loss": 3.43069,
+        "ppl": 30.898
+      },
+      {
+        "step": 3750,
+        "tokens": 491651072,
+        "loss": 3.41273,
+        "ppl": 30.348
+      },
+      {
+        "step": 4000,
+        "tokens": 524419072,
+        "loss": 3.3948,
+        "ppl": 29.809
+      },
+      {
+        "step": 4250,
+        "tokens": 557187072,
+        "loss": 3.37913,
+        "ppl": 29.345
+      },
+      {
+        "step": 4500,
+        "tokens": 589955072,
+        "loss": 3.36331,
+        "ppl": 28.885
+      },
+      {
+        "step": 4750,
+        "tokens": 622723072,
+        "loss": 3.34944,
+        "ppl": 28.487
+      },
+      {
+        "step": 5000,
+        "tokens": 655491072,
+        "loss": 3.33731,
+        "ppl": 28.143
+      },
+      {
+        "step": 5250,
+        "tokens": 688259072,
+        "loss": 3.32552,
+        "ppl": 27.813
+      },
+      {
+        "step": 5500,
+        "tokens": 721027072,
+        "loss": 3.31462,
+        "ppl": 27.512
+      },
+      {
+        "step": 5750,
+        "tokens": 753795072,
+        "loss": 3.30195,
+        "ppl": 27.166
+      },
+      {
+        "step": 6000,
+        "tokens": 786563072,
+        "loss": 3.29121,
+        "ppl": 26.875
+      },
+      {
+        "step": 6250,
+        "tokens": 819331072,
+        "loss": 3.28073,
+        "ppl": 26.595
+      },
+      {
+        "step": 6500,
+        "tokens": 852099072,
+        "loss": 3.27264,
+        "ppl": 26.381
+      },
+      {
+        "step": 6750,
+        "tokens": 884867072,
+        "loss": 3.2621,
+        "ppl": 26.104
+      },
+      {
+        "step": 7000,
+        "tokens": 917635072,
+        "loss": 3.25541,
+        "ppl": 25.93
+      },
+      {
+        "step": 7250,
+        "tokens": 950403072,
+        "loss": 3.24573,
+        "ppl": 25.68
+      },
+      {
+        "step": 7500,
+        "tokens": 983171072,
+        "loss": 3.23768,
+        "ppl": 25.475
+      },
+      {
+        "step": 7750,
+        "tokens": 1015939072,
+        "loss": 3.22972,
+        "ppl": 25.273
+      },
+      {
+        "step": 8000,
+        "tokens": 1048707072,
+        "loss": 3.22101,
+        "ppl": 25.053
+      },
+      {
+        "step": 8250,
+        "tokens": 1081475072,
+        "loss": 3.21496,
+        "ppl": 24.902
+      },
+      {
+        "step": 8500,
+        "tokens": 1114243072,
+        "loss": 3.20648,
+        "ppl": 24.692
+      },
+      {
+        "step": 8750,
+        "tokens": 1147011072,
+        "loss": 3.19905,
+        "ppl": 24.509
+      },
+      {
+        "step": 9000,
+        "tokens": 1179779072,
+        "loss": 3.19246,
+        "ppl": 24.348
+      },
+      {
+        "step": 9250,
+        "tokens": 1212547072,
+        "loss": 3.18723,
+        "ppl": 24.221
+      },
+      {
+        "step": 9500,
+        "tokens": 1245315072,
+        "loss": 3.17895,
+        "ppl": 24.022
+      },
+      {
+        "step": 9750,
+        "tokens": 1278083072,
+        "loss": 3.17411,
+        "ppl": 23.906
+      },
+      {
+        "step": 10000,
+        "tokens": 1310851072,
+        "loss": 3.16933,
+        "ppl": 23.792
+      },
+      {
+        "step": 10250,
+        "tokens": 1343619072,
+        "loss": 3.162,
+        "ppl": 23.618
+      },
+      {
+        "step": 10500,
+        "tokens": 1376387072,
+        "loss": 3.15653,
+        "ppl": 23.489
+      },
+      {
+        "step": 10750,
+        "tokens": 1409155072,
+        "loss": 3.15131,
+        "ppl": 23.367
+      },
+      {
+        "step": 11000,
+        "tokens": 1441923072,
+        "loss": 3.14627,
+        "ppl": 23.249
+      },
+      {
+        "step": 11250,
+        "tokens": 1474691072,
+        "loss": 3.14211,
+        "ppl": 23.153
+      },
+      {
+        "step": 11500,
+        "tokens": 1507459072,
+        "loss": 3.13651,
+        "ppl": 23.023
+      },
+      {
+        "step": 11750,
+        "tokens": 1540227072,
+        "loss": 3.13265,
+        "ppl": 22.935
+      },
+      {
+        "step": 12000,
+        "tokens": 1572995072,
+        "loss": 3.12949,
+        "ppl": 22.862
+      },
+      {
+        "step": 12250,
+        "tokens": 1605763072,
+        "loss": 3.12562,
+        "ppl": 22.774
+      },
+      {
+        "step": 12500,
+        "tokens": 1638531072,
+        "loss": 3.12256,
+        "ppl": 22.705
+      },
+      {
+        "step": 12750,
+        "tokens": 1671299072,
+        "loss": 3.11842,
+        "ppl": 22.611
+      },
+      {
+        "step": 13000,
+        "tokens": 1704067072,
+        "loss": 3.11666,
+        "ppl": 22.571
+      },
+      {
+        "step": 13250,
+        "tokens": 1736835072,
+        "loss": 3.11386,
+        "ppl": 22.508
+      },
+      {
+        "step": 13500,
+        "tokens": 1769603072,
+        "loss": 3.11132,
+        "ppl": 22.451
+      },
+      {
+        "step": 13750,
+        "tokens": 1802371072,
+        "loss": 3.109,
+        "ppl": 22.399
+      },
+      {
+        "step": 14000,
+        "tokens": 1835139072,
+        "loss": 3.10742,
+        "ppl": 22.363
+      },
+      {
+        "step": 14250,
+        "tokens": 1867907072,
+        "loss": 3.10485,
+        "ppl": 22.306
+      },
+      {
+        "step": 14494,
+        "tokens": 1899888640,
+        "loss": 3.10392,
+        "ppl": 22.285
+      }
+    ],
+    "best_val_loss": 3.10392,
+    "best_val_ppl": 22.285,
+    "tokens_target": 1899888640,
+    "nonfinite_values": 0,
+    "rest_hours": 2.051
+  },
+  "benchmarks": {
+    "_harness": "lm-evaluation-harness",
+    "_note": "Random-chance baselines are published alongside every score because at this model size two of the four tasks are expected to sit at chance.",
+    "wikitext103_ppl": 65.11,
+    "arc_easy": {
+      "ours": 40.32,
+      "gpt2_small": 39.73,
+      "chance": 25.0
+    },
+    "piqa": {
+      "ours": 60.28,
+      "gpt2_small": 62.08,
+      "chance": 50.0
+    },
+    "hellaswag": {
+      "ours": 28.71,
+      "gpt2_small": 31.38,
+      "chance": 25.0
+    },
+    "winogrande": {
+      "ours": 50.99,
+      "gpt2_small": 50.67,
+      "chance": 50.0
+    },
+    "wikitext103_bits_per_byte": 1.1267,
+    "_measured_from": "runs/r1/eval.json",
+    "_weights": "runs\\r1\\ckpt.pt",
+    "_steps_completed": 14495
+  },
+  "ablation": {
+    "_comment": "Corpus-mix probe runs. Filled in by short runs before the long one.",
+    "runs": []
+  },
+  "samples": {
+    "items": [
+      {
+        "prompt": "The reason the sky appears blue is",
+        "completion": " because it is the brightest object in the sky, so it is only an object that is in contrast to the rest of the sky. Therefore, the stars in the sky are very similar to each other. However, the shape of the stars is different; they are very different, and the different"
+      },
+      {
+        "prompt": "The most important step in making bread is",
+        "completion": " to make the process as simple as possible. It is the first step in making bread. All we need is a simple ingredient like wheat flour.\nA simple ingredient is a mixture of wheat flour and wheat flour that is mixed into a large amount of flour. It is made from the husk of"
+      },
+      {
+        "prompt": "In 1905, Albert Einstein published",
+        "completion": " his famous theory of relativity in his book, The General Theory of Relativity. Einstein\u2019s famous work was a key to the development of his theory of relativity. Einstein wrote his famous famous statement about relativity.\nI will use the following example to illustrate the book and discuss the results"
+      },
+      {
+        "prompt": "A computer program is",
+        "completion": " still widely used, and the system is the fastest growing software program on the market.\nThe application of the system is available in both Windows and Windows Server that is not used for Windows.\nDetermination of the method of computing a machine is based on the basic principle of its operations and the"
+      }
+    ],
+    "settings": {
+      "temperature": 0.8,
+      "top_k": 40,
+      "max_new_tokens": 60,
+      "seed": 1337
+    },
+    "runtime": {
+      "device": "cuda",
+      "precision": "bf16"
+    },
+    "_steps_completed": 14495,
+    "_weights": "runs\\r1\\ckpt.pt"
+  },
+  "_run": "r1"
+}

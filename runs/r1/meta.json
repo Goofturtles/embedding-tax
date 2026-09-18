@@ -1,0 +1,12 @@
+{
+  "dataset": "HuggingFaceFW/fineweb-edu:sample-10BT",
+  "shard_tokens": 100000000,
+  "vocab_size": 16384,
+  "dtype": "uint16",
+  "seconds": 2905.8,
+  "train_tokens": 1900000000,
+  "val_tokens": 100000000,
+  "train_shards": 19,
+  "val_shards": 1,
+  "split_note": "val is the last full shard of the stream: documents the model never sees."
+}

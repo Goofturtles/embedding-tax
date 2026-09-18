@@ -1,0 +1,689 @@
+/* =========================================================================================
+   shared.css: the one design system both pages load (index.html and app.html), before
+   their own stylesheet. In order: tokens, base, the environment layer, focus and the skip
+   link, the header capsule, the crumb strip, buttons, chips, the three materials, the arch,
+   the footer, reduced motion.
+
+   ANCHOR BRAND: Anthropic (anthropic.com + claude.com share one design system). Every colour,
+   size, radius, shadow, easing and duration below is read from their live CSS; the source
+   legend at the top of the token block names the file each value came from. Mostar supplies
+   the light, the arch, the river and the one photograph: the photo's limestone IS the
+   anchor's ivory, so page and photo read as one place.
+
+   WHAT IS NOT THE ANCHOR'S:
+     [S] the display and UI faces. Anthropic Serif and Anthropic Sans are proprietary and are
+         never loaded; Newsreader (opsz serif, same transitional editorial character) and
+         Instrument Sans (quiet, open apertures) stand in, from Google Fonts. JetBrains Mono
+         is 1:1 (OFL; the anchor loads it too).
+     [P] two role assignments sampled from the photo: where the dusk glow and the river glow
+         sit (upper right / lower left), and the ivory halo behind ink type over the photo.
+     [K] the 10k-websites legibility and motion system, re-coloured to this world.
+     [A] this product's own roles, and the transition aliases at the end of the token block.
+
+   OWNERSHIP: this file and the header + footer blocks of both html files. Page stylesheets
+   (styles.css, explorer.css, playground.css) load after it and may override any rule here.
+   JS hooks kept: #capNav, .cap-links, .cap-pill, a[data-sec] (script.js measures the links'
+   offsetLeft/offsetWidth inside .cap-links and positions .cap-pill inline; it writes
+   --seg0..2 on #capNav and toggles .is-current / aria-current on the links; it may add
+   .hidden to #capNav while scrolling down inside the stage); .big-foot-word .bfw (script.js
+   splits the letters into .bfw-l); [data-reveal] gets .is-in from script.js's observer.
+
+   The signature element is the ARCH (one span, viewBox 0 0 1200 300). It lives here as a
+   utility (.arch, .arch-wrap) because it appears on both pages and in the footer; the pages
+   place it. Remove the arch and both pages lose their mark; everything else stays quiet.
+   ========================================================================================= */
+
+/* ---------- TOKENS: the design package's tokens.css, verbatim, source comments included ---------- */
+/* tokens.css, loaded first by BOTH pages. SOURCE LEGEND (every value is verbatim from the file tagged, or [S] a licensed substitute, or [P] a role sampled from the photo, or [K] the 10k-websites skill's legibility/motion system re-coloured to this world, or [KEEP] an existing rig value):
+   [C0] https://claude.com/_next/static/chunks/0ff7370c6f4058bd.css   [C4] https://claude.com/_next/static/chunks/4962f23fe6f59939.css
+   [C6] https://claude.com/_next/static/chunks/6b8c9c16011b99e6.css   [C7] https://claude.com/_next/static/chunks/780e01683c358c29.css
+   [R2] https://www.anthropic.com/_next/static/chunks/2pnrpp88lh_gg.css   [R0j] https://www.anthropic.com/_next/static/chunks/0jlkzpw9ac_ue.css
+   [R0h] https://www.anthropic.com/_next/static/chunks/0hpj44a23iwyo.css   [W] https://cdn.prod.website-files.com/67ce28cfec624e2b733f8a52/css/ant-brand.shared.6af327f04.min.css
+   [M] https://mobbin.com/sites/sections/9242cefa-a95b-48df-82e1-5aac6046250c (Reducto, measured numeral proportion)
+   [GF-serif] https://fonts.google.com/specimen/Newsreader   [GF-sans] https://fonts.google.com/specimen/Instrument+Sans   [GF-mono] https://fonts.google.com/specimen/JetBrains+Mono */
+:root {
+  /* 1. neutral ramp [C0 --color-gray-*] = [R2 --color-slate-*] = [W --swatch--ivory/slate/cloud] */
+  --color-gray-000:#fff; --color-gray-050:#faf9f5; --color-gray-100:#f5f4ed; --color-gray-150:#f0eee6; --color-gray-200:#e8e6dc; --color-gray-250:#dedcd1;
+  --color-gray-300:#d1cfc5; --color-gray-350:#c2c0b6; --color-gray-400:#b0aea5; --color-gray-450:#9c9a92; --color-gray-500:#87867f; --color-gray-550:#73726c;
+  --color-gray-600:#5e5d59; --color-gray-650:#4d4c48; --color-gray-700:#3d3d3a; --color-gray-750:#30302e; --color-gray-800:#262624; --color-gray-850:#1f1e1d;
+  --color-gray-900:#1a1918; --color-gray-950:#141413; --color-gray-1000:#000;
+  /* accents [C0][R2][W] */
+  --color-clay:#d97757;          /* [C0] --color-clay = [W] --swatch--clay */
+  --color-clay-hover:#c6613f;    /* [C0] --color-clay-hover = [W] --swatch--accent */
+  --color-clay-dark:#c46849;     /* [C0] --color-clay-dark = [C0] --color-focus */
+  --color-oat:#e3dacc; --color-olive:#788c5d; --color-cactus:#bcd1ca; --color-mineral:#629987; --color-coral:#ebcece; --color-sky:#6a9bcc; /* [C0][R2][W] */
+  --color-error:#bf4d43;         /* [C0][R2] */
+  --swatch-slate-faded-10:#1414131a; --swatch-slate-faded-20:#14141333; --swatch-ivory-faded-10:#faf9f51a; --swatch-ivory-faded-20:#faf9f533; /* [W] */
+  --color-glass-bg:#f5f4ed66; --color-glass-border:#c2c0b64d; --glass-blur:5px; /* [R0h] .ScrollIntroGlobe skip control, the anchor's only backdrop-filter */
+  /* 2. canvas and surface roles (the design-package names) */
+  --canvas:var(--color-gray-050);          /* [C0] --theme-background-primary; never #fff, never #000 */
+  --panel:var(--color-gray-000);           /* [C0] --theme-background-overlay; the CARD material */
+  --well:var(--color-gray-100);            /* [C0] --theme-background-secondary; the sunken well */
+  --panel-tint:var(--color-gray-150);      /* [C0] --theme-background-tertiary; receded cards, switch track */
+  --accent:var(--color-clay);              /* [C0]; the embedding cost, the CTA glyph, the arch crown */
+  --accent-hover:var(--color-clay-hover);  /* [C0]; large text and the brand button fill */
+  --accent-muted:#d9775726;                /* [P] clay at 15%: the tax-bar glow, particles, the arch crown halo (alpha only; hue is [C0] clay) */
+  --accent-focus:var(--color-clay-dark);   /* [C0] --color-focus */
+  --text-primary:var(--color-gray-950);    /* [C0] --theme-foreground-primary, 17:1 on ivory */
+  --text-secondary:var(--color-gray-750);  /* [C0] --theme-foreground-secondary, 12.4:1 */
+  --text-tertiary:var(--color-gray-600);   /* [C0] --theme-foreground-tertiary, 7.5:1 */
+  --text-disabled:var(--color-gray-500);   /* [C0] gray-500, 3.9:1: disabled controls only */
+  --border-primary:var(--color-gray-400); --border-secondary:var(--color-gray-300); --border-tertiary:var(--color-gray-200); /* [C0] --theme-border-* */
+  --border-strong:var(--color-gray-950);   /* [R2] --border-strong */
+  /* dark (slate) roles for the closing band and footer [C0 .theme-dark] / [R2 data-theme=slate] */
+  --dark-canvas:#141413; --dark-panel:#1a1918; --dark-well:#262624; --dark-border:#5e5d59; --dark-border-2:#3d3d3a; --dark-border-3:#30302e;
+  --dark-text:#faf9f5; --dark-text-2:#b0aea5; --dark-text-3:#87867f; /* 8.3:1 and 5.1:1 on #141413 */
+  --dark-btn-bg:#faf9f5; --dark-btn-fg:#141413; --dark-btn-bg-hover:#f0eee6; --dark-btn2-bg:#30302e; --dark-btn2-bg-hover:#3d3d3a; --dark-border-faint:#faf9f51a; /* [R2][C0][W] */
+  /* 3. product roles [A]: anchor swatches given this product's meanings */
+  --cost:var(--color-clay); --cost-text:var(--color-clay-hover); --cost-tint:var(--color-oat); --cost-edge:var(--color-gray-950); /* clay is 2.96:1, so every cost fill carries a 1px ink hairline */
+  --depth:var(--color-olive); --depth-tint:var(--color-cactus);            /* fills and text >= 24px only */
+  --over-cap:var(--color-error); --over-cap-tint:var(--color-coral);        /* tint behind slabs only, never behind text */
+  --ghost:var(--color-gray-250); --ghost-edge:var(--color-gray-500);
+  --river:var(--color-mineral);                                             /* [P] environment glow only */
+  --tone-0:var(--color-gray-950); --tone-1:var(--cost); --tone-2:var(--depth); /* chapter tones Intro / Budget / Depth */
+  /* 4. compatibility aliases consumed by the current styles.css / explorer.css / shared.css [A] */
+  --surface-ground:var(--canvas); --surface-card:var(--panel); --surface-sunken:var(--well); --surface-hover:var(--well); --surface-hover-alpha:var(--swatch-slate-faded-10); --surface-inverse:var(--color-gray-950);
+  --text-strong:var(--text-primary); --text-subtle:var(--text-tertiary); --text-on-inverse:var(--color-gray-050); --text-link:var(--color-gray-950);
+  --border-hairline:var(--border-tertiary); --border-control:var(--border-secondary);
+  --accent-embedding:var(--cost); --accent-embedding-text:var(--cost-text); --accent-embedding-subtle:var(--cost-tint);
+  --layers:var(--depth); --layers-text:var(--depth); --layers-subtle:var(--depth-tint); --over-cap-text:var(--over-cap); --over-cap-subtle:var(--over-cap-tint);
+  --pending:var(--color-gray-500); --pending-text:var(--text-tertiary); --pending-subtle:var(--well); --guide:var(--color-gray-150); --dashed:var(--color-gray-500); --cross:transparent;
+  --lp-ink:var(--text-primary); --lp-subtle:var(--text-tertiary); --lp-card:var(--panel); --lp-hair:var(--border-tertiary); --lp-embed:var(--cost); --lp-embed-text:var(--cost-text); --lp-embed-subtle:var(--cost-tint); --lp-embed-wash:var(--cost-tint); --lp-layer:var(--depth); --lp-layer-text:var(--depth); --lp-layer-subtle:var(--depth-tint);
+  /* 5. fonts. Anthropic Serif / Sans / Mono are proprietary and never loaded. */
+  --font-display:"Newsreader", Georgia, serif;                                       /* [S] [GF-serif] substitute for [C0] var(--font-anthropic-serif),Georgia,serif; weights 400 + 400 italic + 500 */
+  --font-serif:var(--font-display);
+  --font-sans:"Instrument Sans", system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; /* [S] [GF-sans] substitute for [C0] var(--font-anthropic-sans),system-ui,sans-serif; weights 400 / 500 / 600 */
+  --font-mono:"JetBrains Mono", "jetBrainsMono Fallback", ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace; /* [W] @font-face Jetbrains Mono 400 + [C0] code fallback; weights 400 / 500 */
+  --font-features:"pnum" on, "lnum" on, "liga" on;   /* [C0] body and every .text-* class */
+  --font-opsz:"opsz" 48;                              /* [C4] serif display headings; Newsreader honours the same axis */
+  --num:tabular-nums lining-nums;                     /* [A] deviation: ledgers, counters and the playground token count need tnum */
+  --weight-light:300; --weight-normal:400; --weight-medium:500; --weight-semibold:600; --weight-bold:700; --weight-button-primary:480; /* [C0] */
+  /* 6. type scale, fluid [C0 :root] */
+  --display-1:clamp(42px, 33.429px + 2.679vw, 72px); --display-2:clamp(36px, 28px + 2.5vw, 64px);
+  --headline-1:clamp(34px, 28.857px + 1.607vw, 52px); --headline-2:clamp(30px, 26px + 1.25vw, 44px); --headline-3:clamp(28px, 25.714px + .714vw, 36px);
+  --headline-4:clamp(23px, 20.429px + .804vw, 32px); --headline-5:clamp(20px, 18.571px + .446vw, 25px); --headline-6:clamp(16px, 15.143px + .268vw, 19px);
+  --body-large-1:clamp(22px, 21.429px + .179vw, 24px); --body-large-2:clamp(20px, 19.143px + .268vw, 23px); --body-1:clamp(19px, 18.714px + .089vw, 20px);
+  --body-2:17px; --body-3:15px; --caption:12px; --micro:10px; --mono-size:15px; --caption-14:14px; /* [C0][R2] */
+  --lh-tight:1; --lh-tighter:1.1; --lh-snug:1.2; --lh-normal:1.3; --lh-relaxed:1.5; --lh-loose:1.6; --lh-looser:1.7; /* [C0] --line-height-* */
+  --lh-clip-floor:1.25;                                        /* [R2] --leading-125: the minimum inside anything clipped (odometer, digit rolls, masks) */
+  --hero-numeral:clamp(56px, 10.9vw, 157px);                    /* [M] Reducto: the numeral spans 54.7% of the width */
+  --tracking-display:-.02em; --tracking-button:-.005em; --tracking-nav:-.0025em; --tracking-label:.05em; /* [W] 0-02em, [W] 0-005em, [R0j] navText, [C0] observed */
+  --measure-narrow:20ch; --measure-headline:30ch; --measure-title:45ch; --measure-body:60ch; --measure-wide:70ch; --measure-prose:80ch; /* [C0] --text-width-* */
+  /* 7. spacing [C0 --sp-*, --gap-*, section rhythm base tier] */
+  --sp-2:2px; --sp-4:4px; --sp-6:6px; --sp-8:8px; --sp-12:12px; --sp-16:16px; --sp-20:20px; --sp-24:24px; --sp-32:32px; --sp-40:40px; --sp-48:48px; --sp-56:56px; --sp-64:64px; --sp-80:80px; --sp-96:96px; --sp-128:128px; --sp-200:200px;
+  --gap-xs:16px; --gap-sm:24px; --gap-md:32px; --gap-lg:48px;
+  --section-sm:32px; --section-md:64px; --section-main:96px; --section-lg:128px; --page-margin:32px; --gutter:16px;
+  --container:1440px; --container-medium:1192px; --container-small:960px; --container-narrow:660px; --card-pad-sm:16px; --card-pad-md:24px; --card-pad-lg:48px; /* [C0][R2] */
+  --header-height:56px;                                          /* [A] the glass capsule; [C6] NavBar inner is 72/84px, the capsule sits inside a 72/84px band */
+  --header-band:72px; --breakpoint-tablet:833px; --breakpoint-desktop:1200px; /* [C6][C0] */
+  --space-1:var(--sp-4); --space-2:var(--sp-8); --space-3:var(--sp-12); --space-4:var(--sp-16); --space-6:var(--sp-24); --space-8:var(--sp-32); --space-10:var(--sp-40); --space-16:var(--sp-64); --space-24:var(--sp-96); --space-32:var(--sp-128); --page-width:var(--container); /* aliases [A] */
+  /* 8. radii [C0 --br-*], [W] --radius--round */
+  --br-2:2px; --br-4:4px; --br-6:6px; --br-8:8px; --br-12:12px; --br-16:16px; --br-24:24px; --br-32:32px; --radius-round:100vw;
+  --radius-sm:var(--br-8); --radius-md:var(--br-12); --radius-lg:var(--br-16); --radius-xl:var(--br-24); --radius-full:999px; /* [A] buttons br-8, rail br-12, cards br-16, media br-24, chips round */
+  --border-xs:.5px; --border-sm:1px; --border-md:1.5px; --border-lg:2px; /* [C0][R2] */
+  /* 9. shadows and light logic */
+  --shadow-sm:0 2px 8px #0000000a; --shadow-md:0 4px 20px #0000000a; --shadow-lg:0 4px 16px #0000001a;                  /* [C0] */
+  --shadow-card:0 2px 2px #00000003, 0 4px 4px #00000005, 0 16px 24px #0000000a;                                          /* [W] .card */
+  --shadow-hairline:0 0 0 1px #0000001a, 0 1px 3px #0000001a;                                                             /* [W] */
+  --shadow-floating:0 4px 3px #00000005, 0 10px 8px #00000008, 0 19px 15px #0000000a, 0 34px 27px #0000000a, 0 63px 50px #0000000d, 0 150px 120px #00000012; /* [W] floating media: the story panels over the photo */
+  --light-edge:inset 0 1px 0 #ffffff99;                                                                                    /* [P] dusk light catches every card's top edge (white at 60%) */
+  --elev-flat:0 0 0 1px var(--swatch-slate-faded-10); --elev-raised:var(--shadow-card); --elev-medium:var(--shadow-md); --elev-large:var(--shadow-card); --elev-tooltip:var(--shadow-md); --elev-menu:var(--shadow-md); --elev-modal:var(--shadow-card); /* [A] aliases */
+  /* glow: only the arch crown and the tax bar; shadow lives on a pseudo-element, only its opacity animates [K] */
+  --glow-accent:0 0 24px 6px var(--accent-muted), 0 0 64px 18px #d9775714;
+  --glow-ivory:0 0 32px 8px var(--swatch-ivory-faded-20);
+  /* scrims and text shadows: the 10k system inverted for ink text on a bright photo [K]; base colour is the anchor's ivory */
+  --scrim-rgb:250, 249, 245;                                                                                                /* [C0] gray-050 */
+  --scrim-base:radial-gradient(ellipse 120% 90% at 50% 45%, rgba(var(--scrim-rgb), 0) 35%, rgba(var(--scrim-rgb), .34) 100%);
+  --scrim-band-peak:.55;                                                                                                    /* per band: hero .35, budget .55, depth .55, cards .45; tuned against the worst frame */
+  --scrim-band:radial-gradient(ellipse 74% 62% at 50% 50%, rgba(var(--scrim-rgb), var(--scrim-band-peak)) 0%, rgba(var(--scrim-rgb), calc(var(--scrim-band-peak) * .66)) 46%, rgba(var(--scrim-rgb), 0) 76%);
+  --tshadow-ink:0 1px 2px rgba(250,249,245,.95), 0 3px 12px rgba(250,249,245,.78), 0 10px 44px rgba(250,249,245,.8);       /* ink type directly over the photo; off on buttons */
+  --tshadow-ivory:0 1px 2px rgba(20,20,19,.95), 0 3px 12px rgba(20,20,19,.78), 0 10px 44px rgba(20,20,19,.8);              /* ivory type over the slate media card */
+  --blur-tint:250, 249, 245;                                                                                                 /* [KEEP] the shade script.js drives, now washing toward paper */
+  --grain:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .08 0 0 0 0 .08 0 0 0 0 .075 0 0 0 .5 0'/></filter><rect width='180' height='180' filter='url(%23n)'/></svg>"); /* [K] grain tile, slate-tinted */
+  --grain-opacity:.06; --grain-opacity-stage:.04;
+  /* 10. focus [C4][R0j][W] */
+  --focus-width:2px; --focus-offset:4px; --focus-offset-compact:2px; --focus-ring-ink:#141413; --focus-ring-ivory:#faf9f5;
+  /* 11. motion [C0 easings], [R0j] gridIn, [C7] stagger, [KEEP] carousel dwell */
+  --ease-in-quart:cubic-bezier(.895,.03,.685,.22); --ease-out-quart:cubic-bezier(.165,.84,.44,1); --ease-in-out-quart:cubic-bezier(.77,0,.175,1); --ease-in-out-expo:cubic-bezier(1,0,0,1);
+  --ease-out-power2:cubic-bezier(.25,1,.5,1); --ease-in-out-power3:cubic-bezier(.645,.045,.355,1); --ease-in-out-power2:cubic-bezier(.455,.03,.515,.955); --ease-out-expo:cubic-bezier(.19,1,.22,1);
+  --ease-grid-in:cubic-bezier(.33,1,.68,1); --ease-tabs:cubic-bezier(.4,0,.2,1);
+  --reveal-duration:.75s; --dur-hover:.2s; --dur-text:.1s; --dur-transform:.3s; --dur-slide:.5s; --dur-draw:.55s; --dur-nav:1s; --stagger:80ms;
+  --dur-arch:1.6s;                                                                                                          /* [K] the signature draw; transform/opacity/dash only */
+  --dur-xs:.1s; --dur-s:.2s; --dur-m:.3s; --dur-l:.5s; --ease-standard:ease-in-out; --ease-enter:var(--ease-out-quart); --ease-exit:var(--ease-in-quart); --ease-swift:var(--ease-out-expo);
+  --ease-out:var(--ease-out-power2); --ease-expo:var(--ease-out-power2); --ease-in:var(--ease-in-quart); --ease-draw:var(--ease-grid-in); --ease-slide:var(--ease-out-expo); /* [A] the names styles.css and script.js EASE still read */
+  --t-dwell:6500ms; --env-cycle:90s; --env-cycle-2:120s; --living-cycle:6s;                                               /* [KEEP] dwell; [K] environment >= 60s, living elements >= 4s */
+  --track-lead:17vw;                                                                                                        /* [KEEP] */
+}
+@font-face { font-family:"jetBrainsMono Fallback"; src:local(Arial); ascent-override:77.57%; descent-override:22.82%; line-gap-override:0%; size-adjust:131.49%; } /* [C0][R2g] */
+@media (min-width:833px) { :root { --section-sm:48px; --section-md:72px; --section-main:112px; --section-lg:160px; --page-margin:48px; --card-pad-sm:24px; --card-pad-md:32px; --card-pad-lg:64px; } } /* [C0][R2] tablet tier */
+@media (min-width:1200px) { :root { --section-sm:64px; --section-md:96px; --section-main:128px; --section-lg:200px; --page-margin:64px; --header-band:84px; } } /* [C0][C6] desktop tier */
+@media (prefers-reduced-motion:reduce) { :root { scroll-behavior:auto; --env-cycle:0s; --env-cycle-2:0s; --living-cycle:0s; } *, :before, :after { transition-duration:.01ms !important; animation-duration:.01ms !important; animation-iteration-count:1 !important; } } /* [C0] verbatim, plus the environment stopped */
+body.paused *, body.paused *::before, body.paused *::after { animation-play-state:paused !important; } /* [K] hidden tab and the Pause motion control */
+:root { --cost:#d97757; --depth:#788c5d; } /* explorer.js readPalette() parses these two as hex off :root; keep last */
+html, body { overflow-x:hidden; overflow-x:clip; } /* [K] both, hidden as the fallback */
+
+/* ---------- [A] TRANSITION ALIASES ----------
+   The names styles.css and explorer.css still read from the Vercel/Geist system that this
+   file replaces, re-pointed onto the anchor's values so the base re-skins before the page
+   passes land (nothing stays blue). Delete this block once neither stylesheet reads them. */
+:root {
+  --ds-background-100: var(--panel); --ds-background-200: var(--canvas);
+  --ds-gray-100: var(--color-gray-100); --ds-gray-200: var(--color-gray-200); --ds-gray-400: var(--color-gray-250);
+  --ds-gray-500: var(--color-gray-300); --ds-gray-600: var(--color-gray-400); --ds-gray-700: var(--color-gray-500);
+  --ds-gray-900: var(--color-gray-700); --ds-gray-1000: var(--color-gray-950);
+  --ds-gray-alpha-200: var(--swatch-slate-faded-10); --ds-gray-alpha-300: var(--swatch-slate-faded-10);
+  --ds-gray-alpha-400: var(--swatch-slate-faded-10); --ds-gray-alpha-500: var(--swatch-slate-faded-20);
+  --ds-gray-alpha-600: #14141340; --ds-gray-alpha-700: #14141370;
+  --ds-blue-100: var(--color-gray-150); --ds-blue-600: var(--color-clay); --ds-blue-700: var(--color-gray-950);
+  --ds-green-400: var(--color-cactus); --ds-red-500: var(--color-coral); --ds-red-700: var(--color-error);
+  --ds-contrast-fg: var(--color-gray-050);
+  --ds-focus-color: var(--accent-focus);
+  --ds-focus-ring: 0 0 0 2px var(--canvas), 0 0 0 4px var(--accent-focus);
+  --ds-focus-ring-outline: 2px solid var(--accent-focus);
+  --ds-shadow-border-base: var(--shadow-hairline); --ds-shadow-border-small: var(--elev-flat); --ds-shadow-border-medium: var(--shadow-hairline);
+  --ds-shadow-small: var(--shadow-sm); --ds-shadow-medium: var(--shadow-md); --ds-shadow-menu: var(--shadow-md);
+  --ds-shadow-modal: var(--shadow-card); --ds-shadow-tooltip: var(--shadow-md); --ds-shadow-xl: var(--shadow-floating); --ds-shadow-2xl: var(--shadow-floating);
+  --text-copy-13: 400 13px/1.6 var(--font-sans); --text-copy-13-mono: 400 13px/1.6 var(--font-mono);
+  --text-copy-14: 400 15px/1.5 var(--font-sans); --text-copy-14-mono: 400 15px/1.5 var(--font-mono);
+  --text-copy-16: 400 var(--body-2)/1.6 var(--font-sans); --text-copy-18: 400 var(--body-1)/1.6 var(--font-sans);
+  --text-button-14: 500 14px/1 var(--font-sans);
+  --text-heading-14: 500 15px/1.3 var(--font-sans); --text-heading-16: 500 var(--headline-6)/1.2 var(--font-sans);
+  --text-heading-20: 400 var(--headline-5)/1.2 var(--font-display); --text-heading-24: 400 var(--headline-4)/1.2 var(--font-display);
+  --text-heading-32: 400 var(--headline-2)/1.2 var(--font-display); --text-heading-48: 400 var(--display-2)/1.1 var(--font-display);
+  --text-label-12: 500 12px/1.6 var(--font-sans); --text-label-12-mono: 500 12px/1.6 var(--font-mono);
+  --text-label-13: 500 13px/1.6 var(--font-sans); --text-label-13-mono: 500 13px/1.6 var(--font-mono);
+  --text-label-14: 500 14px/1.6 var(--font-sans);
+  --track-heading-14: var(--tracking-nav); --track-heading-16: var(--tracking-nav); --track-heading-20: 0;
+  --track-heading-24: 0; --track-heading-32: 0; --track-heading-48: 0; --track-heading-64: 0;
+  --weight-copy-strong: var(--weight-medium);
+}
+
+/* =========================================================================================
+   BASE. The canvas is the html element's background (ivory, never white, never black); the
+   body stays transparent so the environment layer below shows through every section that
+   does not paint its own opaque ground. The two selectors outrank the page stylesheets'
+   `body` / `.ex-body` backgrounds on purpose (same colour, moved one level up).
+   ========================================================================================= */
+*, *::before, *::after { box-sizing: border-box; }
+html {
+  background: var(--canvas); color: var(--text-primary);
+  scroll-padding-top: calc(var(--header-band) + 16px);   /* the capsule band, so anchors land under it */
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  margin: 0; min-height: 100vh;
+  font-family: var(--font-sans); font-size: var(--body-3); line-height: var(--lh-relaxed);
+  font-feature-settings: var(--font-features);                                  /* [C0] body */
+  font-synthesis: none; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+}
+html > body, body.ex-body { background: transparent; }
+/* The pages toggle state with the hidden attribute (playground.js shows one of idle / loading /
+   ready / packaging / failure). Any component rule that sets display (.btn inline-flex,
+   .pg-state grid) outranks the browser's own [hidden] rule, so hidden things still rendered:
+   the Load button stayed after loading and both fallback panels sat under a working model. */
+[hidden] { display: none !important; }
+img, svg { max-width: 100%; }                                                  /* [W] img{max-width:100%} */
+
+/* =========================================================================================
+   ENVIRONMENT LAYER [K] [P]: one fixed layer behind everything on both pages, so scrolling
+   feels like moving through a place. Three sheets, all pointer-events none, all at z -1 in
+   the root stacking context (above the ivory canvas, below every section):
+     html::before  the dusk glow: clay at 10%, 900px radial, from the upper right (the photo's
+                   light), drifting 40px on a 90s transform loop, negative delay so it is
+                   mid-cycle at first paint;
+     html::after   the river glow: mineral at 7%, 700x420 ellipse, lower left, 120s loop,
+                   counter-phase;
+     body::before  paper grain: the feTurbulence tile at 6%, multiply, static.
+   Transform-only; static under reduced motion (cycle 0s + animation none); paused on hidden
+   tabs and by the Pause-motion control through body.paused. The pinned stage's own 4% grain
+   sheet and the slate sections' grain are their own ::before (see .theme-dark).
+   Precedent for a grained ground on an AI site: Cohere's grained closing gradient
+   https://mobbin.com/sites/sections/368bbb9d-dd0f-4d48-b4ff-07de548fd9fa
+   ========================================================================================= */
+html::before, html::after {
+  content: ""; position: fixed; z-index: -1; pointer-events: none;
+  border-radius: 50%; will-change: transform;
+}
+html::before {
+  top: -20%; right: -10%; width: 900px; height: 900px;
+  background: radial-gradient(circle at center, #d977571a 0%, #d9775700 70%);
+  animation: env-drift-a var(--env-cycle) ease-in-out -30s infinite alternate;
+}
+html::after {
+  bottom: -10%; left: -5%; width: 700px; height: 420px;
+  background: radial-gradient(ellipse at center, #62998712 0%, #62998700 70%);
+  animation: env-drift-b var(--env-cycle-2) ease-in-out -50s infinite alternate;
+}
+body::before {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background-image: var(--grain); background-size: 180px 180px;
+  opacity: var(--grain-opacity); mix-blend-mode: multiply;
+}
+@keyframes env-drift-a { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-40px, 24px, 0); } }
+@keyframes env-drift-b { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(36px, -20px, 0); } }
+body.paused::before, body.paused::after { animation-play-state: paused !important; }
+html:has(> body.paused)::before, html:has(> body.paused)::after { animation-play-state: paused !important; }   /* the glows live on html, which a body class reaches only through :has() */
+
+/* The slate theme [C0 .theme-dark] for the closing band and the footer: its own grain sheet
+   (inverted, screen, 5%) so the paper and the slate share one texture. The sheet sits at
+   z -1 inside the section's own stacking context, so children keep their positioning. */
+.theme-dark { position: relative; isolation: isolate; background: var(--dark-canvas); color: var(--dark-text); }
+.theme-dark::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background-image: var(--grain); background-size: 180px 180px;
+  opacity: .05; mix-blend-mode: screen; filter: invert(1);                     /* [A] inverted so dark grain reads as light grain on slate */
+}
+
+/* =========================================================================================
+   FOCUS RING [C4]: 2px of the anchor's focus clay, offset 4px on links and buttons, 2px on
+   inputs, thumbs and switches; ivory on the slate theme [R0j]. :where() keeps the element
+   part at zero weight so any page rule for a control overrides it.
+   ========================================================================================= */
+:where(a, button, [role="button"], summary, [tabindex]):focus-visible { outline: 2px solid var(--accent-focus); outline-offset: var(--focus-offset); }
+:where(input, select, textarea, [role="slider"], [role="switch"], [role="checkbox"]):focus-visible { outline: 2px solid var(--accent-focus); outline-offset: var(--focus-offset-compact); }
+.theme-dark :where(a, button, [role="button"], summary, [tabindex], input, select, textarea):focus-visible { outline-color: var(--focus-ring-ivory); outline-offset: var(--focus-offset-compact); }
+
+/* Visually hidden text that assistive tech still reads: clip-path, never overflow:hidden,
+   so the clip probe stays at zero hits. */
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; clip-path: inset(50%); white-space: nowrap; }
+
+/* ---------- skip link (WCAG 2.4.1) ----------
+   Hidden by clip-path until focused, then an ink Button primary size-medium at the top left,
+   above the capsule. */
+.skip-link {
+  position: fixed; top: 12px; left: 16px; z-index: 1000;
+  display: inline-flex; align-items: center; height: 36px; padding: 0 var(--sp-12);
+  border-radius: var(--br-8); background: var(--color-gray-950); color: var(--color-gray-050);
+  font: 500 15px/1.6 var(--font-sans); letter-spacing: var(--tracking-button);
+  text-decoration: none; white-space: nowrap;
+  clip-path: inset(50%); pointer-events: none;
+}
+.skip-link:focus { clip-path: none; pointer-events: auto; outline: 2px solid var(--accent-focus); outline-offset: 4px; }
+
+/* =========================================================================================
+   HEADER CAPSULE: a fixed GLASS capsule over the photo, not a full-width bar.
+   Anthropic research chip sub-nav https://mobbin.com/sites/sections/5d90eadd-ec0b-4ec1-9729-d315afe8d366
+   Claude marketing header https://mobbin.com/sites/sections/6eb09dee-d3e2-4c6c-aa87-3346999a6d3c
+   The glass value is the research ScrollIntroGlobe control [R0h]
+     https://mobbin.com/sites/sections/d0ea8855-f290-486c-a4ba-7a1f9515d308
+   Sana floating pill nav https://mobbin.com/sites/sections/024243a5-db5f-4042-be7a-40f7e87a3bee
+   Zaro floating capsule https://mobbin.com/sites/sections/1504b865-76c3-4681-8079-da52475e6e58
+   Modifiers: --story (index.html, fixed over the stage)  --app (app.html, sticky; static on
+   phones). Contrast: ink on 40% ivory over the darkest stone pixel composites to about 8:1,
+   over the sky about 12:1.
+   ========================================================================================= */
+.site-header {
+  position: fixed; top: 12px; left: 0; right: 0; z-index: 75;
+  width: min(1120px, calc(100vw - 2 * var(--page-margin))); height: var(--header-height);
+  margin: 0 auto;
+  border: 1px solid var(--color-glass-border); border-radius: var(--br-12);
+  background: var(--color-glass-bg);
+  -webkit-backdrop-filter: blur(var(--glass-blur)); backdrop-filter: blur(var(--glass-blur));
+  box-shadow: var(--shadow-sm);
+  color: var(--text-primary);
+  /* [C6] NavBar entrance navSlideDown 1s --ease-out-power2. [A] fill-mode backwards, not
+     both: a forwards fill would pin transform and defeat .hidden below. */
+  animation: navSlideDown var(--dur-nav) var(--ease-out-power2) backwards;
+  transition: transform var(--dur-transform) var(--ease-out-quart);
+}
+@keyframes navSlideDown { 0% { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+.site-header--app { position: sticky; margin: 12px auto 0; }
+/* hide-on-scroll [R0j]: script.js adds .hidden while scrolling down inside the stage and
+   removes it on any upward scroll and at the stage's end; keyboard focus always brings it back. */
+.site-header.hidden { transform: translateY(-120%); }
+.site-header.hidden:focus-within { transform: none; }
+
+.site-header-inner {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--sp-12);
+  height: 100%; padding: 0 10px 0 14px;
+}
+
+/* the mark + wordmark: Newsreader 500 --headline-6/1.2 */
+.site-brand {
+  display: inline-flex; align-items: center; gap: var(--sp-8); flex: none;
+  min-height: 36px; margin-left: -4px; padding: 0 4px; border-radius: var(--br-8);
+  color: var(--text-primary); text-decoration: none; white-space: nowrap;
+  font: 500 var(--headline-6)/1.2 var(--font-display);
+}
+.site-mark { display: block; flex: none; }
+
+/* the chip row: research Tabs verbatim [R2]: 2px 12px 4px, 1px ink, 100px radius,
+   15px/1.6 500, tracking -.0025em; hover and current fill ink with ivory text (.2s). On index
+   the current fill is the sliding .cap-pill behind the link; on app it is the link itself. */
+.site-links { position: relative; display: flex; align-items: center; justify-self: center; gap: var(--sp-8); min-width: 0; }
+.site-link {
+  position: relative; z-index: 1;
+  display: inline-flex; align-items: center; padding: 2px 12px 4px;
+  border: 1px solid var(--border-strong); border-radius: var(--radius-round);
+  background: transparent; color: var(--text-primary); text-decoration: none; white-space: nowrap;
+  font: 500 15px/1.6 var(--font-sans); letter-spacing: var(--tracking-nav);
+  transition: color var(--dur-hover) var(--ease-in-quart), background-color var(--dur-hover) var(--ease-in-quart);
+}
+.site-link:hover, .site-link[aria-current="page"] { background: var(--color-gray-950); color: var(--color-gray-050); }
+.site-link.is-current { color: var(--color-gray-050); }
+.site-pill {
+  position: absolute; left: 0; top: 0; bottom: 0; z-index: 0;
+  width: 0; border-radius: var(--radius-round); background: var(--color-gray-950);
+  opacity: 0; pointer-events: none;
+  transition: transform .25s var(--ease-tabs), width .25s var(--ease-tabs), opacity var(--dur-hover) var(--ease-tabs);
+}
+
+.site-actions { display: flex; align-items: center; gap: var(--sp-8); justify-self: end; }
+.btn-mark { display: block; flex: none; width: 8px; height: 8px; border-radius: 1px; background: var(--accent); }   /* the clay square: the cost, the CTA glyph */
+
+/* the 2px chapter strip along the capsule's bottom edge, inside its radius: track --well,
+   three scaleX fills the reader drives (--seg0..2 from script.js, no transition), in the
+   chapter tones ink / clay / olive. It fades on the last 5% of the third chapter, which is
+   the stage's end, so nothing is needed from the script. Story page only. */
+.cap-strip {
+  position: absolute; left: 12px; right: 12px; bottom: 0; height: 2px;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px;
+  background: var(--well); pointer-events: none;
+  opacity: calc((1 - var(--seg2, 0)) * 20);
+}
+.cap-strip i { display: block; height: 100%; transform-origin: left center; transform: scaleX(var(--seg0, 0)); background: var(--tone-0); }
+.cap-strip i:nth-child(2) { transform: scaleX(var(--seg1, 0)); background: var(--tone-1); }
+.cap-strip i:nth-child(3) { transform: scaleX(var(--seg2, 0)); background: var(--tone-2); }
+.site-header--app .cap-strip { display: none; }
+
+@media (max-width: 832px) {
+  /* Below the tablet tier the Explorer chip is the action on index; the back arrow goes on app. */
+  .site-header--story .site-actions { display: none; }
+  .site-actions .btn-arrow { display: none; }
+}
+@media (max-width: 720px) {
+  .site-header { width: calc(100vw - 16px); }
+  .site-header--app { position: static; }
+  .site-word, .site-actions { display: none; }
+  .site-header-inner { grid-template-columns: auto minmax(0, 1fr); padding: 0 8px; }
+  .site-links { justify-self: end; gap: 4px; }
+  .site-link { padding: 2px 10px 4px; }
+}
+@media (max-width: 360px) {
+  .site-link { padding: 2px 8px 4px; font-size: 14px; }
+}
+@media (pointer: coarse) {
+  .site-link { min-height: 44px; }
+}
+
+/* =========================================================================================
+   CRUMB STRIP (app.html): under the capsule, in flow, not sticky. Claude NavBar breadcrumbs
+   [C6] https://mobbin.com/sites/sections/6eb09dee-d3e2-4c6c-aa87-3346999a6d3c; OpenAI About
+   rail back link https://mobbin.com/sites/sections/ce8344a8-9e58-49db-b909-db3b5576679d.
+   The right-hand note is a mono provenance line; results.js may fill #crumbRun with
+   "Snapshot of run {_run} \00b7 not live" from results.json._run.
+   ========================================================================================= */
+.site-crumbs { margin-top: 12px; border-block: 1px solid var(--border-tertiary); color: var(--text-secondary); font: 400 15px/1.6 var(--font-sans); }
+.site-crumbs-inner {
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: var(--sp-8) var(--sp-24);
+  max-width: calc(var(--container) + 2 * var(--page-margin)); margin: 0 auto; padding: 12px var(--page-margin);
+}
+.site-crumbs-list { display: flex; flex-wrap: wrap; align-items: baseline; margin: 0; padding: 0; list-style: none; }
+.site-crumbs-list li + li::before { content: "/"; margin: 0 8px; color: var(--text-tertiary); }
+.site-crumbs-list a { display: inline-block; padding: 8px 0; color: inherit; text-decoration: none; transition: color var(--dur-hover) ease-in-out; }
+.site-crumbs-list a:hover { color: var(--text-primary); text-decoration: underline; text-underline-offset: .15em; }
+.site-crumbs-list [aria-current] { color: var(--text-primary); }
+.site-crumbs-note { margin: 0; color: var(--text-tertiary); font: 400 12px/1.6 var(--font-mono); font-variant-numeric: var(--num); }
+
+/* =========================================================================================
+   BUTTONS [C4 .Button-module]: br-8, no border, min-width 44px, line-height 1, inline-flex;
+   size-large 40px 8px 16px gap 8px; size-medium 36px 8px 12px (default); size-small 28px
+   4px 12px gap 4px; transition color .1s, background-color .2s, border-color .2s,
+   box-shadow .2s ease-in-out. Variants from [C0 .theme-main] and [R2 data-theme=ivory]:
+     primary   ink #141413 / ivory #faf9f5, weight 480, hover #3d3d3a
+     secondary #e8e6dc / #4d4c48 weight 500, hover text ink; ring 1px #d1cfc5 -> 1px + 2px
+     tertiary  #faf9f5 / #5e5d59 weight 500, ring 1px #d1cfc5, hover text ink
+     brand     #c6613f / #fff
+   Slate variants under .theme-dark [C0 .theme-dark] [R2 data-theme=slate] [W .u-theme-dark].
+   No pills (pills are chips only), no lifts, no text-shadow on buttons ever [K].
+   Claude research hero black button https://mobbin.com/sites/sections/d0ea8855-f290-486c-a4ba-7a1f9515d308
+   Claude stacked CTA cards https://mobbin.com/sites/sections/6b3858df-ac1a-489c-b3bf-295a4e0f9fc1
+   ========================================================================================= */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; flex: none; gap: var(--sp-8);
+  max-width: 100%; min-width: 44px; height: 36px; margin: 0; padding: var(--sp-8) var(--sp-12);
+  border: none; border-radius: var(--br-8);
+  font-family: var(--font-sans); font-size: 14px; font-weight: var(--weight-medium); line-height: 1;
+  letter-spacing: var(--tracking-button); white-space: nowrap; text-decoration: none; text-shadow: none;
+  cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent;
+  transition: color var(--dur-text) ease-in-out, background-color var(--dur-hover) ease-in-out, border-color var(--dur-hover) ease-in-out, box-shadow var(--dur-hover) ease-in-out;
+}
+.btn-label { display: inline-block; }
+.btn svg { flex: none; display: block; }
+.btn--lg { height: 40px; padding: var(--sp-8) var(--sp-16); }
+.btn--sm { height: 28px; padding: var(--sp-4) var(--sp-12); gap: var(--sp-4); font-size: 13px; }
+
+.btn--primary { background: var(--color-gray-950); color: var(--color-gray-050); font-weight: var(--weight-button-primary); }
+.btn--primary:hover { background: var(--color-gray-700); }
+.btn--secondary { background: var(--color-gray-200); color: var(--color-gray-650); box-shadow: 0 0 0 0 var(--color-gray-200), 0 0 0 1px var(--border-secondary); }
+.btn--secondary:hover { color: var(--color-gray-950); box-shadow: 0 0 0 1px var(--color-gray-200), 0 0 0 2px var(--border-secondary); }
+.btn--tertiary { background: var(--color-gray-050); color: var(--color-gray-600); box-shadow: 0 0 0 1px var(--border-secondary); }
+.btn--tertiary:hover { color: var(--color-gray-950); }
+.btn--brand { background: var(--color-clay-hover); color: var(--color-gray-000); }
+.btn--brand:hover { background: var(--color-clay-dark); }
+.btn--ghost { background: transparent; color: var(--color-gray-950); }
+.btn--ghost:hover { background: var(--swatch-slate-faded-10); }
+.btn:disabled, .btn[aria-disabled="true"] { background: var(--color-gray-150); color: var(--text-disabled); box-shadow: none; cursor: not-allowed; }
+
+.theme-dark .btn--primary { background: var(--dark-btn-bg); color: var(--dark-btn-fg); font-weight: var(--weight-medium); }
+.theme-dark .btn--primary:hover { background: var(--dark-btn-bg-hover); }
+.theme-dark .btn--secondary { background: var(--dark-btn2-bg); color: var(--dark-text); box-shadow: none; }
+.theme-dark .btn--secondary:hover { background: var(--dark-btn2-bg-hover); color: var(--dark-text); box-shadow: none; }
+.theme-dark .btn--tertiary { background: transparent; color: var(--dark-text-2); box-shadow: 0 0 0 1px var(--dark-border); }
+.theme-dark .btn--tertiary:hover { color: var(--dark-text); }
+.theme-dark .btn--ghost { color: var(--dark-text); }
+.theme-dark .btn--ghost:hover { background: var(--swatch-ivory-faded-10); }
+.theme-dark .btn:disabled, .theme-dark .btn[aria-disabled="true"] { background: var(--dark-well); color: var(--dark-text-3); }
+
+@media (pointer: coarse) {
+  .btn { min-height: 44px; }
+}
+
+/* =========================================================================================
+   CHIPS [C4 FeatureGrid chip]: 4px 8px, 1px --theme-border-secondary, br-4,
+   --theme-background-secondary, 12px, weight 500, --theme-foreground-tertiary (7.5:1 on the
+   well). Variants carry an 8px colour square (clay with a 1px ink inset = the cost, olive =
+   depth, error = over the cap) instead of tinted text, so 12px text never drops under AA.
+   Chips are labels: no hover, no pointer. Dark chips under .theme-dark: 1px #3d3d3a, #1a1918,
+   #b0aea5. .chip--tab is the research chip-tab (36px, 100vw radius, 1px ink, hover fills ink)
+   for tabs, presets and the intro card's links.
+   Claude hero chip tabs https://mobbin.com/sites/sections/5456030e-9762-4284-a0de-76b4907fc9de
+   Claude capabilities row https://mobbin.com/sites/sections/e3dc86d1-cea3-4f7b-9864-46230a89e735
+   ========================================================================================= */
+.chip {
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; gap: 6px;
+  padding: var(--sp-4) var(--sp-8);
+  border: 1px solid var(--border-secondary); border-radius: var(--br-4);
+  background: var(--well); color: var(--text-tertiary);
+  font: 500 12px/1.6 var(--font-sans); letter-spacing: normal; white-space: nowrap;
+  font-variant-numeric: var(--num);
+}
+.chip svg { flex: none; display: block; width: 14px; height: 14px; }
+.chip--lg { font-size: 13px; }
+.chip--embedding::before, .chip--layers::before, .chip--over::before {
+  content: ""; display: block; flex: none; width: 8px; height: 8px; border-radius: 1px;
+}
+.chip--embedding::before { background: var(--cost); box-shadow: inset 0 0 0 1px var(--cost-edge); }
+.chip--layers::before { background: var(--depth); }
+.chip--over::before { background: var(--over-cap); }
+.chip--pending { color: var(--text-tertiary); }
+.chip--inverted { border-color: var(--color-gray-950); background: var(--color-gray-950); color: var(--color-gray-050); }
+.theme-dark .chip { border-color: var(--dark-border-2); background: var(--dark-panel); color: var(--dark-text-2); }
+.theme-dark .chip--inverted { border-color: var(--dark-text); background: var(--dark-text); color: var(--dark-canvas); }
+
+.chip--tab {
+  min-height: 36px; padding: 5px 14px;
+  border: 1px solid var(--border-strong); border-radius: var(--radius-round);
+  background: transparent; color: var(--text-primary);
+  font: 500 15px/1.6 var(--font-sans); letter-spacing: var(--tracking-nav);
+  text-decoration: none; cursor: pointer;
+  transition: color var(--dur-hover) var(--ease-in-quart), background-color var(--dur-hover) var(--ease-in-quart);
+}
+.chip--tab:hover, .chip--tab.is-selected, .chip--tab[aria-selected="true"], .chip--tab[aria-pressed="true"] { background: var(--color-gray-950); color: var(--color-gray-050); }
+.chip--tab:disabled, .chip--tab[aria-disabled="true"] { border-color: var(--border-primary); color: var(--text-disabled); cursor: not-allowed; background: transparent; }
+.theme-dark .chip--tab { border-color: var(--dark-text); color: var(--dark-text); }
+.theme-dark .chip--tab:hover, .theme-dark .chip--tab.is-selected, .theme-dark .chip--tab[aria-selected="true"] { background: var(--dark-text); color: var(--dark-canvas); }
+@media (pointer: coarse) {
+  .chip--tab { min-height: 44px; }
+}
+
+/* =========================================================================================
+   THE THREE MATERIALS. Exactly three surfaces exist on either page:
+     .card   white #fff, br-16, 1px slate-faded-10, the Webflow card shadow [W .card] plus the
+             dusk light on its top edge (--light-edge); nothing lifts on hover.
+     .glass  the anchor's only backdrop-filter [R0h]: #f5f4ed66, blur(5px), 1px #c2c0b64d,
+             4px radius, 8px 16px, 13px/400 #30302e; for the small floating controls only.
+     SLATE   .theme-dark above.
+   Text over the photo (the numeral only) carries --tshadow-ink; buttons never do.
+   ========================================================================================= */
+.card {
+  background: var(--panel); border: 1px solid var(--swatch-slate-faded-10); border-radius: var(--br-16);
+  box-shadow: var(--light-edge), var(--shadow-card);
+}
+.card--floating { box-shadow: var(--light-edge), var(--shadow-floating); }
+.card--receded { background: var(--panel-tint); box-shadow: var(--shadow-hairline); }
+.glass {
+  background: var(--color-glass-bg); border: 1px solid var(--color-glass-border); border-radius: var(--br-4);
+  padding: 8px 16px; color: var(--color-gray-750);
+  font: 400 13px/1.6 var(--font-sans); text-shadow: none;
+  -webkit-backdrop-filter: blur(var(--glass-blur)); backdrop-filter: blur(var(--glass-blur));
+  transition: background-color var(--dur-hover) ease-in-out;
+}
+button.glass, a.glass { cursor: pointer; text-decoration: none; }
+button.glass:hover, a.glass:hover { background: var(--color-gray-100); }
+.tshadow-ink { text-shadow: var(--tshadow-ink); }
+@media (pointer: coarse) {
+  button.glass, a.glass { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+}
+
+/* =========================================================================================
+   THE ARCH, the signature element. One hand-drawn span:
+     <div class="arch-wrap" aria-hidden="true" data-reveal>
+       <svg class="arch" viewBox="0 0 1200 300" preserveAspectRatio="none" focusable="false">
+         <path pathLength="1" d="M0 300 C 120 96, 330 40, 600 40 C 870 40, 1080 96, 1200 300"/>
+         <path class="arch-tick" d="M600 33 v14"/>
+       </svg>
+       <span class="arch-label">50,000,000</span>
+     </div>
+   Stroke 1.5px currentColor (ink at 70% on ivory: .arch-wrap; ivory at 20% on slate:
+   .arch-wrap--ivory), non-scaling so preserveAspectRatio="none" can squash it on phones.
+   It draws itself left to right over 1.6s --ease-grid-in when its [data-reveal] host gets
+   .is-in (script.js's observer on index; the explorer adds the class after its FadeIn); the
+   keystone tick and its label fade at .7 of the draw. Without scripts, and under reduced
+   motion, the arch is drawn. Whatever sits under the crown is under the cap.
+   The crown carries the only glow on the site: a 160px clay radial on ::before whose opacity
+   breathes 8s once .is-lit (the landing, when the model is loaded) or always at whisper
+   (.arch-wrap--whisper, the explorer hero). Grok light beam behind giant type, the restraint
+   reference https://mobbin.com/sites/sections/6d1d2671-6a8f-4bd9-868d-0f03dab5e519
+   ========================================================================================= */
+.arch-wrap { position: relative; display: block; color: #141413b3; }
+.arch-wrap--ivory { color: var(--swatch-ivory-faded-20); }
+.arch { display: block; width: 100%; height: 100%; overflow: visible; }
+.arch path {
+  fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; vector-effect: non-scaling-stroke;
+  stroke-dasharray: 1; stroke-dashoffset: 0;
+  transition: stroke-dashoffset var(--dur-arch) var(--ease-grid-in);
+}
+.arch .arch-tick { stroke-width: 2; stroke-linecap: butt; stroke-dasharray: none; opacity: 1; transition: opacity var(--dur-transform) var(--ease-out-power2) 1.12s; }
+.arch-label {
+  position: absolute; left: 50%; top: 13.3%; transform: translate(-50%, calc(-100% - 6px));
+  margin: 0; color: var(--text-tertiary); font: 400 12px/1.6 var(--font-mono); font-variant-numeric: var(--num);
+  white-space: nowrap; opacity: 1; transition: opacity var(--dur-transform) var(--ease-out-power2) 1.12s;
+}
+.arch-wrap--ivory .arch-label, .theme-dark .arch-label { color: var(--dark-text-3); }
+.js [data-reveal]:not(.is-in) .arch path:not(.arch-tick) { stroke-dashoffset: 1; }
+.js [data-reveal]:not(.is-in) :is(.arch-tick, .arch-label) { opacity: 0; }
+.arch-wrap::before {
+  content: ""; position: absolute; left: 50%; top: 13.3%; width: 160px; height: 160px; margin: -80px 0 0 -80px;
+  border-radius: 50%; background: radial-gradient(circle, var(--accent-muted) 0%, #d9775700 70%);
+  box-shadow: var(--glow-accent); opacity: 0; pointer-events: none;
+}
+.arch-wrap.is-lit::before, .arch-wrap--whisper::before { animation: arch-breathe 8s ease-in-out -3s infinite alternate; }
+.arch-wrap--whisper::before { opacity: .5; }
+@keyframes arch-breathe { from { opacity: .5; } to { opacity: 1; } }
+
+/* =========================================================================================
+   FOOTER (both pages, slate): a brand block beside link columns over a small-print bar,
+   then, on index only, the giant wordmark under the arch.
+   Harvey dark CTA + footer https://mobbin.com/sites/sections/3479c6e6-96b2-428f-9142-f47d07c94134
+   OpenAI footer columns https://mobbin.com/sites/sections/2a7bd006-b64c-468d-be1e-8e1440c7ad7e
+   Vucko "Back to top" in the baseline row https://mobbin.com/sites/sections/325d9889-5eae-493d-926a-a959e8e99005
+   Structured giant wordmark with its baseline fully visible
+     https://mobbin.com/sites/sections/cf954a98-4f2e-41d3-b2a1-168e4ba0108d
+   Links are the anchor's navLink [C6]: padding 8px 0, secondary text, primary on hover, .2s.
+   ========================================================================================= */
+.site-footer { border-top: 1px solid var(--dark-border-faint); font: 400 15px/1.6 var(--font-sans); }
+.site-footer--app { margin-top: var(--section-main); }
+.site-footer-inner {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--sp-32);
+  max-width: calc(var(--container) + 2 * var(--page-margin));
+  margin: 0 auto; padding: var(--sp-64) var(--page-margin) var(--sp-48);
+}
+.site-footer-brand {
+  display: flex; align-items: center; gap: var(--sp-8); margin: 0; align-self: start;
+  color: var(--dark-text); font: 500 var(--headline-6)/1.2 var(--font-display);
+}
+.site-footer-brand svg { flex: none; display: block; }
+.site-footer-nav { display: grid; grid-template-columns: repeat(2, minmax(9rem, auto)); column-gap: var(--sp-48); }
+.site-footer-head { margin: 0 0 var(--sp-4); color: var(--dark-text); font: 500 15px/1.6 var(--font-sans); }
+.site-footer-list { margin: 0; padding: 0; list-style: none; }
+.site-footer-link {
+  display: inline-flex; align-items: center; gap: var(--sp-4); min-height: 40px; padding: var(--sp-8) 0;
+  color: var(--dark-text-2); text-decoration: none;
+  transition: color var(--dur-hover) ease-in-out;
+}
+.site-footer-link:hover { color: var(--dark-text); }
+.site-footer-bar {
+  grid-column: 1 / -1;
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: var(--sp-8) var(--sp-24);
+  padding-top: var(--sp-24); border-top: 1px solid var(--dark-border-3);
+}
+.site-footer-bar p { margin: 0; color: var(--dark-text-3); font: 400 12px/1.6 var(--font-sans); }
+.site-footer-bar .site-footer-link { min-height: 24px; padding: 0; color: var(--dark-text-2); font: inherit; }
+.site-footer-bar .site-footer-link:hover { color: var(--dark-text); }
+
+/* the arch above the wordmark (ivory-faded stroke) and the wordmark under its crown.
+   Newsreader 400, clamp(56px, 12.6vw, 240px), nowrap, tracking -.02em, line-height 1.25 and
+   .16em of breathing room below: no overflow hidden and no clip anywhere near it, the g's
+   tail is the recurring clipping failure. Its letters (.bfw-l, split by script.js) are
+   choreographed by styles.css. A soft ivory radial (--glow-ivory) drifts 60s behind it. */
+.foot-arch {
+  position: absolute; left: var(--page-margin); right: var(--page-margin); bottom: 0; z-index: 0;
+  height: clamp(120px, 18vw, 260px); pointer-events: none;
+}
+.big-foot-word {
+  position: relative; z-index: 1; isolation: isolate;
+  margin: clamp(48px, 6vw, 96px) 0 0; padding: 0 var(--page-margin) .16em;
+  text-align: center; white-space: nowrap; color: var(--dark-text);
+  font: 400 clamp(56px, 12.6vw, 240px)/1.25 var(--font-display);
+  font-variation-settings: var(--font-opsz); letter-spacing: var(--tracking-display);
+}
+.big-foot-word::before {
+  content: ""; position: absolute; left: 50%; top: 50%; z-index: -1;
+  width: min(720px, 70vw); height: 100%; border-radius: 50%;
+  background: radial-gradient(ellipse at center, var(--swatch-ivory-faded-10) 0%, #faf9f500 70%);
+  box-shadow: var(--glow-ivory); pointer-events: none;
+  transform: translate(-50%, -50%);
+  animation: foot-glow 60s ease-in-out -20s infinite alternate;
+}
+@keyframes foot-glow { from { transform: translate(-50%, -50%); } to { transform: translate(-46%, -54%); } }
+
+@media (max-width: 640px) {
+  .site-footer-inner { grid-template-columns: minmax(0, 1fr); padding: var(--sp-48) var(--page-margin) var(--sp-32); }
+  .site-footer-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--sp-24); }
+  .big-foot-word { padding-inline: var(--sp-16); }
+}
+
+/* =========================================================================================
+   REDUCED MOTION, the shared components' final states. The [C0] clamp in the token block
+   already shortens every transition and animation; these make the resting state explicit
+   and honour a live flip in both directions (media queries re-evaluate on their own).
+   ========================================================================================= */
+@media (prefers-reduced-motion: reduce) {
+  html::before, html::after, body::before { animation: none; }
+  .site-header { animation: none; transition: none; }
+  .site-pill, .site-link, .btn, .chip--tab, .glass, .site-footer-link, .site-crumbs-list a { transition: none; }
+  .arch path { transition: none; stroke-dashoffset: 0 !important; }
+  .arch-tick, .arch-label { opacity: 1 !important; transition: none; }
+  .arch-wrap::before, .big-foot-word::before { animation: none; }
+}
