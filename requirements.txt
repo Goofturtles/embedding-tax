@@ -46,6 +46,8 @@ networkx==3.6.1
 nltk==3.10.3
 numexpr==2.14.2
 numpy==2.5.3
+onnx==1.22.0
+onnxruntime==1.30.0
 packaging==26.3
 pandas==3.0.5
 pathvalidate==3.3.1

@@ -10,7 +10,7 @@ By Arjun Sharma.
 
 At a width of 512, the embedding table costs `vocab × 512` parameters. With GPT-2's 50,257-token vocabulary that one table is 25.7M parameters: 51.5% of the cap spent before a single transformer layer exists, leaving room for 7 layers. A 16,384-token vocabulary costs 8.4M (16.8%) and leaves room for **13 layers**. Everything else in the model is held equal; the vocabulary is the decision.
 
-`python tools/param_count.py` prints the count and the config, and when torch is installed it also builds the real model and asserts the live count matches the arithmetic.
+`python tools/param_count.py` prints the count and the config, and when torch is installed it also builds the real model and asserts the live count matches the arithmetic. It also rewrites `configs/embedding_tax.json` from the config it checked.
 
 ## Model
 
@@ -41,7 +41,7 @@ Config: [`configs/embedding_tax.json`](configs/embedding_tax.json). Code: [`mode
 | Wall clock | 7.30 h, of which 2.05 h was deliberate idle (cooling pauses and a 65% GPU duty cap), so about 5.2 h of compute |
 | Throughput | 105,549 tokens/s (from the training log) |
 | Approximate compute | ≈ 5.6 × 10¹⁷ FLOPs (6 · N · D with N = 49.3M, D = 1.9B) |
-| Final validation loss | 3.1039 (per-token perplexity 22.29; per-token numbers only compare within this tokenizer) |
+| Final validation loss | 3.1039 on the training curve's 40-batch estimate (per-token perplexity 22.29); 3.1276 on a separate 320-batch estimate of the same final weights (22.82), the figure in `eval.json` and the model manifest. Per-token numbers only compare within this tokenizer. |
 
 The run's own records are in [`runs/r1/`](runs/r1/): `log.jsonl` (every step and validation point), `eval.json` (the harness output), `samples.json` and `meta.json` (the corpus snapshot). The checkpoints are not in the repository because of their size (197 MB model-only, 592 MB with optimizer state).
 
@@ -60,7 +60,7 @@ Scored with [lm-evaluation-harness](https://github.com/EleutherAI/lm-evaluation-
 
 Chance is listed beside every score because at this size HellaSwag and WinoGrande are expected to sit near it. Word perplexity and bits per byte are normalised per word and per byte, so unlike per-token perplexity they compare across tokenizers.
 
-Every number on the site is read from [`site/results.json`](site/results.json), which `tools/publish_results.py` writes from `runs/r1/log.jsonl` and `runs/r1/eval.json`. Nothing on the site is typed in by hand.
+Every measured number on the site is read from [`site/results.json`](site/results.json), which `tools/publish_results.py` writes from `runs/r1/log.jsonl` and `runs/r1/eval.json`. The GPT-2 Small and chance columns are reference values entered by hand; this pipeline did not measure them.
 
 ## Running the model in the browser
 
@@ -95,12 +95,14 @@ The guards only change which token can come next; the model's output is never ed
 pip install -r requirements.txt
 
 python tools/prepare_data.py --tokens 2000000000   # stream FineWeb-Edu, fit the tokenizer, write 19 train + 1 val shards
-python tools/train.py --run r1                      # add --resume to continue after a stop
-python tools/eval_harness.py --run r1               # lm-evaluation-harness -> runs/r1/eval.json
-python tools/sample.py --run r1                     # the four published samples -> runs/r1/samples.json
-python tools/publish_results.py --run r1            # -> site/results.json
-python tools/export_web.py --run r1                 # ONNX export, parity check, int8 -> site/model/
+python tools/train.py --run r2                      # add --resume to continue after a stop
+python tools/eval_harness.py --run r2               # lm-evaluation-harness -> runs/r2/eval.json
+python tools/sample.py --run r2                     # the four published samples -> runs/r2/samples.json
+python tools/publish_results.py --run r2            # -> site/results.json
+python tools/export_web.py --run r2 --ckpt runs/r2/ckpt.pt   # ONNX export, parity check, int8 -> site/model/
 ```
+
+`r1` is the submitted run. Its records are committed, and the trainer refuses to start a fresh run in a folder that already has a log, so a new run needs a new name.
 
 `tools/smoke.py` runs a few real training steps on random tokens and reports throughput and peak VRAM. `requirements.txt` is the exact environment the run used (a `pip freeze`, CUDA 12.4 wheels).
 
