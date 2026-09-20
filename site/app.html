@@ -41,14 +41,15 @@
     <a class="site-brand" href="index.html" aria-label="The Embedding Tax, home"><svg class="site-mark" viewBox="0 0 64 64" width="24" height="24" aria-hidden="true"><path d="M12 19 L52 19 L52 45 L44 45 L44 37 A12 12 0 0 0 20 37 L20 45 L12 45 Z" fill="currentColor"/></svg><span class="site-word" aria-hidden="true">The Embedding Tax</span></a>
     <nav class="site-links" aria-label="Main menu">
       <a class="site-link" href="index.html">Model</a>
-      <a class="site-link" href="story.html">Story</a>
       <a class="site-link" href="app.html" aria-current="page">Explorer</a>
+      <a class="site-link" href="app.html#results">Research</a>
+      <a class="site-link" href="story.html">Story</a>
     </nav>
     <div class="site-actions">
-      <a class="btn btn--secondary" href="index.html"><svg class="btn-arrow" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M13 8H3M7 4 3 8l4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="btn-label">Try the model</span></a>
+      <a class="btn btn--primary" href="app.html#results"><i class="btn-mark" aria-hidden="true"></i><span class="btn-label">Read the research</span></a>
     </div>
   </div>
-</header>
+  </header>
 
 <!-- Crumb strip (shared.css, "CRUMB STRIP"): under the capsule, in flow, not sticky. Claude
      NavBar breadcrumbs https://mobbin.com/sites/sections/6eb09dee-d3e2-4c6c-aa87-3346999a6d3c.
@@ -70,6 +71,31 @@
      https://mobbin.com/sites/sections/d0ea8855-f290-486c-a4ba-7a1f9515d308; Cohere grained
      ground https://mobbin.com/sites/sections/368bbb9d-dd0f-4d48-b4ff-07de548fd9fa. -->
 <main class="ex-main" id="work" tabindex="-1">
+
+  <!-- EXPLORER OPENING (.xop): one dark viewport before the ivory page, so arriving from the
+       home or the story never looks like the same screen twice. Centred composition, the arch
+       motif behind it, the calculator one scroll below. Figures here are the page's own published
+       constants; everything measured is rendered further down by results.js from results.json. -->
+  <section class="xop" aria-labelledby="xopTitle">
+    <div class="xop-bg" aria-hidden="true"></div>
+    <div class="xop-inner">
+      <p class="xop-eyebrow xop-in" style="--d:120ms"><span class="xop-dot" aria-hidden="true"></span>Explorer and research</p>
+      <h1 class="xop-title xop-in" id="xopTitle" style="--d:300ms">Every number on this page was measured, not claimed.</h1>
+      <p class="xop-sub xop-in" style="--d:500ms">Move the cap and watch the layers fit, then read the run that produced the model and the harness scores it earned.</p>
+      <div class="xop-cta xop-in" style="--d:700ms">
+        <a class="xop-btn xop-btn--light" href="#calc">Open the calculator</a>
+        <a class="xop-btn xop-btn--ghost" href="#results">Read the run</a>
+      </div>
+      <ul class="xop-feats">
+        <li class="xop-in" style="--d:1000ms"><span class="xop-tick" aria-hidden="true"></span>13 layers under a 50M cap</li>
+        <li class="xop-in" style="--d:1070ms"><span class="xop-tick" aria-hidden="true"></span>1.9B tokens, one GPU</li>
+        <li class="xop-in" style="--d:1140ms"><span class="xop-tick" aria-hidden="true"></span>lm-evaluation-harness</li>
+        <li class="xop-in" style="--d:1210ms"><span class="xop-tick" aria-hidden="true"></span>Runs in your browser</li>
+      </ul>
+      <span class="xop-rule xop-in" style="--d:1300ms" aria-hidden="true"></span>
+    </div>
+  </section>
+
 
   <!-- HERO UNDER THE ARCH. The signature span draws itself on load (shared.css .arch) and the
        headline sits under it: whatever is under the crown is under the cap. Antimetal two-tone

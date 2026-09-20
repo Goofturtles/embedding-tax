@@ -1473,4 +1473,49 @@
     root.classList.remove("js");
     throw err;
   }
+
+  /* ---- the story opening panel: every figure comes from results.json, never from the page ---- */
+  (function storyRun() {
+    var bars = document.querySelector('[data-run="bars"]');
+    if (!bars) return;
+    var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var set = function (key, text) {
+      var el = document.querySelector('[data-run="' + key + '"]');
+      if (el) el.textContent = text;
+    };
+    var fmt = function (n) { return Number(n).toLocaleString("en-US"); };
+    fetch("results.json", { cache: "default" }).then(function (r) { return r.json(); }).then(function (data) {
+      var curve = (data.training && data.training.val_curve) || [];
+      if (!curve.length) return;
+      var first = curve[0], last = curve[curve.length - 1];
+      set("loss", last.loss.toFixed(4));
+      set("first", first.loss.toFixed(4));
+      set("firststep", fmt(first.step));
+      set("drop", (-100 * (first.loss - last.loss) / first.loss).toFixed(1) + "%");
+      set("tokens", fmt(data.training.tokens_seen));
+      // 32 evenly spaced points of the real curve; the bar is the loss, floored just under the last one
+      var N = 32, lo = last.loss * 0.6, hi = first.loss;   // a floor under the last value, so the tail still reads
+      var frag = document.createDocumentFragment();
+      for (var i = 0; i < N; i++) {
+        var p = curve[Math.round(i * (curve.length - 1) / (N - 1))];
+        var bar = document.createElement("i");
+        bar.style.height = (100 * (p.loss - lo) / (hi - lo)).toFixed(1) + "%";
+        if (i < 4) bar.className = "is-early";
+        if (!reduce) bar.style.setProperty("--d", (1100 + i * 30) + "ms");
+        bar.title = "step " + fmt(p.step) + ": loss " + p.loss.toFixed(4);
+        frag.appendChild(bar);
+      }
+      bars.appendChild(frag);
+      var axis = document.querySelector('[data-run="axis"]');
+      if (axis) {
+        axis.textContent = "";
+        [0, 0.33, 0.66, 1].forEach(function (f) {
+          var p = curve[Math.round(f * (curve.length - 1))];
+          var span = document.createElement("span");
+          span.textContent = fmt(p.step);
+          axis.appendChild(span);
+        });
+      }
+    }).catch(function () { /* the panel keeps its published fallback text */ });
+  })();
 })();

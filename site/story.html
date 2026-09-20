@@ -44,19 +44,70 @@
 <header class="site-header site-header--story" id="capNav">
   <div class="site-header-inner">
     <a class="site-brand" href="index.html" aria-label="The Embedding Tax, home"><svg class="site-mark" viewBox="0 0 64 64" width="24" height="24" aria-hidden="true"><path d="M12 19 L52 19 L52 45 L44 45 L44 37 A12 12 0 0 0 20 37 L20 45 L12 45 Z" fill="currentColor"/></svg><span class="site-word" aria-hidden="true">The Embedding Tax</span></a>
-    <nav class="site-links cap-links" aria-label="Main menu">
-      <span class="site-pill cap-pill" aria-hidden="true"></span>
-      <a class="site-link" href="#cinema" data-sec="0">Intro</a>
-      <a class="site-link" href="#budget" data-sec="1">Budget</a>
-      <a class="site-link" href="#depth" data-sec="2">Depth</a>
+    <nav class="site-links" aria-label="Main menu">
+      <a class="site-link" href="index.html">Model</a>
       <a class="site-link" href="app.html">Explorer</a>
+      <a class="site-link" href="app.html#results">Research</a>
+      <a class="site-link" href="story.html" aria-current="page">Story</a>
     </nav>
     <div class="site-actions">
-      <a class="btn btn--primary" href="app.html"><i class="btn-mark" aria-hidden="true"></i><span class="btn-label">Open the explorer</span></a>
+      <a class="btn btn--primary" href="app.html#results"><i class="btn-mark" aria-hidden="true"></i><span class="btn-label">Read the research</span></a>
     </div>
   </div>
   <div class="cap-strip" aria-hidden="true"><i></i><i></i><i></i></div>
 </header>
+
+
+<!-- STORY OPENING: a dark glass front door, so arriving here never feels like the home page.
+     The photograph is the same Mostar sky, sunk under an ink veil; the panel on the right is the
+     real training run, read from results.json by script.js (storyRun): nothing here is typed in. -->
+<section class="sop" aria-labelledby="sopTitle">
+  <div class="sop-bg" aria-hidden="true"></div>
+  <div class="sop-inner">
+    <div class="sop-copy">
+      <p class="sop-eyebrow sop-in" style="--d:120ms"><span class="sop-dot" aria-hidden="true"></span>The story</p>
+      <h1 class="sop-title sop-in" id="sopTitle" style="--d:300ms">Fifty million parameters, and the word list eats half of them.</h1>
+      <p class="sop-sub sop-in" style="--d:500ms">A scroll through the one decision that set this model's shape, the budget it bought, and the run that followed.</p>
+      <div class="sop-cta sop-in" style="--d:700ms">
+        <a class="sop-btn sop-btn--light" href="#cinema">Start the story</a>
+        <a class="sop-btn sop-btn--ghost" href="app.html">Open the explorer</a>
+      </div>
+    </div>
+
+    <figure class="sop-card sop-in sop-in--scale" style="--d:900ms" aria-labelledby="sopCardHead">
+      <figcaption class="sop-card-head" id="sopCardHead">Validation loss, run r1</figcaption>
+      <p class="sop-amount"><span class="sop-amount-n" data-run="loss">3.1039</span><span class="sop-amount-d">/ token</span></p>
+      <div class="sop-delta">
+        <span class="sop-badge" data-run="drop">-45.5%</span>
+        <span class="sop-delta-note">from <span data-run="first">5.6906</span> at step <span data-run="firststep">250</span></span>
+      </div>
+      <div class="sop-chart">
+        <div class="sop-bars" data-run="bars" role="img" aria-label="Validation loss falling across the training run"></div>
+        <div class="sop-grid" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+      </div>
+      <div class="sop-axis" data-run="axis" aria-hidden="true"></div>
+      <p class="sop-foot"><span data-run="tokens">1,899,888,640</span> tokens on one RTX 4090</p>
+    </figure>
+  </div>
+  <a class="sop-scroll sop-in" style="--d:1100ms" href="#cinema" aria-label="Scroll to the story"><span aria-hidden="true">Scroll</span></a>
+</section>
+
+<!-- Page strip: the top bar is identical on every page, so this row says which page you are on
+     and carries the story's own chapter nav (script.js measures .cap-links and slides .cap-pill). -->
+<nav class="site-crumbs site-crumbs--story" aria-label="Breadcrumb">
+  <div class="site-crumbs-inner">
+    <ol class="site-crumbs-list">
+      <li><a href="index.html">The Embedding Tax</a></li>
+      <li aria-current="page">Story</li>
+    </ol>
+    <div class="site-links cap-links" role="group" aria-label="Chapters">
+      <span class="site-pill cap-pill" aria-hidden="true"></span>
+      <a class="site-link" href="#cinema" data-sec="0">Intro</a>
+      <a class="site-link" href="#budget" data-sec="1">Budget</a>
+      <a class="site-link" href="#depth" data-sec="2">Depth</a>
+    </div>
+  </div>
+</nav>
 
 <!-- Section rail: the anchor's tooltip card material (styles.css). The sliding thumb and the
      per-chapter side track follow Grain's story segments

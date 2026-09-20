@@ -687,3 +687,10 @@ button.glass:hover, a.glass:hover { background: var(--color-gray-100); }
   .arch-tick, .arch-label { opacity: 1 !important; transition: none; }
   .arch-wrap::before, .big-foot-word::before { animation: none; }
 }
+
+/* The page strip under the bar: the bar itself never changes between pages, so this row is
+   where a page says its name. On the story it also holds the chapter nav (.cap-links). */
+.site-crumbs--story .site-crumbs-inner { flex-wrap: wrap; gap: var(--sp-8) var(--sp-16); }
+.site-crumbs .cap-links { justify-self: end; margin-left: auto; padding: 4px 0; }
+.site-crumbs .cap-links .site-link { font-size: 14px; }
+@media (max-width: 700px) { .site-crumbs .cap-links { margin-left: 0; } }

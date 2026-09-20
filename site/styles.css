@@ -1228,3 +1228,74 @@ html:not(.js) .sight-card { transform: none; background: var(--panel); }
   .closing-city { transform: translateX(-50%); }
   .wp-switch-track, .wp-switch-track::after, .wp-seg-opt span { transition: none; }
 }
+
+/* =========================================================================================
+   STORY OPENING (.sop): the dark glass front door of story.html. The site's photograph runs
+   through every page, so this section sinks it under an ink veil and puts the copy and the run
+   panel on glass: arriving from the home page now looks like arriving somewhere else. Entrances
+   are staggered by --d with the reference board's easing, and every figure in the panel is
+   written by script.js from results.json.
+   ========================================================================================= */
+.sop { position: relative; isolation: isolate; display: flex; flex-direction: column; justify-content: center;
+  min-height: 100svh; padding: 132px var(--page-margin, 24px) 96px; overflow: hidden; background: #080a19; }
+.sop-bg { position: absolute; inset: 0; z-index: -1;
+  background: linear-gradient(180deg, #080a19d9 0%, #080a19b8 42%, #080a19f2 100%),
+              url("https://raft-blast-61784561.figma.site/_assets/v11/16b5007d9c93971e26ffe4e0e3e37946f6bd538c.png") center/cover no-repeat; }
+.sop-inner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: 40px; width: 100%; max-width: 1200px; margin: 0 auto; }
+.sop-copy { flex: 1 1 420px; max-width: 593px; }
+.sop-eyebrow { display: inline-flex; align-items: center; gap: 10px; margin: 0 0 20px; padding: 6px 14px;
+  border-radius: 999px; background: rgba(10, 7, 7, .35); backdrop-filter: blur(17px); -webkit-backdrop-filter: blur(17px);
+  color: #fff; font: 500 13px/1.4 var(--font-sans); }
+.sop-dot { width: 8px; height: 8px; border-radius: 2px; background: var(--accent); }
+.sop-title { margin: 0 0 20px; color: #fff; font: 400 clamp(36px, 5.2vw, 72px)/0.98 var(--font-display); letter-spacing: -.02em; text-wrap: balance; }
+.sop-sub { margin: 0 0 28px; max-width: 430px; color: #ffffffcc; font: 400 clamp(16px, 1.4vw, 20px)/1.35 var(--font-sans); }
+.sop-cta { display: flex; flex-wrap: wrap; gap: 12px; }
+.sop-btn { display: inline-flex; align-items: center; height: 51px; padding: 0 27px; border-radius: 12px;
+  font: 500 15px/1 var(--font-sans); text-decoration: none;
+  transition: opacity var(--dur-hover) ease-in-out, background-color var(--dur-hover) ease-in-out; }
+.sop-btn--light { background: #e9e9e9; color: #0a0707; }
+.sop-btn--ghost { border: 1px solid #ffffff8c; color: #fff; }
+.sop-btn--light:hover { opacity: .9; }
+.sop-btn--ghost:hover { background: #ffffff1a; }
+.sop-btn:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
+
+/* the run panel: the site's card material, on dark */
+.sop-card { flex: 0 1 405px; margin: 0; padding: 32px 32px 24px; border-radius: 28px;
+  background: rgba(17, 16, 15, .42); border: 1px solid #ffffff1f;
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); color: #fff; }
+.sop-card-head { margin: 0 0 16px; color: #fff; font: 500 18px/1.2 var(--font-sans); }
+.sop-amount { display: flex; align-items: baseline; gap: 10px; margin: 0 0 12px; }
+.sop-amount-n { color: #fff; font: 400 clamp(34px, 4vw, 46px)/1 var(--font-sans); font-variant-numeric: var(--num); }
+.sop-amount-d { color: #ffffff3d; font: 400 18px/1 var(--font-sans); }
+.sop-delta { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 32px; }
+.sop-badge { padding: 7px 6px; border-radius: 6px; background: #ffffff33; color: #fff; font: 500 14px/1 var(--font-mono); font-variant-numeric: var(--num); }
+.sop-delta-note { color: #ffffffb8; font: 400 13px/1.3 var(--font-sans); }
+.sop-chart { position: relative; }
+.sop-bars { display: flex; align-items: flex-end; gap: 1.5px; height: 100px; }
+.sop-bars i { flex: 1; border-radius: .5px; background: #fff; transform-origin: bottom; }
+.sop-bars i.is-early { background: #ffffff40; }
+.sop-grid { position: absolute; inset: 0; pointer-events: none; display: flex; }
+.sop-grid i { flex: 1; border-right: 1px solid #ffffff1a; }
+.sop-axis { display: flex; justify-content: space-between; margin-top: 12px; color: #ffffffb8; font: 400 10px/1 var(--font-mono); font-variant-numeric: var(--num); }
+.sop-foot { margin: 20px 0 0; padding-top: 16px; border-top: 1px solid #ffffff1a; color: #ffffff99; font: 400 12px/1.5 var(--font-mono); font-variant-numeric: var(--num); }
+.sop-scroll { align-self: center; margin-top: 56px; color: #ffffffb8; font: 500 11px/1 var(--font-sans); letter-spacing: .12em; text-transform: uppercase; text-decoration: none; }
+.sop-scroll:hover { color: #fff; }
+
+/* entrances: hidden in CSS, revealed by the animation's forwards fill */
+.sop-in { opacity: 0; animation: sop-up .8s cubic-bezier(.16, 1, .3, 1) var(--d, 0ms) forwards; }
+.sop-in--scale { animation-name: sop-scale; animation-duration: .9s; }
+.sop-eyebrow.sop-in { animation-name: sop-down; animation-duration: .7s; }
+@keyframes sop-up { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+@keyframes sop-down { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: none; } }
+@keyframes sop-scale { from { opacity: 0; transform: scale(.92); } to { opacity: 1; transform: none; } }
+@keyframes sop-bar { from { opacity: 0; transform: scaleY(0); } to { opacity: 1; transform: scaleY(1); } }
+.sop-bars i { opacity: 0; animation: sop-bar .6s cubic-bezier(.16, 1, .3, 1) var(--d, 0ms) forwards; }
+
+@media (max-width: 900px) { .sop { padding-top: 112px; } .sop-card { flex-basis: 100%; margin-inline: auto; max-width: 405px; } }
+@media (max-width: 640px) {
+  .sop-card { padding: 20px; border-radius: 24px; }
+  .sop-bars { height: 80px; }
+  .sop-btn { height: 46px; padding: 0 20px; font-size: 14px; }
+}
+@media (prefers-reduced-motion: reduce) { .sop-in, .sop-bars i { animation: none; opacity: 1; transform: none; } }
