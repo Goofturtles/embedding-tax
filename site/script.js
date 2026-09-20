@@ -1500,7 +1500,7 @@
         var p = curve[Math.round(i * (curve.length - 1) / (N - 1))];
         var bar = document.createElement("i");
         bar.style.height = (100 * (p.loss - lo) / (hi - lo)).toFixed(1) + "%";
-        if (i < 4) bar.className = "is-early";
+        if (i < 4) bar.className = "is-dim";   // the warm-up steps, dimmed as the reference card dims its edge bars
         if (!reduce) bar.style.setProperty("--d", (1100 + i * 30) + "ms");
         bar.title = "step " + fmt(p.step) + ": loss " + p.loss.toFixed(4);
         frag.appendChild(bar);
@@ -1509,7 +1509,7 @@
       var axis = document.querySelector('[data-run="axis"]');
       if (axis) {
         axis.textContent = "";
-        [0, 0.33, 0.66, 1].forEach(function (f) {
+        [0, 0.25, 0.5, 0.75, 1].forEach(function (f) {
           var p = curve[Math.round(f * (curve.length - 1))];
           var span = document.createElement("span");
           span.textContent = fmt(p.step);

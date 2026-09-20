@@ -1230,72 +1230,89 @@ html:not(.js) .sight-card { transform: none; background: var(--panel); }
 }
 
 /* =========================================================================================
-   STORY OPENING (.sop): the dark glass front door of story.html. The site's photograph runs
-   through every page, so this section sinks it under an ink veil and puts the copy and the run
-   panel on glass: arriving from the home page now looks like arriving somewhere else. Entrances
-   are staggered by --d with the reference board's easing, and every figure in the panel is
-   written by script.js from results.json.
+   STORY OPENING (.ap): the reference hero rebuilt value for value in plain CSS. Section
+   background #080A19 with the video on top (no gradient overlay, as specified); the row is
+   centred with 40px / 48px gaps; the copy column caps at 593px and the card at 405px. Entrance
+   timings are the brief's: 300 / 500 / 700 / 900ms, bars from 1100ms in 30ms steps, all on
+   cubic-bezier(.16, 1, .3, 1) with forwards fill, every element hidden until its animation.
    ========================================================================================= */
-.sop { position: relative; isolation: isolate; display: flex; flex-direction: column; justify-content: center;
-  min-height: 100svh; padding: 132px var(--page-margin, 24px) 96px; overflow: hidden; background: #080a19; }
-.sop-bg { position: absolute; inset: 0; z-index: -1;
-  background: linear-gradient(180deg, #080a19d9 0%, #080a19b8 42%, #080a19f2 100%),
-              url("https://raft-blast-61784561.figma.site/_assets/v11/16b5007d9c93971e26ffe4e0e3e37946f6bd538c.png") center/cover no-repeat; }
-.sop-inner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
-  gap: 40px; width: 100%; max-width: 1200px; margin: 0 auto; }
-.sop-copy { flex: 1 1 420px; max-width: 593px; }
-.sop-eyebrow { display: inline-flex; align-items: center; gap: 10px; margin: 0 0 20px; padding: 6px 14px;
-  border-radius: 999px; background: rgba(10, 7, 7, .35); backdrop-filter: blur(17px); -webkit-backdrop-filter: blur(17px);
-  color: #fff; font: 500 13px/1.4 var(--font-sans); }
-.sop-dot { width: 8px; height: 8px; border-radius: 2px; background: var(--accent); }
-.sop-title { margin: 0 0 20px; color: #fff; font: 400 clamp(36px, 5.2vw, 72px)/0.98 var(--font-display); letter-spacing: -.02em; text-wrap: balance; }
-.sop-sub { margin: 0 0 28px; max-width: 430px; color: #ffffffcc; font: 400 clamp(16px, 1.4vw, 20px)/1.35 var(--font-sans); }
-.sop-cta { display: flex; flex-wrap: wrap; gap: 12px; }
-.sop-btn { display: inline-flex; align-items: center; height: 51px; padding: 0 27px; border-radius: 12px;
-  font: 500 15px/1 var(--font-sans); text-decoration: none;
-  transition: opacity var(--dur-hover) ease-in-out, background-color var(--dur-hover) ease-in-out; }
-.sop-btn--light { background: #e9e9e9; color: #0a0707; }
-.sop-btn--ghost { border: 1px solid #ffffff8c; color: #fff; }
-.sop-btn--light:hover { opacity: .9; }
-.sop-btn--ghost:hover { background: #ffffff1a; }
-.sop-btn:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
-
-/* the run panel: the site's card material, on dark */
-.sop-card { flex: 0 1 405px; margin: 0; padding: 32px 32px 24px; border-radius: 28px;
-  background: rgba(17, 16, 15, .42); border: 1px solid #ffffff1f;
-  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); color: #fff; }
-.sop-card-head { margin: 0 0 16px; color: #fff; font: 500 18px/1.2 var(--font-sans); }
-.sop-amount { display: flex; align-items: baseline; gap: 10px; margin: 0 0 12px; }
-.sop-amount-n { color: #fff; font: 400 clamp(34px, 4vw, 46px)/1 var(--font-sans); font-variant-numeric: var(--num); }
-.sop-amount-d { color: #ffffff3d; font: 400 18px/1 var(--font-sans); }
-.sop-delta { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 32px; }
-.sop-badge { padding: 7px 6px; border-radius: 6px; background: #ffffff33; color: #fff; font: 500 14px/1 var(--font-mono); font-variant-numeric: var(--num); }
-.sop-delta-note { color: #ffffffb8; font: 400 13px/1.3 var(--font-sans); }
-.sop-chart { position: relative; }
-.sop-bars { display: flex; align-items: flex-end; gap: 1.5px; height: 100px; }
-.sop-bars i { flex: 1; border-radius: .5px; background: #fff; transform-origin: bottom; }
-.sop-bars i.is-early { background: #ffffff40; }
-.sop-grid { position: absolute; inset: 0; pointer-events: none; display: flex; }
-.sop-grid i { flex: 1; border-right: 1px solid #ffffff1a; }
-.sop-axis { display: flex; justify-content: space-between; margin-top: 12px; color: #ffffffb8; font: 400 10px/1 var(--font-mono); font-variant-numeric: var(--num); }
-.sop-foot { margin: 20px 0 0; padding-top: 16px; border-top: 1px solid #ffffff1a; color: #ffffff99; font: 400 12px/1.5 var(--font-mono); font-variant-numeric: var(--num); }
-.sop-scroll { align-self: center; margin-top: 56px; color: #ffffffb8; font: 500 11px/1 var(--font-sans); letter-spacing: .12em; text-transform: uppercase; text-decoration: none; }
-.sop-scroll:hover { color: #fff; }
-
-/* entrances: hidden in CSS, revealed by the animation's forwards fill */
-.sop-in { opacity: 0; animation: sop-up .8s cubic-bezier(.16, 1, .3, 1) var(--d, 0ms) forwards; }
-.sop-in--scale { animation-name: sop-scale; animation-duration: .9s; }
-.sop-eyebrow.sop-in { animation-name: sop-down; animation-duration: .7s; }
-@keyframes sop-up { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
-@keyframes sop-down { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: none; } }
-@keyframes sop-scale { from { opacity: 0; transform: scale(.92); } to { opacity: 1; transform: none; } }
-@keyframes sop-bar { from { opacity: 0; transform: scaleY(0); } to { opacity: 1; transform: scaleY(1); } }
-.sop-bars i { opacity: 0; animation: sop-bar .6s cubic-bezier(.16, 1, .3, 1) var(--d, 0ms) forwards; }
-
-@media (max-width: 900px) { .sop { padding-top: 112px; } .sop-card { flex-basis: 100%; margin-inline: auto; max-width: 405px; } }
-@media (max-width: 640px) {
-  .sop-card { padding: 20px; border-radius: 24px; }
-  .sop-bars { height: 80px; }
-  .sop-btn { height: 46px; padding: 0 20px; font-size: 14px; }
+.ap { position: relative; width: 100%; height: 100svh; overflow: hidden; background: #080A19; }
+.ap-art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.ap-z { position: relative; z-index: 1; height: 100%; display: flex; flex-direction: column; }
+.ap-row { flex: 1; display: flex; align-items: center; padding: 32px 0; }
+.ap-row > * { min-width: 0; }
+.ap-row { }
+.ap-z > .ap-row { width: 100%; }
+.ap-row { gap: 0; }
+.ap-z .ap-row { justify-content: center; }
+.ap-row > .ap-copy, .ap-row > .ap-cardwrap { }
+.ap-row { padding-inline: 20px; }
+@media (min-width: 640px) { .ap-row { padding-inline: 32px; } }
+@media (min-width: 768px) { .ap-row { padding-inline: 82px; } }
+.ap-row { max-width: 1800px; margin: 0 auto; }
+.ap-row { display: flex; flex-direction: column; gap: 40px; align-items: stretch; }
+@media (min-width: 1024px) { .ap-row { flex-direction: row; align-items: center; justify-content: space-between; gap: 48px; } }
+.ap-copy { max-width: 593px; }
+.ap-h1 { margin: 0 0 20px; color: #fff; font: 400 36px/0.95 var(--font-display); letter-spacing: -.01em; }
+.ap-sub { margin: 0 0 28px; max-width: 370px; color: #fffc; font: 450 16px/1.3 var(--font-sans); }
+.ap-cta { display: flex; flex-wrap: wrap; gap: 12px; }
+.ap-btn { display: inline-flex; align-items: center; height: 46px; padding: 0 20px; border-radius: 12px;
+  font: 450 14px/15.5px var(--font-sans); text-decoration: none; transition: opacity .2s ease-in-out, background-color .2s ease-in-out; }
+.ap-btn--light { background: #E9E9E9; color: #0A0707; }
+.ap-btn--light:hover { opacity: .9; }
+.ap-btn--ghost { border: 1px solid #fff; color: #fff; }
+.ap-btn--ghost:hover { opacity: .8; }
+.ap-btn:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
+@media (min-width: 640px) {
+  .ap-h1 { font-size: 52px; margin-bottom: 32px; }
+  .ap-sub { font-size: 18px; margin-bottom: 40px; }
+  .ap-cta { gap: 16px; }
+  .ap-btn { height: 51px; padding: 0 27px; font-size: 15.5px; }
 }
-@media (prefers-reduced-motion: reduce) { .sop-in, .sop-bars i { animation: none; opacity: 1; transform: none; } }
+@media (min-width: 768px) { .ap-h1 { font-size: 64px; } .ap-sub { font-size: 20px; } }
+@media (min-width: 1024px) { .ap-h1 { font-size: 72px; } }
+
+/* the stat card: rgba(17,16,15,.35) on 20px blur, radius 24 / 33, padding 20 / 32 with a
+   shallower bottom (20 / 24), centred under 1024px and left-aligned in its column above it */
+.ap-cardwrap { width: 100%; max-width: 405px; margin: 0 auto; }
+@media (min-width: 1024px) { .ap-cardwrap { margin: 0; } }
+.ap-card { margin: 0; padding: 20px 20px 20px; border-radius: 24px; background: rgba(17, 16, 15, .35);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+@media (min-width: 640px) { .ap-card { padding: 32px 32px 24px; border-radius: 33px; } }
+.ap-card-label { margin: 0 0 12px; color: #fff; font: 450 16px/20px var(--font-sans); }
+.ap-amount { margin: 0 0 8px; }
+.ap-amount-n { color: #fff; font: 450 28px/1 var(--font-sans); font-variant-numeric: var(--num); }
+.ap-amount-d { color: #fff3; font: 450 28px/1 var(--font-sans); }
+.ap-delta { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 24px; }
+.ap-badge { padding: 7px 6px; border-radius: 6px; background: #fff3; color: #fff; font: 450 12px/14px var(--font-sans); font-variant-numeric: var(--num); }
+.ap-delta-note { color: #fffc; font: 450 12px/14px var(--font-sans); opacity: .7; }
+@media (min-width: 640px) {
+  .ap-card-label { font-size: 20px; margin-bottom: 16px; }
+  .ap-amount { margin-bottom: 12px; }
+  .ap-amount-n, .ap-amount-d { font-size: 46px; }
+  .ap-delta { margin-bottom: 32px; }
+  .ap-badge, .ap-delta-note { font-size: 14px; }
+}
+.ap-chart { position: relative; }
+.ap-bars { display: flex; align-items: flex-end; gap: 1.5px; height: 80px; }
+@media (min-width: 640px) { .ap-bars { height: 100px; } }
+.ap-bars i { flex: 1; border-radius: .5px; background: #fff; transform-origin: bottom; opacity: 0;
+  animation: ap-bar .6s cubic-bezier(.16, 1, .3, 1) var(--d, 0ms) forwards; }
+.ap-bars i.is-dim { background: rgba(255, 255, 255, .1); }
+.ap-grid { position: absolute; inset: 0; pointer-events: none; }
+.ap-grid i { position: absolute; top: 0; bottom: 0; width: 1px; background: #ffffff1a; }
+.ap-grid i:nth-child(1) { left: 20%; } .ap-grid i:nth-child(2) { left: 40%; }
+.ap-grid i:nth-child(3) { left: 60%; } .ap-grid i:nth-child(4) { left: 80%; }
+.ap-grid i:nth-child(5) { left: 100%; }
+.ap-axis { display: flex; justify-content: space-between; margin-top: 12px; color: #fffc; font: 450 9px/10px var(--font-sans); font-variant-numeric: var(--num); }
+@media (min-width: 640px) { .ap-axis { font-size: 10px; } }
+.ap-axis span:nth-child(n+4) { opacity: .4; }
+
+.ap-anim { opacity: 0; animation-duration: .8s; animation-timing-function: cubic-bezier(.16, 1, .3, 1);
+  animation-delay: var(--d, 0ms); animation-fill-mode: forwards; }
+.ap-up { animation-name: ap-up; }
+.ap-scale { animation-name: ap-scale; animation-duration: .9s; }
+@keyframes ap-up { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+@keyframes ap-scale { from { opacity: 0; transform: scale(.92); } to { opacity: 1; transform: none; } }
+@keyframes ap-bar { from { opacity: 0; transform: scaleY(0); } to { opacity: 1; transform: scaleY(1); } }
+@media (prefers-reduced-motion: reduce) { .ap-anim, .ap-bars i { animation: none; opacity: 1; transform: none; } .ap-art { display: none; } }

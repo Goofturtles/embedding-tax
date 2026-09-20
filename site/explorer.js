@@ -914,3 +914,32 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
 })();
+
+/* The opening's artwork is a video, so reduced motion has to pause it: the CSS reset only
+   reaches animations and transitions. The second block retires the entrance once its last
+   tween has ended, so a later breakpoint change can never replay it. */
+(function () {
+  var q = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)");
+  var v = document.querySelector("video.nx-art");
+  if (!q || !v) return;
+  function sync() {
+    if (q.matches) { v.pause(); }
+    else { var p = v.play(); if (p && p.catch) p.catch(function () {}); }
+  }
+  sync();
+  if (q.addEventListener) q.addEventListener("change", sync);
+  else if (q.addListener) q.addListener(sync);
+})();
+(function () {
+  var last = document.querySelector(".nx-foot2");
+  if (!last) return;
+  var timer = 0;
+  function done() {
+    clearTimeout(timer);
+    last.removeEventListener("animationend", done);
+    document.documentElement.classList.add("is-entered");
+  }
+  last.addEventListener("animationend", done);
+  timer = setTimeout(done, 4000);
+})();
+

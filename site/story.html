@@ -58,38 +58,44 @@
 </header>
 
 
-<!-- STORY OPENING: a dark glass front door, so arriving here never feels like the home page.
-     The photograph is the same Mostar sky, sunk under an ink veil; the panel on the right is the
-     real training run, read from results.json by script.js (storyRun): nothing here is typed in. -->
-<section class="sop" aria-labelledby="sopTitle">
-  <div class="sop-bg" aria-hidden="true"></div>
-  <div class="sop-inner">
-    <div class="sop-copy">
-      <p class="sop-eyebrow sop-in" style="--d:120ms"><span class="sop-dot" aria-hidden="true"></span>The story</p>
-      <h1 class="sop-title sop-in" id="sopTitle" style="--d:300ms">Fifty million parameters, and the word list eats half of them.</h1>
-      <p class="sop-sub sop-in" style="--d:500ms">A scroll through the one decision that set this model's shape, the budget it bought, and the run that followed.</p>
-      <div class="sop-cta sop-in" style="--d:700ms">
-        <a class="sop-btn sop-btn--light" href="#cinema">Start the story</a>
-        <a class="sop-btn sop-btn--ghost" href="app.html">Open the explorer</a>
+<!-- STORY OPENING: the reference hero, value for value (section 4-8 of the brief), with our
+     words and our numbers. Video background, no gradient overlay; copy column max 593px; the
+     stat card is the run's real validation curve, written by script.js from results.json. -->
+<section class="ap">
+  <video class="ap-art" src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260813_092641_de52eb87-daf2-41db-92cb-7a56eae012a5.mp4" autoplay loop muted playsinline aria-hidden="true"></video>
+  <div class="ap-z">
+    <div class="ap-row">
+      <div class="ap-copy">
+        <div class="ap-anim ap-up" style="--d:300ms">
+          <h1 class="ap-h1">Fifty million parameters, and the word list takes half</h1>
+        </div>
+        <div class="ap-anim ap-up" style="--d:500ms">
+          <p class="ap-sub">A smaller vocabulary bought this model six more layers</p>
+        </div>
+        <div class="ap-anim ap-up" style="--d:700ms">
+          <div class="ap-cta">
+            <a class="ap-btn ap-btn--light" href="#cinema">Start the story</a>
+            <a class="ap-btn ap-btn--ghost" href="app.html">Open the explorer</a>
+          </div>
+        </div>
+      </div>
+      <div class="ap-anim ap-scale ap-cardwrap" style="--d:900ms">
+        <figure class="ap-card">
+          <figcaption class="ap-card-label">Validation loss</figcaption>
+          <p class="ap-amount"><span class="ap-amount-n" data-run="loss">3.1039</span><span class="ap-amount-d"> / token</span></p>
+          <div class="ap-delta">
+            <span class="ap-badge" data-run="drop">-45.5%</span>
+            <span class="ap-delta-note">vs. first measured point (<span data-run="first">5.69</span> at step <span data-run="firststep">250</span>)</span>
+          </div>
+          <div class="ap-chart">
+            <div class="ap-bars" data-run="bars" role="img" aria-label="Validation loss falling across 14,495 training steps"></div>
+            <div class="ap-grid" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+          </div>
+          <div class="ap-axis" data-run="axis" aria-hidden="true"></div>
+        </figure>
       </div>
     </div>
-
-    <figure class="sop-card sop-in sop-in--scale" style="--d:900ms" aria-labelledby="sopCardHead">
-      <figcaption class="sop-card-head" id="sopCardHead">Validation loss, run r1</figcaption>
-      <p class="sop-amount"><span class="sop-amount-n" data-run="loss">3.1039</span><span class="sop-amount-d">/ token</span></p>
-      <div class="sop-delta">
-        <span class="sop-badge" data-run="drop">-45.5%</span>
-        <span class="sop-delta-note">from <span data-run="first">5.6906</span> at step <span data-run="firststep">250</span></span>
-      </div>
-      <div class="sop-chart">
-        <div class="sop-bars" data-run="bars" role="img" aria-label="Validation loss falling across the training run"></div>
-        <div class="sop-grid" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
-      </div>
-      <div class="sop-axis" data-run="axis" aria-hidden="true"></div>
-      <p class="sop-foot"><span data-run="tokens">1,899,888,640</span> tokens on one RTX 4090</p>
-    </figure>
   </div>
-  <a class="sop-scroll sop-in" style="--d:1100ms" href="#cinema" aria-label="Scroll to the story"><span aria-hidden="true">Scroll</span></a>
 </section>
 
 <!-- Page strip: the top bar is identical on every page, so this row says which page you are on
