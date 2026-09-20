@@ -1316,3 +1316,21 @@ html:not(.js) .sight-card { transform: none; background: var(--panel); }
 @keyframes ap-scale { from { opacity: 0; transform: scale(.92); } to { opacity: 1; transform: none; } }
 @keyframes ap-bar { from { opacity: 0; transform: scaleY(0); } to { opacity: 1; transform: scaleY(1); } }
 @media (prefers-reduced-motion: reduce) { .ap-anim, .ap-bars i { animation: none; opacity: 1; transform: none; } .ap-art { display: none; } }
+
+/* =========================================================================================
+   THE STORY RUNS WITHOUT THE PHOTOGRAPH. The Mostar scene is the home page's backdrop, and
+   repeating it under the scroll story made the two pages read as one. The photographic layers
+   are dropped here and the stage keeps its own ground: the same ivory the rest of the site is
+   built on, with a soft sky wash at the top so the arch still has something to sit in. The rig
+   in script.js is untouched: it writes its transforms to layers that are simply not painted.
+   ========================================================================================= */
+.scene-img { display: none !important; }
+.world {
+  background:
+    radial-gradient(120% 70% at 50% 0%, #e8eef4 0%, #f3f1ea 46%, #faf9f5 100%);
+}
+.world::after {
+  content: ""; position: absolute; inset: auto 0 0; height: 42%;
+  background: linear-gradient(180deg, #faf9f500 0%, #f0ece1cc 60%, #ece7da 100%);
+  pointer-events: none;
+}

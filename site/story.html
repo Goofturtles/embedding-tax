@@ -22,6 +22,7 @@
 <!-- presets.js: the decoding presets, one table for this panel, the explorer and the home composer -->
 <script src="presets.js" defer></script>
 <script src="script.js" defer></script>
+<script src="loopvideo.js" defer></script>
 <!-- The model in the browser (built by the model workflow): window.EmbeddingTax. A missing
      file is a 404 and the Watch-it-write panel shows its packaging state; nothing simulates. -->
 <script src="infer.js" defer></script>
@@ -47,11 +48,11 @@
     <nav class="site-links" aria-label="Main menu">
       <a class="site-link" href="index.html">Model</a>
       <a class="site-link" href="app.html">Explorer</a>
-      <a class="site-link" href="app.html#results">Research</a>
+      <a class="site-link" href="research.html">Research</a>
       <a class="site-link" href="story.html" aria-current="page">Story</a>
     </nav>
     <div class="site-actions">
-      <a class="btn btn--primary" href="app.html#results"><i class="btn-mark" aria-hidden="true"></i><span class="btn-label">Read the research</span></a>
+      <a class="btn btn--primary" href="research.html"><i class="btn-mark" aria-hidden="true"></i><span class="btn-label">Read the research</span></a>
     </div>
   </div>
   <div class="cap-strip" aria-hidden="true"><i></i><i></i><i></i></div>
@@ -62,7 +63,7 @@
      words and our numbers. Video background, no gradient overlay; copy column max 593px; the
      stat card is the run's real validation curve, written by script.js from results.json. -->
 <section class="ap">
-  <video class="ap-art" src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260813_092641_de52eb87-daf2-41db-92cb-7a56eae012a5.mp4" autoplay loop muted playsinline aria-hidden="true"></video>
+  <video class="ap-art" data-seamless src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260813_092641_de52eb87-daf2-41db-92cb-7a56eae012a5.mp4" autoplay loop muted playsinline aria-hidden="true"></video>
   <div class="ap-z">
     <div class="ap-row">
       <div class="ap-copy">
@@ -398,7 +399,7 @@
         <!-- The step and the run's state are bound to the model manifest (script.js); until it
              loads the line says "a step not yet published". -->
         <p class="watch-honest">It writes fluently and is often wrong. This checkpoint is from <span id="lpStep">a step not yet published</span> of <span id="lpRun">a training run that is still going</span>.</p>
-        <p class="watch-link"><a href="app.html#results">See the run so far</a></p>
+        <p class="watch-link"><a href="research.html">See the run so far</a></p>
       </div>
 
       <div class="watch-stage">
@@ -453,7 +454,7 @@
 
           <div class="wp-note wp-note--pack" id="lpPack">
             <p class="wp-note-title">The model is being packaged.</p>
-            <p>The weights are being exported for the browser. This panel will run them here as soon as they land; nothing is simulated in the meantime. <a href="app.html#results">See the run so far</a></p>
+            <p>The weights are being exported for the browser. This panel will run them here as soon as they land; nothing is simulated in the meantime. <a href="research.html">See the run so far</a></p>
           </div>
           <div class="wp-note wp-note--idle" id="lpIdle" hidden>
             <p>One download, kept by your browser. Nothing you type leaves this page.</p>

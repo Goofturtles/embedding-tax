@@ -960,23 +960,20 @@
   timer = setTimeout(done, 4000);
 })();
 
-/* Explorer and Research are two halves of this page, not two pages: the calculator and the
-   model up top, the measured record from #results down. Clicking Research therefore stays here,
-   which read as the bar ignoring the click, so the bar now marks whichever half you are in. */
+/* The research opening: the poster paints first, and the clip is revealed only once it has
+   frames, so there is no flash. Some mobile browsers withhold autoplay until a gesture, so the
+   play attempt is repeated on the first touch and click. */
 (function () {
-  var links = {
-    explorer: document.querySelector('.site-links a[href="app.html"]'),
-    research: document.querySelector('.site-links a[href="app.html#results"]')
-  };
-  var results = document.getElementById("results");
-  if (!links.explorer || !links.research || !results || !("IntersectionObserver" in window)) return;
-  function mark(inResearch) {
-    var on = inResearch ? links.research : links.explorer;
-    var off = inResearch ? links.explorer : links.research;
-    on.setAttribute("aria-current", "page");
-    off.removeAttribute("aria-current");
+  var video = document.getElementById("vyVideo");
+  if (!video) return;
+  function reveal() { video.classList.add("is-ready"); }
+  if (video.readyState >= 3) reveal();
+  else video.addEventListener("loadeddata", reveal, { once: true });
+  function kick() {
+    var p = video.play();
+    if (p && p.catch) p.catch(function () {});
   }
-  new IntersectionObserver(function (entries) {
-    mark(entries[0].isIntersecting || entries[0].boundingClientRect.top < 0);
-  }, { rootMargin: "-45% 0px -45% 0px", threshold: 0 }).observe(results);
+  kick();
+  window.addEventListener("touchstart", kick, { once: true, passive: true });
+  window.addEventListener("click", kick, { once: true });
 })();
