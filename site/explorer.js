@@ -960,23 +960,13 @@
   timer = setTimeout(done, 4000);
 })();
 
-/* The research opening: the poster paints first, and the clip is revealed only once it has
-   frames, so there is no flash. Some mobile browsers withhold autoplay until a gesture, so the
-   play attempt is repeated on the first touch and click. */
+/* The research opening: the poster carries first paint and each clip is revealed once it has
+   frames, so there is no flash. Playback itself is loopvideo.js's job. */
 (function () {
-  var video = document.getElementById("vyVideo");
-  if (!video) return;
-  function reveal() { video.classList.add("is-ready"); }
-  if (video.readyState >= 3) reveal();
-  else video.addEventListener("loadeddata", reveal, { once: true });
-  function kick() {
-    // loopvideo.js swaps between two copies, so play whichever one is on screen: playing the
-    // hidden twin would leave two decoders running and the visible copy out of step
-    var live = document.querySelector(".vy-media video:not(.lv-off)") || video;
-    var p = live.play();
-    if (p && p.catch) p.catch(function () {});
-  }
-  kick();
-  window.addEventListener("touchstart", kick, { once: true, passive: true });
-  window.addEventListener("click", kick, { once: true });
+  var clips = [].slice.call(document.querySelectorAll(".vy-media video, .vy-front"));
+  clips.forEach(function (v) {
+    var reveal = function () { v.classList.add("is-ready"); };
+    if (v.readyState >= 2) reveal();
+    else v.addEventListener("loadeddata", reveal, { once: true });
+  });
 })();
