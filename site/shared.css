@@ -694,3 +694,26 @@ button.glass:hover, a.glass:hover { background: var(--color-gray-100); }
 .site-crumbs .cap-links { justify-self: end; margin-left: auto; padding: 4px 0; }
 .site-crumbs .cap-links .site-link { font-size: 14px; }
 @media (max-width: 700px) { .site-crumbs .cap-links { margin-left: 0; } }
+
+/* =========================================================================================
+   THE BAR OVER AN OPENING: story.html and app.html start on a full-bleed video composition, and
+   both references carry their navigation on top of the artwork rather than in a band above it.
+   So on those pages the capsule floats, in white, with no plate, until the opening is scrolled
+   past: then it settles back into the glass capsule the rest of the site uses. The switch is a
+   class on <html> written by one IntersectionObserver (explorer.js / script.js).
+   ========================================================================================= */
+.has-opening .site-header { position: fixed; top: 12px; z-index: 40; margin-inline: auto; left: 0; right: 0;
+  transition: background-color var(--dur-transform) ease-in-out, border-color var(--dur-transform) ease-in-out, box-shadow var(--dur-transform) ease-in-out; }
+html:not(.past-opening) .has-opening .site-header {
+  background: transparent; border-color: transparent; box-shadow: none;
+  backdrop-filter: none; -webkit-backdrop-filter: none;
+}
+html:not(.past-opening) .has-opening .site-brand,
+html:not(.past-opening) .has-opening .site-link { color: #fff; }
+html:not(.past-opening) .has-opening .site-link { border-color: #ffffff5c; }
+html:not(.past-opening) .has-opening .site-link:hover { background: #ffffff1f; color: #fff; }
+html:not(.past-opening) .has-opening .site-link[aria-current] { background: #fff; color: #0a0707; border-color: #fff; }
+html:not(.past-opening) .has-opening .site-actions .btn--primary { background: #e9e9e9; color: #0a0707; }
+html:not(.past-opening) .has-opening .site-actions .btn--primary:hover { background: #fff; }
+.has-opening .site-crumbs { margin-top: 0; }
+@media (prefers-reduced-motion: reduce) { .has-opening .site-header { transition: none; } }

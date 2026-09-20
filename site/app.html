@@ -26,7 +26,7 @@
 <script src="presets.js" defer></script>
 <script src="playground.js" defer></script>
 </head>
-<body class="ex-body">
+<body class="ex-body has-opening">
 
 <a class="skip-link" href="#work">Skip to content</a>
 
@@ -51,19 +51,6 @@
   </div>
   </header>
 
-<!-- Crumb strip (shared.css, "CRUMB STRIP"): under the capsule, in flow, not sticky. Claude
-     NavBar breadcrumbs https://mobbin.com/sites/sections/6eb09dee-d3e2-4c6c-aa87-3346999a6d3c.
-     #crumbRun is a static provenance note; results.js may extend it to
-     "Snapshot of run {_run} · not live" from results.json._run. Nothing here implies live data. -->
-<nav class="site-crumbs" aria-label="Breadcrumb">
-  <div class="site-crumbs-inner">
-    <ol class="site-crumbs-list">
-      <li><a href="index.html">The Embedding Tax</a></li>
-      <li aria-current="page">Explorer</li>
-    </ol>
-    <p class="site-crumbs-note" id="crumbRun">Snapshot · not live</p>
-  </div>
-</nav>
 
 <!-- PAGE ORDER: hero under the arch, the instrument, the model in use, the provenance seam,
      then the measured record (run, benchmarks, published samples). Rhythm and white cards
@@ -94,6 +81,20 @@
     </div>
     <footer class="nx-foot"><span class="nx-foot1">Trained from scratch on one RTX 4090.</span><span class="nx-foot2">2026</span></footer>
   </section>
+
+<!-- Crumb strip (shared.css, "CRUMB STRIP"): under the capsule, in flow, not sticky. Claude
+     NavBar breadcrumbs https://mobbin.com/sites/sections/6eb09dee-d3e2-4c6c-aa87-3346999a6d3c.
+     #crumbRun is a static provenance note; results.js may extend it to
+     "Snapshot of run {_run} · not live" from results.json._run. Nothing here implies live data. -->
+<nav class="site-crumbs" aria-label="Breadcrumb">
+  <div class="site-crumbs-inner">
+    <ol class="site-crumbs-list">
+      <li><a href="index.html">The Embedding Tax</a></li>
+      <li aria-current="page">Explorer</li>
+    </ol>
+    <p class="site-crumbs-note" id="crumbRun">Snapshot · not live</p>
+  </div>
+</nav>
 
 
   <!-- HERO UNDER THE ARCH. The signature span draws itself on load (shared.css .arch) and the
