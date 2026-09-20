@@ -1090,10 +1090,15 @@
    turntable occludes the headline and the opening reads with depth rather than as a flat plate */
 .vy-front { position: absolute; inset: 0; z-index: 20; width: 100%; height: 100%; object-fit: cover;
   object-position: center 62%; pointer-events: none; opacity: 0; transition: opacity 1.2s ease;
-  -webkit-mask-image: linear-gradient(180deg, transparent 0 46%, #000 58%, #000 100%);
-  mask-image: linear-gradient(180deg, transparent 0 46%, #000 58%, #000 100%); }
+  -webkit-mask-image: linear-gradient(180deg, transparent 0 56%, #000 68%, #000 100%);
+  mask-image: linear-gradient(180deg, transparent 0 56%, #000 68%, #000 100%); }
 .vy-front.is-ready { opacity: 1; }
 @media (max-width: 900px) and (orientation: portrait) {
   .vy-front { top: auto; bottom: 0; height: 64svh; }
 }
 @media (prefers-reduced-motion: reduce) { .vy-front { display: none; } }
+
+/* loopvideo.js gives each clip a twin and swaps them at the loop point: the one waiting its turn
+   is hidden outright, with no transition, so the handover cannot be seen. */
+.lv-off { opacity: 0 !important; transition: none !important; pointer-events: none; }
+.vy-media video, .vy-media img { pointer-events: none; }

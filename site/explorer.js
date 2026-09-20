@@ -922,7 +922,7 @@
    is the one exception, since the CSS reset only reaches animations: there it sits paused on
    its first frame. */
 (function () {
-  var opening = document.querySelector(".ap, .nx");
+  var opening = document.querySelector(".ap, .nx, .vy");
   if (!opening) return;
   var video = opening.querySelector("video");
   var root = document.documentElement;

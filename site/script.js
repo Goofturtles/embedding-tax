@@ -671,7 +671,7 @@
     introOn = atTop && !reduceMotion.matches && !isShort;
     if (!atTop) { root.classList.add("no-veil"); return; }
     if (!introOn) { root.classList.add("scene-open"); return; }   // the veil's lift only, no settle
-    var decodes = toArray(document.querySelectorAll(".sky-img, .bridge-img")).map(function (img) {
+    var decodes = toArray(document.querySelectorAll(".sky-img, .bridge-img")).map(function (img) {   // none since the scene left; the veil then lifts on the next frame
       return img.decode ? img.decode().catch(function () {}) : Promise.resolve();
     });
     Promise.race([Promise.all(decodes), wait(500)]).then(function () {
@@ -1526,7 +1526,7 @@
    is the one exception, since the CSS reset only reaches animations: there it sits paused on
    its first frame. */
 (function () {
-  var opening = document.querySelector(".ap, .nx");
+  var opening = document.querySelector(".ap, .nx, .vy");
   if (!opening) return;
   var video = opening.querySelector("video");
   var root = document.documentElement;
