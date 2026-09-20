@@ -64,6 +64,11 @@
     video.loop = false;                      // the handover is the loop now
     video.parentNode.insertBefore(twin, video.nextSibling);
 
+    // the authored element is revealed the same way its twin already is, or the pair would pop
+    // in at the first handover: the pages only reveal the clips they know about by id
+    if (video.readyState >= 2) video.classList.add('is-ready');
+    else video.addEventListener('loadeddata', function () { video.classList.add('is-ready'); }, { once: true });
+
     this.front = video;
     this.back = twin;
     this.armed = false;
@@ -122,14 +127,13 @@
   var authored = [].slice.call(document.querySelectorAll('video[data-seamless]'));
   if (!authored.length) return;
 
+  // The clips carry their file in data-src, so nothing is fetched until this runs: a visitor who
+  // asked for less motion downloads no video at all, and keeps the poster the markup already has.
   var i;
-  if (rm && rm.matches) {                    // and it downloads nothing either
-    for (i = 0; i < authored.length; i++) {
-      authored[i].autoplay = false;
-      authored[i].preload = 'none';
-      authored[i].pause();
-    }
-    return;
+  if (rm && rm.matches) return;
+  for (i = 0; i < authored.length; i++) {
+    var src = authored[i].getAttribute('data-src');
+    if (src) authored[i].src = src;
   }
 
   var pairs = [], byId = {};
