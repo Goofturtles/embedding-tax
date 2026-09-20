@@ -10,8 +10,8 @@
    the page is restored from the back/forward cache, and whenever one reports that it paused,
    stalled or ran out of data. Nothing else: no swapping, no seeking, no pausing off screen.
 
-   Reduced motion is the one exception. There the clips are paused and the pages show their
-   poster instead, which is the frame the loop was built from.  */
+   Reduced motion is the one exception. The pages hide these clips there, so they are paused and
+   their download is dropped rather than left buffering for something nobody will see.  */
 (function () {
   'use strict';
 
@@ -23,25 +23,35 @@
 
   function kick(video) {
     if (reduced()) { video.pause(); return; }
-    if (!video.paused) return;
+    if (!video.paused || video.error) return;
+    // an autoplay a browser will not grant answers every play() with another pause event, so a
+    // clip that keeps refusing is left alone until the visitor does something
+    if (video.lvTries > 8) return;
+    video.lvTries = (video.lvTries || 0) + 1;
     var p = video.play();
-    if (p && p.catch) p.catch(function () {});   // a refusal is retried on the next gesture
+    if (p && p.then) p.then(function () { video.lvTries = 0; }, function () { /* retried on the next gesture */ });
   }
 
   function kickAll() {
-    for (var i = 0; i < videos.length; i++) kick(videos[i]);
+    videos.forEach(function (video) { video.lvTries = 0; kick(video); });
   }
 
-  for (var i = 0; i < videos.length; i++) {
-    var video = videos[i];
+  videos.forEach(function (video) {
     video.loop = true;                      // whatever the markup says, these clips repeat
     video.muted = true;                     // muted is what makes autoplay legal
+    if (reduced()) {
+      // the pages hide these clips entirely under reduced motion, so stop the download too
+      video.pause();
+      video.removeAttribute('src');
+      video.load();
+      return;
+    }
     kick(video);
-    // an element that reports trouble is simply started again
+    // an element that reports trouble is simply started again, that element and no other
     ['pause', 'stalled', 'suspend', 'waiting', 'canplay', 'loadeddata'].forEach(function (evt) {
       video.addEventListener(evt, function () { kick(video); });
     });
-  }
+  });
 
   document.addEventListener('visibilitychange', function () { if (!document.hidden) kickAll(); });
   window.addEventListener('pageshow', kickAll);
