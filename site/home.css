@@ -98,7 +98,9 @@ html.zt-on .zt-hero .try-chip:disabled { opacity: calc(var(--ho, 1) * .55); }
 html.zt-on .zt-stage { position: absolute; left: 0; right: 0; bottom: 0; z-index: 1; box-sizing: border-box; height: var(--svh-px);
   display: grid; grid-template-areas: "c"; grid-template-columns: minmax(0, 1fr); place-items: center; padding: calc(var(--header-band) + 12px) var(--page-margin) 24px; }
 html.zt-on .zt-chap { grid-area: c; margin: 0; transform-origin: var(--ox) var(--oy); transform: scale(var(--cs, 1)); will-change: transform; }
-html.zt-on .zt-chap :is(.chap-panel, .pages-head, .dest) { opacity: var(--co, 1); }
+html.zt-on .zt-chap :is(.chap-panel, .pages-head, .dest) { opacity: var(--co, 1);
+  /* a cast shadow is what makes a panel sit in front of the valley rather than on the glass */
+  box-shadow: 0 22px 52px -20px rgba(9, 12, 20, .55), 0 3px 10px -4px rgba(9, 12, 20, .22); }
 html.zt-on .zt-chap :is(.chap-panel, .pages-head, .dest) > * { opacity: var(--ci, 1); }   /* the text, not the glass: no backdrop root */
 html.zt-on .zt-chap--pages { align-self: end; }   /* the cards sit on the valley, sky above; the footer follows them up */
 html.zt-on .cam { will-change: transform; }

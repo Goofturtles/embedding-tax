@@ -216,8 +216,8 @@
   function chapter(u, w) {                  // w = [in0, in1, out0, out1] in svh; out may be null
     var t = ss(seg(u, w[0], w[1]));
     var s = 1 / (1 + 2.3333 * (1 - t));
-    var o = ss(seg(s, 0.40, 0.72));
-    var ci = ss(seg(s, 0.40, 0.66));
+    var o = ss(seg(s, 0.40, 0.56));    // solid by 56% of its travel, not 72%: a half-there card
+    var ci = ss(seg(s, 0.44, 0.60));   // over a photograph reads as a glitch, not as distance
     if (w[2] != null) {
       s *= 1 + 0.015 * seg(u, w[1], w[2]);
       var k = seg(u, w[2], w[3]);
@@ -461,15 +461,17 @@
       // the town fades while #device still covers the centre (gone by u 2.45, while the panel is still at .5 or
       // more, so the town never lingers half-transparent over the valley); a phone stops it at 2.6x, where its source
       // runs out, and has it gone by 2.3x, before the #device hold (it used to sit at .1-.2 under the card through the hold)
-      var narrow = vw < 700, tCap = narrow ? 2.6 : 4.4;
+      var narrow = vw < 700, tCap = narrow ? 2.6 : 3.5;   // 4.4 pushed the town to 2.3x its own pixels
       var sTown = depth(2.2, c, tCap), oTown = 1 - ss(narrow ? seg(sTown, 1.56, 2.3) : seg(sTown, 2.45, 2.56));
       var sBr = depth(1.45, c, 6), oBr = 1 - ss(seg(sBr, 4.5, 6));
       var sTw = depth(1.25, c, 3.2);
       // the gate: as #budget starts to pass, the tower pair cuts in (a .07 svh dissolve, never a lingering ghost)
       // at the size of the first screen and parts past the camera, leaving by scale like the first pair
       var sDoor = 1 + 2.2 * ss(seg(u, 3.95, 4.75)), oDoor = ss(seg(u, 3.95, 4.02));
-      setVar(scene, '--s-sky', depth(30, c, 9).toFixed(4));
-      setVar(scene, '--s-four', depth(5, c, 9).toFixed(4));
+      // caps keep each photograph near its own resolution: the sky and the mountains used to reach
+      // 9x, several times their source, and the late frames went soft
+      setVar(scene, '--s-sky', depth(30, c, 4).toFixed(4));
+      setVar(scene, '--s-four', depth(5, c, narrow ? 2.6 : 3.4).toFixed(4));
       setVar(scene, '--o-four', (.9 + .1 * ss(seg(c, 1.25, 1.85))).toFixed(3));
       setVar(scene, '--s-town', sTown.toFixed(4));
       setVar(scene, '--o-town', oTown.toFixed(3));
@@ -506,7 +508,7 @@
         if (ch.o > mo) mo = ch.o;
       }
       // the scrim only protects text: it follows the most visible chapter, and the photo is clear in between
-      setVar(scene, '--scrim-o', (.25 * mo).toFixed(3));
+      setVar(scene, '--scrim-o', (.34 * mo).toFixed(3));
 
       setAsk(ho < .05 && !blocking && !footBlocks);
 
