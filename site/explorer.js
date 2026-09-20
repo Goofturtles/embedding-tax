@@ -970,7 +970,10 @@
   if (video.readyState >= 3) reveal();
   else video.addEventListener("loadeddata", reveal, { once: true });
   function kick() {
-    var p = video.play();
+    // loopvideo.js swaps between two copies, so play whichever one is on screen: playing the
+    // hidden twin would leave two decoders running and the visible copy out of step
+    var live = document.querySelector(".vy-media video:not(.lv-off)") || video;
+    var p = live.play();
     if (p && p.catch) p.catch(function () {});
   }
   kick();

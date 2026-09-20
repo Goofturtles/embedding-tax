@@ -1100,5 +1100,7 @@
 
 /* loopvideo.js gives each clip a twin and swaps them at the loop point: the one waiting its turn
    is hidden outright, with no transition, so the handover cannot be seen. */
-.lv-off { opacity: 0 !important; transition: none !important; pointer-events: none; }
+.lv-off { visibility: hidden !important; pointer-events: none; }
+/* visibility, not opacity: the clips fade in on .is-ready, and toggling opacity made every
+   handover a one-second crossfade between two copies instead of the cut it has to be. */
 .vy-media video, .vy-media img { pointer-events: none; }
