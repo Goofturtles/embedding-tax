@@ -1521,17 +1521,16 @@
 })();
 
 /* The opening owns the first screen: this sets .past-opening on <html> once it has been
-   scrolled past (the bar changes from white-on-artwork to the glass capsule), and turns the
-   video into a scroll instrument. The reference calls for a looping clip; scrolling through the
-   opening scrubs it instead, so the artwork answers the scroll, and it falls back to plain
-   playback when the file will not seek. Reduced motion: no scrub, no playback, first frame. */
+   scrolled past, which is what turns the bar from white-on-artwork back into the glass capsule.
+   The clip plays the way the reference calls for it: autoplay, muted, looping. Reduced motion
+   is the one exception, since the CSS reset only reaches animations: there it sits paused on
+   its first frame. */
 (function () {
   var opening = document.querySelector(".ap, .nx");
   if (!opening) return;
   var video = opening.querySelector("video");
   var root = document.documentElement;
   var rm = window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
-  var reduced = function () { return !!(rm && rm.matches); };
 
   if ("IntersectionObserver" in window) {
     new IntersectionObserver(function (entries) {
@@ -1540,43 +1539,14 @@
   }
 
   if (!video) return;
-  var duration = 0, scrubbable = false, frame = 0;
-  var seekable = function () {
-    try { return video.seekable && video.seekable.length > 0 && video.seekable.end(0) > 0.5; }
-    catch (e) { return false; }
-  };
-  var apply = function () {
-    frame = 0;
-    if (!scrubbable || reduced()) return;
-    var box = opening.getBoundingClientRect();
-    var span = box.height || 1;
-    var p = Math.min(1, Math.max(0, -box.top / span));          // 0 at the top of the opening, 1 as it leaves
-    var t = p * (duration - 0.05);
-    if (isFinite(t) && Math.abs(video.currentTime - t) > 0.02) {
-      try { video.currentTime = t; } catch (e) { /* a seek that the file refuses is not fatal */ }
-    }
-  };
-  var onScroll = function () { if (!frame) frame = requestAnimationFrame(apply); };
-
-  var start = function () {
-    if (reduced()) { video.pause(); return; }
-    duration = video.duration || 0;
-    scrubbable = duration > 0.5 && seekable();
-    if (scrubbable) {
-      video.pause();
-      window.addEventListener("scroll", onScroll, { passive: true });
-      window.addEventListener("resize", onScroll);
-      apply();
-    } else {
-      var p = video.play();
-      if (p && p.catch) p.catch(function () {});
-    }
-  };
-  if (video.readyState >= 1) start();
-  else video.addEventListener("loadedmetadata", start, { once: true });
-  if (rm && rm.addEventListener) rm.addEventListener("change", function () {
-    if (reduced()) { video.pause(); } else { start(); }
-  });
+  function sync() {
+    if (rm && rm.matches) { video.pause(); return; }
+    var p = video.play();
+    if (p && p.catch) p.catch(function () {});
+  }
+  sync();
+  if (rm && rm.addEventListener) rm.addEventListener("change", sync);
+  else if (rm && rm.addListener) rm.addListener(sync);
 })();
 
 /* Retire the opening's entrance once its last tween has ended, so a later breakpoint change
