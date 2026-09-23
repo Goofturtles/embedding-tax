@@ -28,8 +28,12 @@
    ========================================================================================= */
 
 :root {
-  /* ---------- scroll-rig variables: defaults only. script.js writes the live values on
-     .stage (not :root), so a scroll frame restyles the stage subtree and nothing else. */
+  /* ---------- scroll-rig variables: defaults only. script.js writes each live value on the
+     element that consumes it (.back-stack, .shade, .hero-title, .intro-copy, the two panels,
+     the band scrims, the slider and its controls), so a scroll frame restyles those elements and
+     not the whole stage. The photo layers' variables (--four-*, --bazaar-*, --bridge-*,
+     --split-*, --frame2-*, --blur-px, --back-brightness, --sky-settle) are no longer written:
+     their layers were removed, and these defaults are all that is left of them. */
   --mx: 0; --my: 0;
   --back-opacity: 1; --back-x: 0px; --back-y: 0px; --back-scale: 0.76;
   --four-y: 10vh; --four-scale: 0.78;
@@ -786,7 +790,9 @@ button { border: 0; font: inherit; color: inherit; background: none; }
 .skip-story, .pause-motion { position: absolute; bottom: 20px; z-index: 14; cursor: pointer; }
 .skip-story { right: 24px; }
 .pause-motion { left: 24px; }
-@media (max-width: 640px) { .scroll-cue, .skip-story, .pause-motion { display: none; } }
+/* button.* on purpose: shared.css shows every button.glass as inline-flex on touch screens
+   (0,1,1), which beat a plain class here and put both controls over the depth card's link. */
+@media (max-width: 640px) { .scroll-cue, button.skip-story, button.pause-motion { display: none; } }
 
 /* =========================================================================================
    WATCH IT WRITE (section.watch, ivory, in normal flow): a 5/7 split under the drawn arch,
@@ -1316,6 +1322,22 @@ html:not(.js) .sight-card { transform: none; background: var(--panel); }
 @keyframes ap-scale { from { opacity: 0; transform: scale(.92); } to { opacity: 1; transform: none; } }
 @keyframes ap-bar { from { opacity: 0; transform: scaleY(0); } to { opacity: 1; transform: scaleY(1); } }
 @media (prefers-reduced-motion: reduce) { .ap-anim, .ap-bars i { animation: none; opacity: 1; transform: none; } .ap-art { display: none; } }
+
+/* Under 1024px the opening is one column (headline, sub, two buttons, the loss card), which is
+   taller than a phone's screen, and the fixed capsule floats over its top. So the section grows
+   with its content instead of clipping it at 100svh, and the column starts below the capsule.
+   It still fills at least one screen and centres the column when there is room (tablets). Short
+   phones (700px and under) also get a shorter chart, so the card mostly stays on the first
+   screen. 1024px and up is untouched. */
+@media (max-width: 1023px) {
+  .ap { display: flex; flex-direction: column; height: auto; min-height: 100vh; min-height: 100svh; }
+  .ap-z { flex: 1; height: auto; }
+  .ap-row { padding-top: calc(var(--header-band) + 16px); }
+}
+@media (max-width: 1023px) and (max-height: 700px) {
+  .ap-bars { height: 48px; }
+  .ap-delta { margin-bottom: 16px; }
+}
 
 /* =========================================================================================
    THE STORY RUNS WITHOUT THE PHOTOGRAPH. The Mostar scene is the home page's backdrop, and

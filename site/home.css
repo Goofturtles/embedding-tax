@@ -31,8 +31,17 @@ body.home { background: transparent; color: var(--text-primary); --accent-focus:
    Continuous sky behind every chapter, Air https://mobbin.com/sites/sections/7917824f-28da-4b9f-a84c-fe28f35d26d4
    Every layer shares one origin, 50% 78% of the camera box: inside the arch opening, just under the
    crown and above the river. Base scales are folded into each image's box so scroll 0 is scale(1). */
-.scene { position: fixed; inset: 0; z-index: -1; overflow: hidden; overflow: clip; background: #cfe3f3; pointer-events: none; --sw: max(100vw, 177.78vh); }
+/* a stable box, the large viewport tall from the top: a phone's toolbar collapsing or expanding mid-scroll changes
+   innerHeight, and with inset:0 the bottom-anchored photo moved 72px against the glass (which is sized from svh
+   and pinned from the top) while the zoom origin moved with it (measured, iPhone 15 profile). lvh does not change
+   with the toolbar; on a desktop it is innerHeight, so nothing moves there. With the toolbar showing, the strip
+   under it is photo too. */
+.scene { position: fixed; top: 0; left: 0; right: 0; height: 100vh; height: 100lvh; z-index: -1; overflow: hidden; overflow: clip; background: #cfe3f3; pointer-events: none; --sw: max(100vw, 177.78vh); }
 @supports (height: 1lvh) { .scene { --sw: max(100vw, 177.78lvh); } }
+/* the images: srcset in index.html, same host and file, resized by the host (?w=). A fine pointer asks for the full
+   width and gets exactly today's file; a coarse, hover-less pointer asks for 853px (533px for the sky, a gradient
+   and clouds), which a DPR 2-3 screen resolves to the 2560 (sky 1600) variant. What matters is decoded size, not
+   download: full size kept ~118 MB of bitmaps on a phone and ~156 MB on an iPad in the process the model loads into. */
 .cam { position: absolute; left: 50%; bottom: 0; width: var(--sw); height: calc(var(--sw) * .5625); margin-left: calc(var(--sw) * -.5); transform-origin: 50% 78%; }
 .cam img { position: absolute; display: block; max-width: none; height: auto; user-select: none; transition: opacity .6s ease; }
 .cam img.is-wait { opacity: 0; }
@@ -110,11 +119,24 @@ html.zt-on .cam--town   { transform: scale(var(--s-town, 1)); opacity: var(--o-t
 html.zt-on .cam--bridge { transform: scale(var(--s-br, 1));   opacity: var(--o-br, 1); }
 html.zt-on .cam--split  { transform: scale(var(--s-tw, 1)); }
 html.zt-on .cam--door   { display: block; transform: scale(var(--s-door, 1)); opacity: var(--o-door, 0); }   /* from 1x, its base on the bottom edge, only ever growing */
+/* a portrait phone gets the 1px GIF for both tower pairs (the <source> in index.html, same condition): without
+   this their four boxes were still promoted and composited at 1172x1172 CSS px each, drawing nothing */
+@media (max-aspect-ratio: 5/8) { .cam--split, html.zt-on .cam--door { display: none; } }
 html.zt-on .scene-scrim { will-change: opacity; }
 html.zt-on::before, html.zt-on::after { animation: none; }   /* shared.css env-drift: hidden behind the scene, it kept ~240 composited frames a second at rest */
 /* at rest on the first screen nothing is promoted: a layer keeps the raster scale it reached while zoomed,
    so without this the photos and the headline would come back resampled instead of pixel-identical */
 html.zt-on.zt-rest :is(.cam, .zt-hero, .zt-chap, .scene-scrim) { will-change: auto; }
+/* touch: the layers stay promoted at rest. Re-promoting ~15 of them on the first camera frame cost a 50ms frame in 5
+   of 6 starts (33ms in 6 of 6 kept, Chromium iPhone 15 at 4x CPU); pixel-identical re-rasters are a desktop reading concern */
+@media (hover: none) and (pointer: coarse) {
+  html.zt-on.zt-rest :is(.cam, .zt-hero, .zt-chap) { will-change: transform; }
+  html.zt-on.zt-rest .scene-scrim { will-change: opacity; }
+}
+/* the per-frame scales are read only by the element that carries them: not inherited, so a new value restyles
+   that one box instead of its whole subtree (the hero holds the composer and the settings panel) */
+@property --hs { syntax: '<number>'; inherits: false; initial-value: 1; }
+@property --cs { syntax: '<number>'; inherits: false; initial-value: 1; }
 
 /* ---------- hero ---------- */
 .hero-pill {
@@ -415,6 +437,32 @@ html.zt-on.zt-rest :is(.cam, .zt-hero, .zt-chap, .scene-scrim) { will-change: au
   html.zt-on .pages-grid { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 82%;
     overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: 16px; padding: 8px 16px 30px; margin: 0 -16px; scrollbar-width: thin; }
   html.zt-on .dest { scroll-snap-align: start; box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 12px 24px -16px rgba(16,42,67,.35); }   /* a shadow the row has room for */
+}
+/* 320px: the sub wraps to four lines and the last one falls on the red roofs and dark trees (4.1:1 at its darkest
+   5% of pixels on the static page, measured): a denser haze there */
+@media (max-width: 360px) {
+  .hero-sub { background: rgba(255,255,255,.46); box-shadow: 0 0 36px 30px rgba(255,255,255,.46); }
+}
+
+/* ---------- touch screens: the same glass without a live blur ----------
+   Under every glass surface the photograph changes every zoom frame, so each backdrop blur is rendered again every
+   frame: up to 9 of them over 92% of a phone screen in the first frames, 11 on an iPad's first screen. Measured in
+   Chromium at 4x CPU, same scroll drive: iPad 68 of 123 frames over 34ms with the blur, 10 of 217 without, and no
+   other single change came close. So on a coarse, hover-less pointer the glass keeps its fill, shine, rim and
+   shadow and drops backdrop-filter; each fill is pre-mixed denser to stand in for the frost, so less of the sharp
+   photo shows through and text contrast only rises. The header capsule keeps its blur: small, and the one glass
+   shared by every page. The composer, its tabs and the output card are in composer3d.css. Desktop is untouched. */
+@media (hover: none) and (pointer: coarse) {
+  :root {
+    --lg-fill: linear-gradient(160deg, rgba(255,255,255,.86) 0%, rgba(255,255,255,.76) 100%);
+    --lg-fill-read: linear-gradient(160deg, rgba(255,255,255,.84), rgba(255,255,255,.76));
+  }
+  .glass, .glass-chip, .lg, .chap-panel, .pages-head, .dest, .composer, .c-tab, .try-chip { -webkit-backdrop-filter: none; backdrop-filter: none; }
+  html:not(.zt-on) :is(.chap-panel, .pages-head, .dest) { --lg-fill: linear-gradient(160deg, rgba(255,255,255,.88), rgba(255,255,255,.8)); }
+  .h-out { --lg-fill: linear-gradient(160deg, rgba(255,255,255,.93), rgba(255,255,255,.87)); }
+  .try-chip { background: linear-gradient(160deg, rgba(255,255,255,.9), rgba(255,255,255,.8)); }
+  /* the static page: shared.css's env-drift loops kept the compositor busy at rest (both running at every position) */
+  html::before, html::after { animation: none; }
 }
 
 /* ---------- reduced motion: a still photograph, everything in flow (home.js never adds zt-on) ---------- */

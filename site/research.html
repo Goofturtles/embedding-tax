@@ -18,10 +18,11 @@
 <link rel="stylesheet" href="explorer.css" />
 <script src="explorer.js" defer></script>
 <script src="results.js" defer></script>
-<!-- loopvideo.js: the openings' clips wrap without a visible seam, and a second copy can follow the first -->
+<!-- loopvideo.js: keeps the opening's clip playing (on phones, only while it is on screen); the second
+     copy (#vyFront) runs only on desktop-class screens and follows the first -->
 <script src="loopvideo.js" defer></script>
 </head>
-<body class="ex-body has-opening">
+<body class="ex-body has-opening opening-light">
 
 <a class="skip-link" href="#work">Skip to content</a>
 
@@ -54,9 +55,12 @@
 <section class="vy">
   <div class="vy-media">
     <img alt="" src="https://images.higgs.ai/?default=1&amp;output=webp&amp;url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260908_122011_59c97465-4d23-4fdc-ac40-f6832f573e28.png&amp;w=1920&amp;q=85" />
-    <video id="vyVideo" src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260908_125738_eb584080-9f98-489e-adb2-014760aa34da.mp4" poster="https://images.higgs.ai/?default=1&amp;output=webp&amp;url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260908_122011_59c97465-4d23-4fdc-ac40-f6832f573e28.png&amp;w=1920&amp;q=85" autoplay muted loop playsinline preload="auto" aria-hidden="true"></video>
+    <video id="vyVideo" poster="https://images.higgs.ai/?default=1&amp;output=webp&amp;url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260908_122011_59c97465-4d23-4fdc-ac40-f6832f573e28.png&amp;w=1920&amp;q=85" autoplay muted loop playsinline preload="auto" aria-hidden="true"><source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260908_125738_eb584080-9f98-489e-adb2-014760aa34da.mp4" type="video/mp4" media="(hover: hover) and (pointer: fine)"></video>
   </div>
-  <video class="vy-front" id="vyFront" preload="metadata" src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260908_125738_eb584080-9f98-489e-adb2-014760aa34da.mp4" poster="https://images.higgs.ai/?default=1&amp;output=webp&amp;url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260908_122011_59c97465-4d23-4fdc-ac40-f6832f573e28.png&amp;w=1920&amp;q=85" muted loop playsinline preload="auto" aria-hidden="true" autoplay></video>
+  <!-- Each clip's file is a <source media>: a desktop browser loads it while parsing, a touch browser
+       gets it from loopvideo.js after first paint. The front copy's media also leaves out the narrow
+       portrait layout, where it would sit wholly below the headline; phones never fetch it. -->
+  <video class="vy-front" id="vyFront" preload="metadata" poster="https://images.higgs.ai/?default=1&amp;output=webp&amp;url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260908_122011_59c97465-4d23-4fdc-ac40-f6832f573e28.png&amp;w=1920&amp;q=85" muted loop playsinline aria-hidden="true" autoplay><source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260908_125738_eb584080-9f98-489e-adb2-014760aa34da.mp4" type="video/mp4" media="(hover: hover) and (pointer: fine) and (min-width: 901px), (hover: hover) and (pointer: fine) and (orientation: landscape)"></video>
   <div class="vy-inner">
     <h1 class="vy-head">
       <span class="vy-line"><span>Seven hours on one GPU,</span></span>

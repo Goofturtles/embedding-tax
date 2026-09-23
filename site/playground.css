@@ -47,9 +47,19 @@
 }
 .pg-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--color-gray-450); }
 [data-state="ready"] .pg-dot, [data-state="done"] .pg-dot { background: var(--depth); box-shadow: 0 0 0 3px #788c5d33; }
-[data-state="loading"] .pg-dot, [data-state="writing"] .pg-dot { background: var(--accent); animation: pg-pulse 1s ease-in-out infinite alternate; }
+.pg-dot { position: relative; }
+/* the busy pulse is a ring faded with opacity: animating box-shadow made WebKit repaint every frame
+   (193 ms a frame on an iPhone profile while the model loads, against 15 ms without it) */
+.pg-dot::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; background: #d9775740; opacity: 0; pointer-events: none; }
+[data-state="loading"] .pg-dot, [data-state="writing"] .pg-dot { background: var(--accent); }
+[data-state="loading"] .pg-dot::after, [data-state="writing"] .pg-dot::after { animation: pg-pulse 1s ease-in-out infinite alternate; }
 [data-state="failed"] .pg-dot { background: var(--over-cap); }
-@keyframes pg-pulse { from { box-shadow: 0 0 0 0 #d9775700; } to { box-shadow: 0 0 0 4px #d9775740; } }
+@keyframes pg-pulse { from { opacity: 0; } to { opacity: 1; } }
+/* touch screens hold the ring still: the progress bar and the status text already say the model is
+   busy, and any animation beside the glass composer made WebKit repaint the whole composer a frame */
+@media (hover: none) and (pointer: coarse) {
+  [data-state="loading"] .pg-dot::after, [data-state="writing"] .pg-dot::after { animation: none; opacity: .7; }
+}
 
 /* ---------- the writing surface ---------- */
 .pg-write { min-width: 0; display: grid; gap: var(--sp-16); align-content: start; }

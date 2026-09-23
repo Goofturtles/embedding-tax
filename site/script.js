@@ -3,13 +3,17 @@
    Two layers of motion, deliberately:
    1. Owed's smooth scroll drives the window. A wheel tick moves a target and the page
       eases toward it every frame, so the scroll itself carries inertia.
-   2. The choreography reads the resulting scroll distance and smooths it again at 0.14,
-      which is what keeps the layers from snapping on a fast flick.
+   2. The choreography reads the resulting scroll distance and smooths it again at 0.14 a
+      frame, which is what keeps the layers from snapping on a fast flick. Below 60fps the
+      step grows with the frame time, so a slow device settles in the same time, not the same
+      number of frames. On touch screens it does not smooth at all: the OS already does.
 
    Performance: update() never reads layout. Every size and offset it needs is cached by
    measure() on resize / font load / image load, the scroll position is cached by the
-   scroll listener, and the rig's custom properties are written on .stage (not :root) and
-   only when their value changes.
+   scroll listener, and each of the rig's custom properties is written only when its value
+   changes, on the element that consumes it (STAGE_TARGETS). A custom property is inherited,
+   so one written on .stage restyled all of the stage's elements every frame; one written on
+   .shade restyles .shade.
 
    Reduced motion: the smooth scroll is off, values snap, the pointer parallax is zero, and
    every large move (bridge exit and zoom, splitframe zoom, card fly-in, panel slides) plays
@@ -83,20 +87,29 @@
   var skipStory = document.getElementById("skipStory");
   var pauseMotion = document.getElementById("pauseMotion");
   var veil = document.querySelector(".dawn-veil");
+  var backStack = document.querySelector(".back-stack");
+  var shadeEl = document.querySelector(".stage .shade");
+  var scrimHero = document.querySelector(".band-scrim--hero");
+  var scrimBudget = document.querySelector(".band-scrim--budget");
+  var scrimDepth = document.querySelector(".band-scrim--depth");
   var closing = document.querySelector(".closing");
   var closingScene = document.querySelector(".closing-scene");
 
   var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
   var shortScreen = window.matchMedia("(max-height: 560px)");
   var finePointer = window.matchMedia("(hover: hover) and (pointer: fine)");
+  var coarsePointer = window.matchMedia("(pointer: coarse)");
 
   /* ---------- state ---------- */
-  var L = { vh: window.innerHeight, vw: window.innerWidth, sectionTop: 0, sectionH: 0, maxDist: 0,
+  // vh: the window's height (the closing band, short screens, the pointer). sh: the pinned
+  // stage's own height (100svh), which is what the rig is laid out against; on iOS the window
+  // grows when the toolbar collapses while the stage does not.
+  var L = { vh: window.innerHeight, sh: window.innerHeight, vw: window.innerWidth, sectionTop: 0, sectionH: 0, maxDist: 0,
             budgetTop: 0, depthTop: 0, closingTop: 0, closingH: 1, pill: [], sightStep: 0 };
   var sy = window.scrollY;
   var isShort = shortScreen.matches;
   var targetMouseX = 0, targetMouseY = 0, mouseX = 0, mouseY = 0;
-  var smoothScroll = 0, initialized = false, rafPending = false;
+  var smoothScroll = 0, initialized = false, rafPending = false, lastTick = 0;
   var activeSection = -2, factsCounted = false, depthBuilt = false, budgetEntered = false;
   var cueGone = false, controlsReady = false, firstActivation = false;
   var introStart = -1, introOn = false, closingNear = false;
@@ -126,7 +139,25 @@
     cache[name] = value;
     el.style.setProperty(name, value);
   }
-  function setStage(name, value) { setVar(stage, stageCache, name, value); }
+  // Where each live variable is consumed (styles.css). Anything not listed goes on .stage.
+  var STAGE_TARGETS = {
+    "--back-opacity": [backStack], "--back-x": [backStack], "--back-y": [backStack], "--back-scale": [backStack],
+    "--shade-z": [shadeEl], "--shade-top-alpha": [shadeEl], "--shade-mid-alpha": [shadeEl], "--shade-bottom-alpha": [shadeEl],
+    "--title-y": [heroTitle], "--title-scale": [heroTitle], "--title-opacity": [heroTitle, scrimHero],
+    "--intro-copy-y": [introCopy], "--intro-copy-opacity": [introCopy],
+    "--panel2-opacity": [budgetPanel, scrimBudget], "--panel2-y": [budgetPanel],
+    "--panel3-opacity": [depthPanel, scrimDepth], "--panel3-y": [depthPanel],
+    "--sights-opacity": [slider], "--sights-enter-x": [slider], "--sights-visibility": [slider],
+    "--sights-scale": [slider], "--sights-top": [slider],
+    "--sights-controls-opacity": [sightsControls], "--sights-screen-top": [sightsControls],
+    "--k1": [heroTitle, introCopy, scrollCue], "--k2": [budgetPanel], "--k3": [depthPanel], "--k4": [slider]
+  };
+  function setStage(name, value) {
+    if (stageCache[name] === value) return;
+    stageCache[name] = value;
+    var els = STAGE_TARGETS[name] || [stage];
+    for (var i = 0; i < els.length; i++) if (els[i]) els[i].style.setProperty(name, value);
+  }
 
   /* ---------- layout cache ----------
      The only place that reads layout. Runs at init, on resize (once per frame), when the
@@ -134,10 +165,11 @@
   function measure() {
     L.vh = window.innerHeight;
     L.vw = window.innerWidth;
+    L.sh = isShort ? L.vh : (stage.clientHeight || L.vh);
     sy = window.scrollY;
     L.sectionTop = section.getBoundingClientRect().top + sy;
     L.sectionH = section.offsetHeight;
-    L.maxDist = Math.max(0, L.sectionH - L.vh);
+    L.maxDist = Math.max(0, L.sectionH - L.sh);
     if (isShort) {
       // In flow and untransformed only in this mode.
       if (budgetPanel) L.budgetTop = budgetPanel.getBoundingClientRect().top + sy;
@@ -214,8 +246,13 @@
     var reduce = reduceMotion.matches;
 
     var target = clamp(sy - L.sectionTop, 0, L.maxDist);
-    if (!initialized || reduce || isShort) { smoothScroll = target; initialized = true; }
-    else smoothScroll = lerp(smoothScroll, target, 0.14);
+    // 0.14 a frame at 60fps and above, as it always was; below 60fps the step follows the time
+    // (k = 9.05/s is 0.14 at 16.7ms), so a slow frame no longer stretches the tail. After an
+    // idle spell the first frame counts as one 60fps frame, not as the whole pause.
+    var dt = now - lastTick > 100 ? 1 / 60 : Math.min(0.1, (now - lastTick) / 1000);
+    lastTick = now;
+    if (!initialized || reduce || isShort || coarsePointer.matches) { smoothScroll = target; initialized = true; }
+    else smoothScroll = lerp(smoothScroll, target, Math.max(0.14, 1 - Math.exp(-dt * 9.05)));
     if (Math.abs(smoothScroll - target) < 0.08) smoothScroll = target;
 
     if (reduce) { mouseX = mouseY = 0; targetMouseX = targetMouseY = 0; }
@@ -223,7 +260,7 @@
 
     if (!cueGone && target > 24 && scrollCue) { cueGone = true; scrollCue.classList.add("is-gone"); }
 
-    var past = sy > L.sectionTop + L.sectionH - L.vh * 0.5;
+    var past = sy > L.sectionTop + L.sectionH - L.sh * 0.5;
     updateClosing(reduce);
     // Hide-on-scroll-down inside the stage; back on any upward scroll, at the stage's end and
     // on short screens (the CSS also brings it back whenever focus is inside the capsule).
@@ -244,21 +281,14 @@
     var sightsEnter = Math.pow(smoothstep(TIMING.CARDS_IN[0], TIMING.CARDS_IN[1], s), 1.55);
     var controlsEnter = smoothstep(TIMING.CONTROLS_IN[0], TIMING.CONTROLS_IN[1], s);
     var blurActive = clamp(frame2.active + frame3.active);
-    var frame2Opacity = frame2.active * (1 - frame3.enter);
-    var splitDrift = Math.pow(frame2.enter, 1.5);
     var panel2Opacity = frame2.active * (1 - frame2.exit);
     var panel3Opacity = frame3.active * (1 - frame3.exit);
     var backScale = 0.76 + progress * 0.2 + frame2.enter * 0.18 + frame3.enter * 0.16;
-    var heroY = progress * -74;
-    var heroScale = progress * 0.23;
     // amp: how much of each large translate plays; zoom: how much of each large scale ramp.
-    var amp = 1, zoom = 1, blurAmp = 1;
+    var amp = 1, zoom = 1;
     if (reduce) {
-      amp = 0.2; zoom = 0.25; blurAmp = 0.25;
+      amp = 0.2; zoom = 0.25;
       blurActive *= 0.25;
-      splitDrift *= 0.35;
-      heroY *= 0.3;
-      heroScale *= 0.3;
       backScale = 0.76 + (backScale - 0.76) * 0.4;
     }
 
@@ -279,61 +309,29 @@
     var k1 = reduce ? 1 : Math.max(clamp(s / 160), loadK);
 
     // Placed with the scale the stage actually uses (after the reduced-motion damping).
-    var sightsScreenTop = clamp(L.vh * 0.19, 112, 220) - 36;
-    var sightsParentTop = L.vh - (L.vh - sightsScreenTop) / backScale;
+    var sightsScreenTop = clamp(L.sh * 0.19, 112, 220) - 36;
+    var sightsParentTop = L.sh - (L.sh - sightsScreenTop) / backScale;
     // The slider sits inside .back-stack, which is 106vw wide (left -3vw) and scaled by
     // --back-scale about its bottom centre, so its left edge lands at 50vw - 53vw * backScale
     // on screen. This puts the slider's origin back at the viewport's left edge (in the
     // back-stack's own pre-scale units); the 130vw fly-in rides on top of it.
     var sightsLeft = L.vw * (0.53 - 0.5 / backScale);
 
-    setStage("--mx", mouseX.toFixed(4));
-    setStage("--my", mouseY.toFixed(4));
-
+    // The photo layers' variables (--four-*, --bazaar-*, --bridge-*, --split-*, --frame2-*,
+    // --blur-px, --back-brightness, --sky-settle, and --mx/--my, which only composer3d.css
+    // reads) are no longer written: their layers were removed from this page.
     setStage("--back-opacity", (1 - frame2.active * 0.06).toFixed(4));
     setStage("--back-x", (mouseX * -12).toFixed(2) + "px");
     setStage("--back-y", (mouseY * -4 + 28 * intro).toFixed(2) + "px");
     setStage("--back-scale", (backScale * (1 + 0.045 * intro)).toFixed(4));
-    setStage("--four-y", (10 + progress * 10).toFixed(3) + "vh");
-    setStage("--four-scale", (0.78 + progress * 0.16).toFixed(4));
-    setStage("--bazaar-y", (20 - progress * 8).toFixed(3) + "vh");
-    // 8px, not 14: the blur runs on two viewport-sized promoted layers at once through
-    // frames 2 and 3, and 14px was the page's heaviest paint.
-    setStage("--blur-px", (blurActive * 8).toFixed(2) + "px");
-    setStage("--back-brightness", (1 - blurActive * 0.05).toFixed(4));
-    setStage("--bazaar-blur-px", (frame2.active * 14 * blurAmp).toFixed(2) + "px");
-    setStage("--bazaar-brightness", (1 - frame2.active * 0.05).toFixed(4));
-    setStage("--bazaar-saturation", (1 + frame3.active * 0.18).toFixed(4));
     setStage("--shade-z", frame2.active > 0.02 ? "2" : "0");
     setStage("--shade-top-alpha", (blurActive * 0.465).toFixed(4));
     setStage("--shade-mid-alpha", (blurActive * 0.42).toFixed(4));
     setStage("--shade-bottom-alpha", (blurActive * 0.51).toFixed(4));
-    setStage("--sky-settle", (1 + 0.06 * intro).toFixed(4));
 
     setStage("--title-y", (introExit * -210 * amp).toFixed(2) + "px");
     setStage("--title-scale", (1 - introExit * 0.08 * zoom).toFixed(4));
     setStage("--title-opacity", (1 - introExit).toFixed(4));
-
-    setStage("--bridge-x", "calc(-50% + " + (mouseX * 18).toFixed(2) + "px)");
-    setStage("--bridge-y", (mouseY * 8 + heroY - frame2.exit * 760 * amp + L.vh * 0.07 * intro).toFixed(2) + "px");
-    setStage("--bridge-bottom", (5 - frame2.enter * 13 * amp).toFixed(3) + "vh");
-    setStage("--bridge-width", (67.2 + frame2.enter * 37.8 * zoom).toFixed(3) + "vw");
-    setStage("--bridge-scale", (1.02 + heroScale + frame2.exit * 0.46 * zoom + 0.05 * intro).toFixed(4));
-
-    var splitX = splitDrift * 46 + 7 * intro;
-    var splitY = (mouseY * 10 + heroY - splitDrift * 180 + L.vh * 0.10 * intro).toFixed(2) + "px";
-    var splitScale = (1 + heroScale + frame2.enter * 0.74 * zoom + 0.06 * intro).toFixed(4);
-    setStage("--split-left-x", "calc(-50% + " + (-splitX).toFixed(3) + "vw + " + (mouseX * 22).toFixed(2) + "px)");
-    setStage("--split-left-y", splitY);
-    setStage("--split-left-scale", splitScale);
-    setStage("--split-right-x", "calc(-50% + " + splitX.toFixed(3) + "vw + " + (mouseX * 22).toFixed(2) + "px)");
-    setStage("--split-right-y", splitY);
-    setStage("--split-right-scale", splitScale);
-
-    setStage("--frame2-opacity", frame2Opacity.toFixed(4));
-    setStage("--frame2-x", "calc(-50% + " + (mouseX * 10).toFixed(2) + "px)");
-    setStage("--frame2-y", "calc(-50% + " + (mouseY * 8 - frame2.exit * 150 * amp).toFixed(2) + "px)");
-    setStage("--frame2-scale", (1.06 + (frame2.enter * 0.08 + frame2.exit * 0.08) * zoom).toFixed(4));
 
     setStage("--intro-copy-y", (introExit * 90 * amp).toFixed(2) + "px");
     setStage("--intro-copy-opacity", (1 - introExit).toFixed(4));
@@ -1212,12 +1210,24 @@
     }
 
     /* ---- load: one explicit action, a real progress bar (it never eases back) ---- */
-    // a visit after a successful load reopens the copy saved in Cache Storage by itself;
-    // cacheOnly never downloads, and any failure just leaves the Load button as before
+    // a visit after a successful load reopens the copy saved in Cache Storage by itself; on a phone
+    // or tablet (EmbeddingTax.constrained) only on a tap, as in playground.js, so a build of a few
+    // hundred MB never lands on the page's arrival. cacheOnly never downloads, and any failure
+    // while reopening by itself just leaves the Load button as before
+    // (the button stays as short as "Load the model (50 MB)"; the idle note, which wraps, says it downloads nothing)
+    var saved = false, savedSpan = null, idleNote = ui.idle.querySelector("p"), idleNoteText = idleNote ? idleNote.textContent : "";
+    function savedLabel(on) {
+      saved = on;
+      if (!savedSpan) { savedSpan = document.createElement("span"); savedSpan.textContent = "Open the saved model"; ui.load.appendChild(savedSpan); }
+      savedSpan.hidden = !on;
+      if (ui.load.firstElementChild !== savedSpan) ui.load.firstElementChild.hidden = on;
+      if (idleNote) idleNote.textContent = on ? "Already saved on this device: opening it downloads nothing. Nothing you type leaves this page." : idleNoteText;
+    }
     function resume(api, m) {
       if (typeof api.isCached !== "function") return;
       api.isCached(m).then(function (hit) {
         if (!hit || state !== "idle" || api.ready) return;
+        if (typeof api.constrained === "function" && api.constrained()) { savedLabel(true); return; }
         setState("loading");
         ui.barText.textContent = "Opening the copy saved on this device";
         api.load({ cacheOnly: true }).then(function (res) {
@@ -1234,15 +1244,18 @@
     }
     // focus follows the panel only if the visitor is still in it: a 50 MB load or a slow WASM run
     // can end after they have scrolled on, and an unconditional focus() would drag the page back
+    // (a container of the panel counts as nowhere in particular, like body: Safari focuses the
+    // nearest focusable ancestor, <main tabindex="-1">, on a tap, never the button, as in playground.js)
     function keepFocus(el) {
       var a = document.activeElement;
-      if (el && (!a || a === document.body || rootEl.contains(a))) el.focus({ preventScroll: true });
+      if (el && (!a || a === document.body || rootEl.contains(a) || a.contains(rootEl))) el.focus({ preventScroll: true });
     }
     function load() {
       setState("loading");
       announce("Loading the model");
       var lastSaid = 0;
-      window.EmbeddingTax.load({ onProgress: function (loaded, total) {
+      if (saved) ui.barText.textContent = "Opening the copy saved on this device";
+      window.EmbeddingTax.load(saved ? { cacheOnly: true } : { onProgress: function (loaded, total) {
         var t = total || (manifest && manifest.bytes) || 0;
         var p = t ? clamp(loaded / t) : 0;
         ui.fill.style.setProperty("--p", p.toFixed(3));
@@ -1256,6 +1269,17 @@
         keepFocus(ui.prompt.value.trim() ? ui.write : ui.prompt);
       }).catch(function (err) {
         if (window.console) console.error(err);
+        if (err && err.code === "NOT_CACHED") {   // the saved copy is gone: back to the download button
+          savedLabel(false);
+          setState("idle");
+          announce("The saved copy is no longer on this device. Load downloads it again.");
+          return;
+        }
+        // iPhone and iPad run WebKit in every browser: "try another browser" cannot help there
+        var title = ui.fail.querySelector(".wp-note-title");
+        if (title && (/iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1))) {
+          title.textContent = err && err.code === "OUT_OF_MEMORY" ? "This device ran out of memory for the model. Close other tabs, then try again." : "The model could not run on this device just now. Try again.";
+        }
         setState("failed");
         announce("The model could not load on this device.");
         keepFocus(ui.retry);

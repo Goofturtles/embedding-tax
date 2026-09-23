@@ -31,8 +31,8 @@
        noLeadingBreak, noMidsentenceBreak, cadAlpha, bestOf, bestOfFluencyWeight, onToken, signal }) -> Promise<string>
      tokenCount(text), ready, manifest, last.
    HONESTY: the weights never download without the click (a later visit reopens the copy an
-   earlier successful load left in Cache Storage, cacheOnly, never the network); nothing is
-   simulated; the checkpoint step and
+   earlier load left in Cache Storage, cacheOnly, never the network: by itself on a computer, on a
+   tap on a phone or tablet, EmbeddingTax.constrained()); nothing is simulated; the checkpoint step and
    the parameter count come from model/manifest.json; the run is called complete only when the
    manifest's training_finished field is true. */
 (function () {
@@ -76,6 +76,14 @@
   }
   var RM = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
   function reduced() { return !!(RM && RM.matches); }
+  // iPhone and iPad (iPadOS calls itself a Mac with a touch screen): every browser there runs WebKit,
+  // so the failure panel's "try a current Chrome, Edge or Firefox" cannot help (failCopy).
+  var APPLE_TOUCH = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  // A phone or tablet holding the weights: the button stays as short as "Load the model (50 MB)" (a
+  // longer label ran out of its pill at 320px) and the note under it, which wraps, says what it costs.
+  var SAVED_LABEL = 'Open the saved model';
+  var SAVED_NOTE = 'Already saved on this device: opening it downloads nothing. Nothing you type leaves the page.';
+  var INTERRUPTED_NOTE = 'The page reloaded before the model could open. This time it keeps the weights compressed: less memory, slower writing.';
   function fin(n) { return typeof n === 'number' && isFinite(n); }
   function num(n) { return fin(n) ? n.toLocaleString('en-US') : null; }
   function mb(bytes) { return fin(bytes) ? Math.round(bytes / 1e6) : null; }
@@ -119,7 +127,12 @@
     var tokenN = 0;
     var textNode = null, pending = '', flushFrame = 0;
     var backendLabel = '';
-    var resuming = false;          // reopening the copy already saved on this device, no click, no download
+    var resuming = false;          // reopening the copy already saved on this device, no download
+    var saved = false;             // a phone or tablet holding the weights: Load opens that copy (cacheOnly) on the tap
+    var interrupted = false;       // this tab died building the model (infer.js E.interrupted): the note says so
+    var failTitle = ui.failure ? ui.failure.querySelector('p:not([data-pg])') : null;
+    var failTitleText = failTitle ? failTitle.textContent : '';
+    var loadNoteText = ui.loadnote ? ui.loadnote.textContent : '';
     var STATUS = { init: 'Not loaded', idle: 'Not loaded', packaging: 'Being packaged', loading: 'Loading',
                    ready: 'Ready', writing: 'Writing', done: 'Ready', failed: 'Could not run here' };
 
@@ -160,13 +173,18 @@
     }
 
     /* ---------- manifest: the small file, read on arrival; the weights wait for the click ---------- */
+    function loadLabel() {
+      var size = manifest ? mb(manifest.bytes) : null;
+      ui.load.textContent = saved ? SAVED_LABEL : size !== null ? 'Load the model (' + size + ' MB)' : 'Load the model';
+      text(ui.loadnote, interrupted ? INTERRUPTED_NOTE : saved ? SAVED_NOTE : loadNoteText);
+    }
     function fillManifest(m) {
       manifest = m;
       var size = mb(m.bytes);
       if (size !== null) {
         textAll(ui.mb, String(size));
         for (var i = 0; i < ui.mbunit.length; i++) ui.mbunit[i].hidden = false;
-        ui.load.textContent = 'Load the model (' + size + ' MB)';
+        loadLabel();
       }
       var steps = num(m.steps_completed);
       if (steps !== null) { textAll(ui.step, steps); show(ui.barmeta, true); }
@@ -195,7 +213,14 @@
             api = window.EmbeddingTax;
             if (api && typeof api.load === 'function') {
               if (api.ready) { onLoaded({ backend: api.backend, manifest: api.manifest || m }); }
-              else { ui.load.disabled = false; setState('idle'); resume(api, m); }
+              else {
+                ui.load.disabled = false;
+                // this tab died building the model (a phone reloads a tab that runs out of memory):
+                // say so, and what the next try does differently (infer.js E.interrupted, stats.light)
+                if (api.interrupted && isConstrained(api)) { interrupted = true; loadLabel(); }
+                setState('idle');
+                resume(api, m);
+              }
               return;
             }
             if (waited >= 2000) { setState('packaging'); return; }
@@ -240,37 +265,66 @@
       if (!quiet) keepFocus(ui.prompt);
     }
 
-    // focus follows the panel only while the visitor is in it (a long load can end after they scroll on)
+    // focus follows the panel only while the visitor is in it (a long load can end after they scroll on).
+    // A container of the panel counts as nowhere in particular, like body: Safari does not focus a
+    // button on a tap or click but the nearest focusable ancestor (<main tabindex="-1">), which left
+    // Try again unfocused after a failed load on iPhone and iPad.
     function keepFocus(el) {
       var a = document.activeElement;
-      if (el && (!a || a === document.body || root.contains(a))) el.focus({ preventScroll: true });
+      if (el && (!a || a === document.body || root.contains(a) || a.contains(root))) el.focus({ preventScroll: true });
+    }
+
+    /* iPhone and iPad: every browser there runs WebKit, so the markup's "try a current Chrome, Edge or
+       Firefox" is swapped for advice that can help there. Memory is named only when infer.js
+       classified the error as such (err.code OUT_OF_MEMORY); the technical detail stays below. */
+    function failCopy(err) {
+      if (!failTitle) return;
+      failTitle.textContent = !APPLE_TOUCH ? failTitleText : err && err.code === 'OUT_OF_MEMORY'
+        ? 'This device ran out of memory for the model. Close other tabs, then try again.'
+        : 'The model could not run on this device just now. Try again.';
     }
 
     function onFailed(err) {
       text(ui.failuredetail, err && err.message ? String(err.message) : '');
+      failCopy(err);
       setState('failed');
       keepFocus(ui.retry);
       say('The model could not load on this device.');
     }
 
-    /* a visit after a successful load: the weights are already in Cache Storage, so the model
-       reopens by itself. cacheOnly means a miss rejects instead of downloading; any failure
-       here just leaves the Load button, as if this never ran. */
+    function isConstrained(api) { return typeof api.constrained === 'function' && api.constrained(); }
+
+    /* a visit after a successful load: the weights are already in Cache Storage. On a computer the
+       model reopens by itself. On a phone or tablet it waits for a tap on "Open the saved model" (the
+       note says it downloads nothing): building it takes a few hundred MB for seconds, which should not land on top of
+       the page's own arrival, and a phone that cannot hold it would otherwise be sent into a reload
+       on every visit. cacheOnly means a miss rejects instead of downloading; a failure while
+       reopening by itself just leaves the Load button, as if this never ran. */
     function resume(api, m) {
       if (typeof api.isCached !== 'function') return;
       api.isCached(m).then(function (hit) {
         if (!hit || state !== 'idle' || api.ready) return;
-        resuming = true;
-        if (ui.barfill) ui.barfill.style.setProperty('--p', '0');
-        text(ui.bartext, 'Opening the copy saved on this device');
-        setState('loading');
-        api.load({ onProgress: onProgress, cacheOnly: true }).then(function (r) {
-          resuming = false;
-          onLoaded(r, true);
-        }, function () {
-          resuming = false;
-          if (state === 'loading') setState(api.ready ? 'ready' : 'idle');
-        });
+        if (isConstrained(api)) { saved = true; loadLabel(); return; }
+        openSaved(api, true);
+      });
+    }
+
+    function openSaved(api, quiet) {
+      resuming = true;
+      if (ui.barfill) ui.barfill.style.setProperty('--p', '0');
+      text(ui.bartext, 'Opening the copy saved on this device');
+      setState('loading');
+      api.load({ onProgress: onProgress, cacheOnly: true }).then(function (r) {
+        resuming = false;
+        onLoaded(r, quiet);
+      }, function (err) {
+        resuming = false;
+        if (err && err.code === 'NOT_CACHED') {   // the saved copy is gone: back to the download button
+          saved = false;
+          loadLabel();
+          if (!quiet) say('The saved copy is no longer on this device. Load downloads it again.');
+        } else if (!quiet) { onFailed(err); return; }
+        if (state === 'loading') setState(api.ready ? 'ready' : 'idle');
       });
     }
 
@@ -278,6 +332,7 @@
       if (state !== 'idle' && state !== 'failed') return;
       var api = window.EmbeddingTax;
       if (!api || typeof api.load !== 'function') { setState('packaging'); return; }
+      if (saved) { openSaved(api, false); return; }
       if (ui.barfill) ui.barfill.style.setProperty('--p', '0');
       text(ui.bartext, 'Loading');
       setState('loading');
@@ -339,6 +394,7 @@
         // a stop pressed while the device failed: infer.js has unloaded the model, so it is a failure
         if (controller && controller.signal.aborted && api.ready) { finish(); return; }
         text(ui.failuredetail, err && err.message ? String(err.message) : '');
+        failCopy(err);
         show(ui.caret, false);
         controller = null;
         setState('failed');

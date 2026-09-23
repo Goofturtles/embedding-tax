@@ -263,6 +263,15 @@ body::before {
 @keyframes env-drift-b { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(36px, -20px, 0); } }
 body.paused::before, body.paused::after { animation-play-state: paused !important; }
 html:has(> body.paused)::before, html:has(> body.paused)::after { animation-play-state: paused !important; }   /* the glows live on html, which a body class reaches only through :has() */
+/* Phones and tablets: the same glows, held still, and the grain laid on without a blend. A
+   forever-moving fixed layer and a multiply-blended fixed sheet under a scrolling page were
+   measured as most of WebKit's repaint cost on these pages. Over the ivory canvas, multiply and
+   normal at this opacity differ by at most 2 levels of 255 (0.04 on average), so the grain reads
+   the same. Desktop keeps the drift and the blend. */
+@media (pointer: coarse), (hover: none) {
+  html::before, html::after { animation: none; }
+  body::before { mix-blend-mode: normal; }
+}
 
 /* The slate theme [C0 .theme-dark] for the closing band and the footer: its own grain sheet
    (inverted, screen, 5%) so the paper and the slate share one texture. The sheet sits at
@@ -401,6 +410,13 @@ html:has(> body.paused)::before, html:has(> body.paused)::after { animation-play
 }
 @media (max-width: 360px) {
   .site-link { padding: 2px 8px 4px; font-size: 14px; }
+}
+/* 320px (first iPhone SE): the mark and four chips need 13px more than the capsule has, so the
+   chips and the gaps tighten rather than the mark going (it is the only way home). */
+@media (max-width: 340px) {
+  .site-header-inner { gap: var(--sp-8); }
+  .site-links { gap: 2px; }
+  .site-link { padding: 2px 6px 4px; }
 }
 @media (pointer: coarse) {
   .site-link { min-height: 44px; }
@@ -601,6 +617,8 @@ button.glass:hover, a.glass:hover { background: var(--color-gray-100); }
 .arch-wrap.is-lit::before, .arch-wrap--whisper::before { animation: arch-breathe 8s ease-in-out -3s infinite alternate; }
 .arch-wrap--whisper::before { opacity: .5; }
 @keyframes arch-breathe { from { opacity: .5; } to { opacity: 1; } }
+/* touch screens hold the arch still: an endless opacity loop kept an idle page repainting on iPhone */
+@media (hover: none) and (pointer: coarse) { .arch-wrap.is-lit::before, .arch-wrap--whisper::before { animation: none; opacity: .8; } }
 
 /* =========================================================================================
    FOOTER (both pages, slate): a brand block beside link columns over a small-print bar,
@@ -643,7 +661,7 @@ button.glass:hover, a.glass:hover { background: var(--color-gray-100); }
 .site-footer-bar .site-footer-link:hover { color: var(--dark-text); }
 
 /* the arch above the wordmark (ivory-faded stroke) and the wordmark under its crown.
-   Newsreader 400, clamp(56px, 12.6vw, 240px), nowrap, tracking -.02em, line-height 1.25 and
+   Newsreader 400, clamp(42px, 12.6vw, 240px), nowrap, tracking -.02em, line-height 1.25 and
    .16em of breathing room below: no overflow hidden and no clip anywhere near it, the g's
    tail is the recurring clipping failure. Its letters (.bfw-l, split by script.js) are
    choreographed by styles.css. A soft ivory radial (--glow-ivory) drifts 60s behind it. */
@@ -655,7 +673,7 @@ button.glass:hover, a.glass:hover { background: var(--color-gray-100); }
   position: relative; z-index: 1; isolation: isolate;
   margin: clamp(48px, 6vw, 96px) 0 0; padding: 0 var(--page-margin) .16em;
   text-align: center; white-space: nowrap; color: var(--dark-text);
-  font: 400 clamp(56px, 12.6vw, 240px)/1.25 var(--font-display);
+  font: 400 clamp(42px, 12.6vw, 240px)/1.25 var(--font-display);   /* 42px floor: at 56px it ran 13-68px past a 320-375px screen */
   font-variation-settings: var(--font-opsz); letter-spacing: var(--tracking-display);
 }
 .big-foot-word::before {
@@ -701,6 +719,9 @@ button.glass:hover, a.glass:hover { background: var(--color-gray-100); }
    So on those pages the capsule floats, in white, with no plate, until the opening is scrolled
    past: then it settles back into the glass capsule the rest of the site uses. The switch is a
    class on <html> written by one IntersectionObserver (explorer.js / script.js).
+   White is for the dark openings only. research.html's opening is a light sky (body
+   .opening-light), where white type measured 1.25:1, so there the bar drops its plate but keeps
+   its ink links (AA).
    ========================================================================================= */
 .has-opening .site-header { position: fixed; top: 12px; z-index: 40; margin-inline: auto; left: 0; right: 0;
   transition: background-color var(--dur-transform) ease-in-out, border-color var(--dur-transform) ease-in-out, box-shadow var(--dur-transform) ease-in-out; }
@@ -708,12 +729,12 @@ html:not(.past-opening) .has-opening .site-header {
   background: transparent; border-color: transparent; box-shadow: none;
   backdrop-filter: none; -webkit-backdrop-filter: none;
 }
-html:not(.past-opening) .has-opening .site-brand,
-html:not(.past-opening) .has-opening .site-link { color: #fff; }
-html:not(.past-opening) .has-opening .site-link { border-color: #ffffff5c; }
-html:not(.past-opening) .has-opening .site-link:hover { background: #ffffff1f; color: #fff; }
-html:not(.past-opening) .has-opening .site-link[aria-current] { background: #fff; color: #0a0707; border-color: #fff; }
-html:not(.past-opening) .has-opening .site-actions .btn--primary { background: #e9e9e9; color: #0a0707; }
-html:not(.past-opening) .has-opening .site-actions .btn--primary:hover { background: #fff; }
+html:not(.past-opening) .has-opening:not(.opening-light) .site-brand,
+html:not(.past-opening) .has-opening:not(.opening-light) .site-link { color: #fff; }
+html:not(.past-opening) .has-opening:not(.opening-light) .site-link { border-color: #ffffff5c; }
+html:not(.past-opening) .has-opening:not(.opening-light) .site-link:hover { background: #ffffff1f; color: #fff; }
+html:not(.past-opening) .has-opening:not(.opening-light) .site-link[aria-current] { background: #fff; color: #0a0707; border-color: #fff; }
+html:not(.past-opening) .has-opening:not(.opening-light) .site-actions .btn--primary { background: #e9e9e9; color: #0a0707; }
+html:not(.past-opening) .has-opening:not(.opening-light) .site-actions .btn--primary:hover { background: #fff; }
 .has-opening .site-crumbs { margin-top: 0; }
 @media (prefers-reduced-motion: reduce) { .has-opening .site-header { transition: none; } }

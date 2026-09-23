@@ -12,15 +12,30 @@
  *         (a stale or torn download is refused and never cached; a cached entry that no longer
  *         hashes right is dropped and re-downloaded), then the manifest's parity self-check (a
  *         fixed context whose argmax the exporter measured on the shipped file) on every backend
- *         candidate: a backend that gets it wrong is not used, and the bytes reach Cache Storage
- *         only after a backend has passed. backend: "auto" (default) | "wasm" | "webgpu".
+ *         candidate: a backend that gets it wrong is not used. When only one session will be built
+ *         (a phone, or a browser without WebGPU), bytes whose SHA-256 matched are cached before it
+ *         (a tab that dies building it reopens from the cache, no second download); otherwise, and
+ *         with no SHA-256 (an insecure context), they reach Cache Storage only after a backend has
+ *         passed. A download that sends nothing
+ *         for 30 s of visible time, and a Worker that goes silent for 30 s mid-call, reject with a
+ *         readable error instead of hanging. backend: "auto" (default) | "wasm" | "webgpu".
  *         cacheOnly: true builds the model only from weights already in Cache Storage (they get
  *         there only after an earlier load passed): nothing is downloaded, and a miss or a corrupt
  *         entry rejects with err.code "NOT_CACHED" instead of falling back to the network.
  *         "auto" benchmarks a warm-up forward on wasm and, when the browser has WebGPU, on
- *         WebGPU too, and keeps the faster one (the first call's preference wins). The wasm
+ *         WebGPU too, and keeps the faster one (the first call's preference wins). On a
+ *         constrained() device "auto" builds wasm alone, never two sessions at once. The wasm
  *         backend always runs in a dedicated Worker with its own copy of the wasm-only
  *         onnxruntime build, so wasm compute never blocks the page, with or without WebGPU.
+ *         A load that fails on memory rejects with err.code "OUT_OF_MEMORY".
+ *     constrained() -> boolean
+ *         a phone or tablet ((pointer: coarse) and (hover: none)), a browser reporting 4 GB of
+ *         memory or less, or an iPad: see E.constrained. Pages use it to wait for a tap before
+ *         reopening saved weights.
+ *     interrupted -> boolean
+ *         this tab died once while building the model (see BUILDING); a constrained device then
+ *         builds the smaller session for the rest of the tab's visit (as it does after a load that
+ *         failed with OUT_OF_MEMORY).
  *     generate(prompt, { maxNewTokens=60, temperature=0.8, topK=40, seed=1337, untilDone=false,
  *                        topP=1, minP=0, repetitionPenalty=1, repetitionWindow=0, frequencyPenalty=0,
  *                        presencePenalty=0, noRepeatNgram=0, noLeadingBreak=0, noMidsentenceBreak=false,
@@ -64,7 +79,8 @@
  *         text that token completed (only whole UTF-8 characters are emitted, so `text` is ""
  *         while a multi-byte character is still being assembled and the rest arrives with the
  *         token that finishes it). Stops at <|endoftext|>, at maxNewTokens, or when `signal`
- *         (an AbortSignal) aborts; on abort it resolves with the text so far. Sampling matches
+ *         (an AbortSignal) aborts; on abort it resolves with the text so far, at once, even while a
+ *         forward is still in flight (that forward finishes on its own; the next one waits for it). Sampling matches
  *         tools/sample.py: logits / temperature, keep the top-k (temperature <= 0 is greedy),
  *         softmax, one draw from a generator seeded with `seed` (mulberry32), so the same
  *         (prompt, settings, seed) reproduces the same text on the same backend. Prompts longer
@@ -89,7 +105,9 @@
  *         goes back to false: load() rebuilds it from the cached weights.
  *     unload() -> Promise
  *         aborts the generate in flight (it resolves with its text so far), releases the session,
- *         terminates the worker (~100 MB freed), resets ready/backend; tokenCount() keeps working
+ *         terminates the worker (its whole wasm heap, which never shrinks while it lives: ~425 MB
+ *         with the folded weights, ~355 MB without prepacking, ~170 MB unfolded), resets
+ *         ready/backend; tokenCount() keeps working
  *         and a later load() rebuilds everything.
  *     isCached(manifest?) -> Promise<boolean>
  *         whether this device already holds the current weights (keyed by manifest sha256), so a
@@ -124,6 +142,17 @@
   };
   var CACHE_NAME = 'embedding-tax-weights';
   var BENCH_T = 48;          // context length of the warm-up forward used to pick a backend
+  // Stall limits, in visible time (visibleClock). A phone that loses its network mid-download, or a
+  // Worker that dies without an error event, used to leave the panel on "Loading" forever.
+  var DOWNLOAD_STALL_MS = 30000;   // no byte of the weights for this long: the download is cancelled
+  var WORKER_SILENCE_MS = 30000;   // a busy Worker speaks once a second; silence this long means it is gone.
+                                   // The longest single step measured (a 512-token forward, 1.3 s on a
+                                   // desktop core) leaves a phone many times slower well inside it.
+  var WORKER_CAP_MS = { init: 90000, create: 240000 };   // an op that never ends while the Worker lives (a CDN request that hangs)
+  var OP_TEXT = { init: 'fetching onnxruntime', create: 'building the model', run: 'running the model' };
+  // What an engine says when it runs out of memory: V8/JSC RangeErrors, Emscripten's OOM abort,
+  // C++ bad_alloc, a WebAssembly.Memory that cannot grow. Only these get err.code OUT_OF_MEMORY.
+  var OOM_TEXT = /out of memory|\bOOM\b|bad_alloc|maximum memory size|could not allocate|failed to allocate|cannot allocate|allocation failed/i;
 
   var scriptUrl = (document.currentScript && document.currentScript.src) || location.href;
   var BASE = scriptUrl.slice(0, scriptUrl.lastIndexOf('/') + 1);
@@ -506,6 +535,21 @@
   })();
 
   function now() { return performance.now(); }
+  function noop() {}
+
+  // Calls tick(ms) about once a second with the time that passed while the page was visible. Time
+  // spent hidden, and a tick that arrives late (over 2.5 s: the tab was frozen, as iOS does to a
+  // background tab), count for nothing, so a load that was only paused is never called stalled
+  // when the visitor comes back. Returns stop().
+  function visibleClock(tick) {
+    var last = now();
+    var id = setInterval(function () {
+      var t = now(), dt = t - last;
+      last = t;
+      if (dt <= 2500 && !document.hidden) tick(dt);
+    }, 1000);
+    return function () { clearInterval(id); };
+  }
 
   // ---------------------------------------------------------------- wasm worker
   //
@@ -513,13 +557,19 @@
   // build; the page thread only ever receives Float32Array logits. (onnxruntime's proxy mode
   // does the same but is unavailable in the WebGPU build, which put a wasm fallback on the
   // main thread whenever navigator.gpu existed: a 2 s freeze at load and 50-110 ms tasks per
-  // token.) Messages: {id, op: init|create|run|release, ...} -> {id, ok, result|error}.
+  // token.) Messages: {id, op: init|create|run|release, ...} -> {id, ok, result|error}; while an op
+  // is in flight the Worker also sends {beat: 1} once a second (between its synchronous stretches),
+  // so the page can tell a busy Worker from a dead one (WasmWorker._clockOn). Idle, it sends nothing.
   var WASM_WORKER_SRC = [
     "'use strict';",
     "var session = null;",
+    "var busy = 0, beat = 0;",
+    "function begin() { if (!busy++) beat = setInterval(function () { self.postMessage({ beat: 1 }); }, 1000); }",
+    "function end() { if (!--busy) clearInterval(beat); }",
     "function errText(e) { return typeof e === 'number' ? 'native exception #' + e : String(e && e.message || e); }",
     "self.onmessage = function (ev) {",
     "  var m = ev.data;",
+    "  begin();",
     "  Promise.resolve().then(function () {",
     "    if (m.op === 'init') {",
     "      // importScripts cannot carry an integrity attribute, so fetch the runtime, hash it and run",
@@ -555,8 +605,10 @@
     "    if (m.op === 'release') { var s = session; session = null; return s ? s.release() : null; }",
     "    throw new Error('unknown op ' + m.op);",
     "  }).then(function (r) {",
+    "    end();",
     "    self.postMessage({ id: m.id, ok: true, result: r }, r instanceof Float32Array ? [r.buffer] : []);",
     "  }, function (e) {",
+    "    end();",
     "    self.postMessage({ id: m.id, ok: false, error: errText(e) });",
     "  });",
     "};"
@@ -567,11 +619,18 @@
     this.worker = new Worker(this.url);
     this.pending = new Map();
     this.nextId = 1;
+    this.dead = null;        // once terminated: the error every later call rejects with at once
+    this.quiet = 0;          // visible ms since the Worker last said anything, while calls are pending
+    this.stopClock = null;
     var self = this;
     this.worker.onmessage = function (ev) {
-      var m = ev.data, p = self.pending.get(m.id);
+      var m = ev.data;
+      self.quiet = 0;
+      if (m && m.beat) return;
+      var p = self.pending.get(m.id);
       if (!p) return;
       self.pending.delete(m.id);
+      if (!self.pending.size) self._clockOff();
       if (m.ok) p.resolve(m.result); else p.reject(new Error('wasm worker: ' + m.error));
     };
     this.worker.onerror = function (ev) {
@@ -580,21 +639,57 @@
   }
   WasmWorker.prototype.call = function (msg, transfer) {
     var self = this;
+    if (this.dead) return Promise.reject(this.dead);
     return new Promise(function (resolve, reject) {
       msg.id = self.nextId++;
-      self.pending.set(msg.id, { resolve: resolve, reject: reject });
+      self.pending.set(msg.id, { resolve: resolve, reject: reject, op: msg.op, waited: 0 });
+      self._clockOn();
       self.worker.postMessage(msg, transfer || []);
     });
+  };
+  // While calls are pending, count visible time. WORKER_SILENCE_MS without a word (a living Worker
+  // beats once a second while busy), or an op past its WORKER_CAP_MS, ends the Worker: every pending
+  // call and every later one rejects with what happened, which the pages show with Try again. A
+  // Worker that dies without an error event (the tab's memory reclaimed, a crash) otherwise left
+  // "Loading" or "Writing" on screen for good.
+  WasmWorker.prototype._clockOn = function () {
+    if (this.stopClock) return;
+    var self = this;
+    this.quiet = 0;
+    this.stopClock = visibleClock(function (dt) {
+      var why = null, doing = null;
+      self.quiet += dt;
+      self.pending.forEach(function (p) {
+        p.waited += dt;
+        doing = doing || OP_TEXT[p.op] || p.op;
+        var cap = WORKER_CAP_MS[p.op];
+        if (!why && cap && p.waited >= cap) why = (OP_TEXT[p.op] || p.op) + ' did not finish within ' + cap / 1000 + ' s';
+      });
+      // A build is one long blocking wasm call, so the once-a-second heartbeat cannot fire during
+      // it: silence is normal there (a phone building the unfolded weights takes well over 30 s),
+      // and the build's own 240 s cap is what catches a real hang.
+      var building = false;
+      self.pending.forEach(function (p) { if (p.op === 'create') building = true; });
+      if (!why && !building && self.quiet >= WORKER_SILENCE_MS) why = 'it stopped answering while ' + doing + ' (nothing from it for ' + WORKER_SILENCE_MS / 1000 + ' s)';
+      if (why) self.terminate(new Error('wasm worker: ' + why));
+    });
+  };
+  WasmWorker.prototype._clockOff = function () {
+    if (this.stopClock) { this.stopClock(); this.stopClock = null; }
   };
   WasmWorker.prototype._failAll = function (err) {
     var p = this.pending;
     this.pending = new Map();
+    this._clockOff();
     p.forEach(function (w) { w.reject(err); });
   };
-  WasmWorker.prototype.terminate = function () {
-    this.worker.terminate();
-    URL.revokeObjectURL(this.url);
-    this._failAll(new Error('wasm worker terminated'));
+  WasmWorker.prototype.terminate = function (err) {
+    if (!this.dead) {
+      this.worker.terminate();
+      URL.revokeObjectURL(this.url);
+      this.dead = err || new Error('wasm worker terminated');
+    }
+    this._failAll(this.dead);
   };
 
   // A backend handle: run(ids) -> Promise<Float32Array logits>, release() -> Promise.
@@ -692,6 +787,57 @@
     _session: null   // the chosen backend handle (workerHandle / sessionHandle)
   };
 
+  // ---------------------------------------------------------------- phones, tablets, small memory
+  //
+  // A constrained device is touch-only ((pointer: coarse) and (hover: none): a phone or a tablet),
+  // reports 4 GB of memory or less (navigator.deviceMemory, Chromium only), or is an iPad (iPadOS
+  // calls itself a Mac with a touch screen, and with a trackpad attached its pointer reads fine).
+  // There "auto" builds one wasm session in the Worker and never the WebGPU one: both at once, with
+  // the WebGPU build's own 400+ MB heap on the page, peaked at 1.35-1.45 GB on phone profiles against
+  // 0.75-0.8 GB for wasm alone, past what iOS lets a tab hold (it reloads the tab instead). Desktop
+  // browsers still race both and keep the faster.
+  function lowMemory() { return typeof navigator.deviceMemory === 'number' && navigator.deviceMemory <= 4; }
+  E.constrained = function () {
+    var mm = function (q) { try { return !!(window.matchMedia && window.matchMedia(q).matches); } catch (e) { return false; } };
+    return (mm('(pointer: coarse)') && mm('(hover: none)')) || lowMemory() ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  };
+
+  // BUILDING sits in sessionStorage while sessions are being built and goes when that ends or the
+  // page is left (pagehide). A tab that died mid-build (iOS reloads a tab that ran out of memory, and
+  // fires no pagehide) finds it on its next arrival: E.interrupted, and LIGHT for the rest of the
+  // tab's visit, so a constrained device builds the smaller session from then on (E._load).
+  var BUILDING = 'embedding-tax:building', LIGHT = 'embedding-tax:light';
+  var building = false;
+  function tabStore() { try { return window.sessionStorage || null; } catch (e) { return null; } }
+  function writeBuilding(on) {
+    var s = tabStore();
+    try { if (s) { if (on) s.setItem(BUILDING, '1'); else s.removeItem(BUILDING); } } catch (e) { /* storage off: nothing is remembered */ }
+  }
+  function markBuilding(on) { building = on; writeBuilding(on); }
+  // E.interrupted: THIS arrival found the mark, so the page reloaded mid-build (the note says so,
+  // once). E.lightTab: some arrival in this tab did, so every later build keeps the weights
+  // compressed; that is a mode, not news, and no note is shown for it.
+  E.interrupted = false;
+  E.lightTab = (function () {
+    var s = tabStore();
+    try {
+      if (s && s.getItem(BUILDING)) { s.removeItem(BUILDING); s.setItem(LIGHT, '1'); E.interrupted = true; }
+      return !!(s && s.getItem(LIGHT));
+    } catch (e) { return false; }
+  })();
+  window.addEventListener('pagehide', function () { if (building) writeBuilding(false); });
+  window.addEventListener('pageshow', function (ev) { if (ev.persisted && building) writeBuilding(true); });   // back from the bfcache mid-build
+  // The same fallback for a build that failed with OUT_OF_MEMORY inside the page (the Worker's heap
+  // could not grow) instead of taking the tab down: its Worker is already gone, and Try again builds
+  // the smaller session.
+  var lightNext = false;
+
+  function outOfMemory(err) {
+    if (err instanceof Error && !err.code && OOM_TEXT.test(err.message)) err.code = 'OUT_OF_MEMORY';
+    return err;
+  }
+
   E._emitProgress = function (loaded, total) {
     for (var i = 0; i < E._progress.length; i++) {
       try { E._progress[i](loaded, total); } catch (e) { /* a listener's error must not stop the load */ }
@@ -718,7 +864,7 @@
     }, function (err) {
       E._progress = [];
       if (E._loadPromise === p) E._loadPromise = null;   // a retry starts over (unload() may have reset it already)
-      throw err;
+      throw outOfMemory(err);
     });
     E._loadPromise = p;
     return p;
@@ -726,7 +872,9 @@
 
   E._load = async function (pref, cacheOnly) {
     if (pref !== 'auto' && pref !== 'wasm' && pref !== 'webgpu') throw new Error('backend must be auto, wasm or webgpu');
-    var stats = { ortVersion: ORT_VERSION, backendPreference: pref, candidates: [] };
+    var constrained = E.constrained();
+    var stats = { ortVersion: ORT_VERSION, backendPreference: pref, constrained: constrained, candidates: [] };
+    if (pref === 'auto' && constrained) pref = 'wasm';   // one session, never two at once (an explicit backend is still honoured)
     E.stats = stats;
     var t0 = now();
 
@@ -791,12 +939,38 @@
         sessOpts.extra.session[k.slice(8)] = String(so[k]);
       }
     }
+    // A constrained device keeps the folded weights (unfolded, each forward ran 1.5-4x slower on a
+    // CPU, and the default preset runs two per token) but skips prepacking: 71 MB less wasm heap for
+    // a forward 5-15% slower, identical tokens. Unfolded (170 MB of heap instead of 354, about half
+    // the speed) only where memory is known to be short: a browser reporting 4 GB or less, or a tab
+    // that already failed once building the folded one (E.interrupted, lightNext). Desktop runs what
+    // the manifest says.
+    stats.light = false;
+    if (constrained) {
+      sessOpts.extra.session.disable_prepacking = '1';
+      stats.light = lowMemory() || E.lightTab || lightNext;
+      if (stats.light) delete sessOpts.extra.session.disable_quant_qdq;
+    }
+    stats.sessionOptions = JSON.parse(JSON.stringify(sessOpts.extra.session));
+
+    // One candidate (wasm: a phone, or a browser without WebGPU) means nothing after its session
+    // needs the page's copy of the weights, so the Worker gets that very buffer, transferred, not a
+    // second copy. Bytes whose SHA-256 matched are the manifest's own file, so they are cached first:
+    // a tab that dies building the session (iOS reloads it) reopens from Cache Storage instead of
+    // downloading again. With no SHA-256 (an insecure context) the old order stands, below.
+    var single = !tryGpu;
+    var cachedEarly = false;
+    if (single && !dl.fromCache && dl.sha256 === 'verified') { stats.cached = await E._cachePut(dl.key, bytes); cachedEarly = true; }
+    var giveAway = single && (dl.fromCache || cachedEarly);
+    dl.bytes = null;
 
     var chosen = null, loser = null;
     var wasmCand = null, gpuCand = null;
+    markBuilding(true);
     try {
       if (pref !== 'webgpu') {
-        wasmCand = await E._trySession(null, 'wasm', bytes, sessOpts);
+        wasmCand = await E._trySession(null, 'wasm', bytes, sessOpts, giveAway);
+        if (giveAway) bytes = null;   // detached now: the Worker holds the only copy
         stats.candidates.push(wasmCand.report);
         if (wasmCand.error && pref === 'wasm') throw wasmCand.error;
       }
@@ -812,19 +986,22 @@
       } else if (okG) chosen = gpuCand;
       else if (okW) chosen = wasmCand;
       else throw (wasmCand && wasmCand.error) || (gpuCand && gpuCand.error) || new Error('no backend could run the model');
+      if (loser) { try { await loser.handle.release(); } catch (e) { /* ignore */ } }
     } catch (err) {
       // Cached bytes that no backend could run correctly are not kept for the next visit, unless
       // they hashed right: then the bytes are fine and the failure was the device (a CDN fetch, a
       // lost GPU, memory), and dropping them would only turn the next click into a 50 MB download.
       if (dl.fromCache && dl.sha256 !== 'verified') await E._cacheDelete(dl.key);
+      if (constrained && outOfMemory(err).code === 'OUT_OF_MEMORY') lightNext = true;
       throw err;
+    } finally {
+      markBuilding(false);
     }
-    if (loser) { try { await loser.handle.release(); } catch (e) { /* ignore */ } }
 
-    // Only now, after a backend has produced the expected answer from these bytes, do they
-    // go to Cache Storage. (Caching before this point once persisted a corrupt download of
-    // the right length, and every later load() served it back instead of the network.)
-    if (!dl.fromCache) stats.cached = await E._cachePut(dl.key, bytes);
+    // Unhashed bytes go to Cache Storage only now, after a backend has produced the expected
+    // answer from them. (Caching unchecked bytes before this point once persisted a corrupt
+    // download of the right length, and every later load() served it back instead of the network.)
+    if (!dl.fromCache && !cachedEarly) stats.cached = await E._cachePut(dl.key, bytes);
 
     E._session = chosen.handle;
     E.backend = chosen.ep;
@@ -839,8 +1016,10 @@
 
   // Build one backend, warm it up, time it, and make it prove itself on the manifest's
   // self-check. Resolves { handle, ep, report } or { error, ep, report }; never rejects.
-  // For "wasm", createMs includes spawning the Worker and fetching the runtime into it.
-  E._trySession = async function (ort, ep, bytes, baseOpts) {
+  // For "wasm", createMs includes spawning the Worker and fetching the runtime into it. giveAway:
+  // nothing after this session needs `bytes`, so the Worker gets the buffer itself (it is detached
+  // here) instead of a copy.
+  E._trySession = async function (ort, ep, bytes, baseOpts, giveAway) {
     var report = { backend: ep };
     var handle = null;
     try {
@@ -852,7 +1031,9 @@
         var w = new WasmWorker();
         handle = workerHandle(w);
         report.ortIntegrity = await w.call({ op: 'init', script: ORT_CDN + ORT_SCRIPT.wasm, wasmPaths: ORT_CDN, integrity: ORT_INTEGRITY.wasm });   // 'verified' | 'unavailable'
-        var copy = bytes.slice();   // the Worker gets its own copy: the page keeps `bytes` for WebGPU and the cache
+        // Otherwise the Worker gets its own copy: the page keeps `bytes` for WebGPU and the cache.
+        var whole = giveAway && bytes.byteOffset === 0 && bytes.byteLength === bytes.buffer.byteLength;
+        var copy = whole ? bytes : bytes.slice();
         var info = await w.call({ op: 'create', bytes: copy.buffer, opts: opts }, [copy.buffer]);
         report.wasmThreads = info.numThreads;
       } else {
@@ -944,7 +1125,7 @@
 
   // Resolves { bytes, fromCache, key, sha256 } with bytes of manifest.bytes length whose SHA-256
   // is manifest.sha256 (when the browser can hash: sha256 is "verified", else "unavailable").
-  // Nothing is written to the cache here; _load does that once a backend has passed.
+  // Nothing is written to the cache here; _load does that (see its `single` comment for when).
   E._fetchWeights = async function (manifest, cacheOnly) {
     var url = MODEL_DIR + manifest.file;
     var key = E._weightsKey(manifest);
@@ -972,23 +1153,51 @@
     }
     if (cacheOnly) throw E._notCached();   // reopening from this device never turns into a download
     E.stats.fromCache = false;
-    var res = await fetch(url).catch(function (e) {
-      throw new Error('download of ' + url + ' failed: ' + (e && e.message || e));
+    // DOWNLOAD_STALL_MS of visible time without a byte (headers included) cancels the request, and
+    // the load fails with a message the page shows beside Try again.
+    var ctl = new AbortController(), stalled = false, quiet = 0;
+    var stopClock = visibleClock(function (dt) {
+      quiet += dt;
+      if (quiet >= DOWNLOAD_STALL_MS && !stalled) { stalled = true; ctl.abort(); }
     });
-    if (!res.ok) throw new Error('fetch ' + url + ': HTTP ' + res.status);
-    if (!total) total = Number(res.headers.get('Content-Length')) || 0;
-    var reader = res.body.getReader();
-    var chunks = [], loaded = 0;
-    E._emitProgress(0, total);
-    for (;;) {
-      var step = await reader.read();
-      if (step.done) break;
-      chunks.push(step.value);
-      loaded += step.value.length;
-      E._emitProgress(Math.min(loaded, total || loaded), total || loaded);
+    var out, loaded = 0;
+    try {
+      var res = await fetch(url, { signal: ctl.signal }).catch(function (e) {
+        throw new Error('download of ' + url + ' failed: ' + (e && e.message || e));
+      });
+      quiet = 0;
+      if (!res.ok) throw new Error('fetch ' + url + ': HTTP ' + res.status);
+      if (!total) total = Number(res.headers.get('Content-Length')) || 0;
+      var reader = res.body.getReader();
+      // Straight into one buffer of the manifest's size: a list of chunks joined at the end held the
+      // whole file twice at its peak. Without manifest.bytes the chunks are joined as before.
+      var chunks = [];
+      out = manifest.bytes ? new Uint8Array(manifest.bytes) : null;
+      E._emitProgress(0, total);
+      for (;;) {
+        var step = await reader.read();
+        if (step.done) break;
+        quiet = 0;
+        if (out) {
+          if (loaded + step.value.length > out.length) {
+            reader.cancel().catch(noop);
+            throw new Error('weights: the server sent more than the ' + out.length + ' bytes the manifest says');
+          }
+          out.set(step.value, loaded);
+        } else chunks.push(step.value);
+        loaded += step.value.length;
+        E._emitProgress(Math.min(loaded, total || loaded), total || loaded);
+      }
+    } catch (e) {
+      if (stalled) throw new Error('the download of ' + manifest.file + ' stalled: no data arrived for ' + DOWNLOAD_STALL_MS / 1000 + ' s. Check the connection and try again');
+      throw e;
+    } finally {
+      stopClock();
     }
-    var out = new Uint8Array(loaded), off = 0;
-    for (var i = 0; i < chunks.length; i++) { out.set(chunks[i], off); off += chunks[i].length; }
+    if (!out) {
+      out = new Uint8Array(loaded);
+      for (var i = 0, off = 0; i < chunks.length; i++) { out.set(chunks[i], off); off += chunks[i].length; }
+    }
     if (total && loaded !== total) throw new Error('weights: got ' + loaded + ' bytes, manifest says ' + total);
     E._emitProgress(loaded, loaded);
     var sha = await verdict(out);   // ~35 ms for 50 MB
@@ -1000,8 +1209,23 @@
     return { bytes: out, fromCache: false, key: key, sha256: sha };
   };
 
-  // s is a backend handle; kept as the one entry point for a forward pass.
-  E._forward = function (s, ids) { return s.run(ids); };
+  // s is a backend handle; kept as the one entry point for a forward pass. Forwards run one at a
+  // time: a Stop answered while a forward was in flight (orStop) leaves that forward running, and
+  // the next one starts only after it settles, so a session never gets two runs at once.
+  var fwdTail = Promise.resolve();
+  E._forward = function (s, ids) {
+    var p = fwdTail.then(function () { return s.run(ids); });
+    fwdTail = p.then(noop, noop);
+    return p;
+  };
+  // A forward that gives way to Stop: resolves STOPPED the moment the run is stopped, even while the
+  // forward is still in flight (a long context on a slow phone, or a Worker that stopped answering:
+  // Stop used to wait on it, forever in that case). The forward's own result or error is dropped.
+  var STOPPED = {};
+  function orStop(p, stopped) {
+    p.catch(noop);   // dropped after a stop: never an unhandled rejection
+    return Promise.race([p, stopped]);
+  }
 
   // Forget the loaded backend (ready goes false, the next load() starts over) and hand it back.
   E._detach = function () {
@@ -1023,18 +1247,22 @@
   E._runtimeFailure = function (s, err) {
     var msg = String(err && err.message || err);
     if (E._session === s) E._release(E._detach());
-    return new Error('EmbeddingTax: the ' + s.ep + ' backend failed mid-generation (' + msg + '); the model has been ' +
-      'unloaded, call load() again to rebuild it (the weights stay cached)');
+    return outOfMemory(new Error('EmbeddingTax: the ' + s.ep + ' backend failed mid-generation (' + msg + '); the model has been ' +
+      'unloaded, call load() again to rebuild it (the weights stay cached)'));
   };
 
-  // Free the ~100 MB the backend holds. The generate in flight stops after its current forward
-  // and resolves with its text so far; ones still queued reject with "call load() first". The
-  // tokenizer stays, so tokenCount() keeps working; load() rebuilds the rest from the cache.
+  // Free what the backend holds (the Worker's whole wasm heap: see the header). The generate in
+  // flight stops at once and resolves with its text so far; ones still queued reject with "call
+  // load() first". The tokenizer stays, so tokenCount() keeps working; load() rebuilds the rest
+  // from the cache.
   E.unload = async function () {
     if (E._loadPromise) { try { await E._loadPromise; } catch (e) { /* a failed load left nothing to free */ } }
     var s = E._detach();
     if (E._current) E._current.abort();
     await E._queue;   // never rejects: it is the settled chain of queued generates
+    // A WebGPU session is not released under a forward still running (a stopped run's, see orStop);
+    // the Worker is simply terminated, which is safe mid-forward and cannot hang on a dead Worker.
+    if (s && s.ep !== 'wasm') await fwdTail;
     if (s) await E._release(s);
   };
 
@@ -1119,6 +1347,10 @@
     var internal = new AbortController();   // unload() stops this generate through it; the caller's signal stays theirs
     E._current = internal;
     var aborted = function () { return internal.signal.aborted || !!(signal && signal.aborted); };
+    var onStop = null;
+    var stopped = new Promise(function (res) { onStop = function () { res(STOPPED); }; });   // settles with STOPPED on either abort
+    internal.signal.addEventListener('abort', onStop);
+    if (signal) { if (signal.aborted) onStop(); else signal.addEventListener('abort', onStop); }
     var t0 = now();
     var drafts = [];
     try {
@@ -1126,7 +1358,7 @@
         // one draft streams live; best-of keeps each draft's pieces and replays the winner
         var pieces = d.bestOf > 1 ? [] : null;
         var emit = pieces ? function (p, id) { pieces.push(p, id); } : onToken;
-        var r = await E._draft(s, ids, input, (seed + Math.imul(i, 0x9E3779B9)) | 0, d, emit, pieces ? null : last, aborted);
+        var r = await E._draft(s, ids, input, (seed + Math.imul(i, 0x9E3779B9)) | 0, d, emit, pieces ? null : last, aborted, stopped);
         r.draft = i;
         r.pieces = pieces;
         r.score = r.meanPmi === null ? null : r.meanPmi + d.bestOfFluencyWeight * r.meanLogp;
@@ -1135,6 +1367,7 @@
       }
     } finally {
       if (E._current === internal) E._current = null;
+      if (signal) signal.removeEventListener('abort', onStop);
     }
     // the highest score wins; ties go to the lower draft; a null score (no token) never beats a number
     var best = drafts[0], bestScore = best.score === null ? -Infinity : best.score, forwards = 0, allTokens = 0, j;
@@ -1185,9 +1418,10 @@
 
   // One draft: the decoding loop of header steps 1-7 from the encoded prompt `ids` (input is the
   // prompt text the break rule reads). emit(piece, tokenId) gets the text as it is decoded; `live`
-  // (E.last, or null) is kept current with newTokens and text. Resolves { ids, text, stoppedBy,
-  // newTokens, forwards, meanPmi, meanLogp, tFirst, seed }.
-  E._draft = async function (s, ids, input, seed, d, emit, live, aborted) {
+  // (E.last, or null) is kept current with newTokens and text; `stopped` settles with STOPPED when
+  // the run is stopped (orStop). Resolves { ids, text, stoppedBy, newTokens, forwards, meanPmi,
+  // meanLogp, tFirst, seed }.
+  E._draft = async function (s, ids, input, seed, d, emit, live, aborted, stopped) {
     var manifest = E.manifest, block = manifest.block_size, eot = manifest.eot_id, tok = E.tokenizer, V = manifest.vocab_size;
     var buf = E._buffers(V), l = buf.l, stamp = buf.stamp, counts = buf.counts;
     var rng = mulberry32(seed);
@@ -1205,10 +1439,12 @@
         if (aborted()) { r.stoppedBy = 'abort'; break; }
         var lc, lu = null;
         try {
-          lc = await E._forward(s, ctx.length > block ? ctx.slice(ctx.length - block) : ctx);
+          lc = await orStop(E._forward(s, ctx.length > block ? ctx.slice(ctx.length - block) : ctx), stopped);
+          if (lc === STOPPED) { r.stoppedBy = 'abort'; break; }
           r.forwards++;
           if (needFree && !aborted()) {   // a Stop pressed during the first pass does not wait for the second
-            lu = await E._forward(s, promptFree.length > block ? promptFree.slice(promptFree.length - block) : promptFree);
+            lu = await orStop(E._forward(s, promptFree.length > block ? promptFree.slice(promptFree.length - block) : promptFree), stopped);
+            if (lu === STOPPED) { r.stoppedBy = 'abort'; break; }
             r.forwards++;
           }
         } catch (err) { throw E._runtimeFailure(s, err); }

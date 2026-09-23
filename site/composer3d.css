@@ -37,6 +37,7 @@
   --tabs-h: 40px;                                   /* composer3d.js writes the real height */
   --sun: 255, 248, 236;
   --shade: 52, 40, 28;
+  --c3d-frost: linear-gradient(180deg, rgba(255, 255, 255, .58) 0%, rgba(255, 255, 255, .68) 100%);   /* the body's frost, over the blur */
   position: relative;                               /* no z-index: the shadow below must join the hero's own stacking context */
 }
 /* registered so the hover change can ease with the shadow's own transform instead of stepping */
@@ -53,7 +54,7 @@
 .par { position: absolute; inset: 0; }
 /* promoted while the eye eases at rest, and for the whole time the zoom camera moves (home.js promotes each .cam
    then too, so the wrappers hold no paint of their own and their fading slide never adds or drops a layer mid-zoom) */
-.scene.is-par .par, html.zt-on:not(.zt-rest) .par { will-change: transform; }
+.scene.is-par .par, html.c3d-on.zt-on:not(.zt-rest) .par { will-change: transform; }   /* c3d-on: on touch nothing moves the wrappers */
 
 /* ---------- ground: the shadow lands on the photo, under every glass surface ----------
    z-index -1 puts it at the bottom of the hero's stacking context (the zoom camera's transform) or of
@@ -111,7 +112,7 @@
       linear-gradient(90deg, rgba(var(--sun), .95) 0, rgba(var(--sun), .9) var(--tab-l, 0px), rgba(var(--sun), 0) calc(var(--tab-l, 0px) + 1px),
                              rgba(var(--sun), 0) calc(var(--tab-r, 0px) - 1px), rgba(var(--sun), .85) var(--tab-r, 0px), rgba(255, 255, 255, .34) 100%) border-box 0 0 / 100% 1.5px no-repeat,
       /* frost: clearer at the top where the bright arch shows through, denser low over the dark stone and trees */
-      linear-gradient(180deg, rgba(255, 255, 255, .58) 0%, rgba(255, 255, 255, .68) 100%) border-box;
+      var(--c3d-frost) border-box;
     box-shadow:
       /* bevel: light rim on the sun side, a darker far rim; Apple iOS 26 glass https://mobbin.com/sites/sections/737a4324-a6f1-4834-9ade-b0fc62c3b60e */
       inset 1px 0 0 rgba(var(--sun), .45),
@@ -237,4 +238,16 @@
   background: linear-gradient(172deg, rgba(255, 255, 255, .42), rgba(255, 255, 255, .26));
   color: #5e5d59;
   box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .65), inset 0 0 0 1px rgba(84, 64, 44, .14);
+}
+
+/* ---------- touch screens: the object without a live blur (see home.css, "touch screens") ----------
+   The photograph under the composer, its tabs and the output card changes every zoom frame, so a backdrop blur is
+   rendered again each frame. On a coarse, hover-less pointer they keep their rim, bevel, sheen and thickness and
+   drop the blur; the frost is pre-mixed denser instead. The selected tab stays as dense as the card top it opens
+   into, and the open tab keeps its ink bar. */
+@media (hover: none) and (pointer: coarse) {
+  .c3d { --c3d-frost: linear-gradient(180deg, rgba(255, 255, 255, .82) 0%, rgba(255, 255, 255, .88) 100%); }
+  .c3d .c-tab, .hero .h-out { -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .c3d .c-tab, .c3d .c-tab:hover { background: rgba(255, 255, 255, .62); }
+  .c3d .c-tab[aria-selected="true"] { background: rgba(255, 255, 255, .84); }
 }

@@ -212,18 +212,23 @@
   /* a chapter comes from depth (.30 -> 1), holds (drifting 1.5%), then passes the camera (gone by 1.15x).
      Its glass and its text fade in together from 40% size (the text a little faster, as the two
      opacities multiply), and leave on one curve, so no blank frosted slab ever arrives ahead of its
-     words or outlives them on the way out (the #budget exit is the tower-gate frame). */
+     words or outlives them on the way out (the #budget exit is the tower-gate frame).
+     On touch the text has no fade of its own and so is exactly as opaque as its glass: the panels span a phone's
+     width, and a glass at .53 over text at .18 read as an empty frosted tile arriving (iPhone 15, u 1.175). */
+  var touchMQ = window.matchMedia ? window.matchMedia('(hover: none) and (pointer: coarse)') : null;
+  var textWithGlass = !!(touchMQ && touchMQ.matches);
   function chapter(u, w) {                  // w = [in0, in1, out0, out1] in svh; out may be null
     var t = ss(seg(u, w[0], w[1]));
     var s = 1 / (1 + 2.3333 * (1 - t));
     var o = ss(seg(s, 0.40, 0.56));    // solid by 56% of its travel, not 72%: a half-there card
-    var ci = ss(seg(s, 0.44, 0.60));   // over a photograph reads as a glitch, not as distance
+    var ci = textWithGlass ? 1 : ss(seg(s, 0.44, 0.60));   // over a photograph reads as a glitch, not as distance
     if (w[2] != null) {
       s *= 1 + 0.015 * seg(u, w[1], w[2]);
       var k = seg(u, w[2], w[3]);
       var so = 1 / (1 - 0.75 * k * k);      // accelerating toward the camera
       var out = 1 - ss(seg(so, 1, 1.15));
-      s *= so; o *= out; ci *= out;
+      s *= so; o *= out;
+      if (!textWithGlass) ci *= out;
     }
     return [s, o, ci];
   }
@@ -242,6 +247,7 @@
     var camSky = scene.querySelector('.cam--sky'), camFour = scene.querySelector('.cam--four'), camTown = scene.querySelector('.cam--town');
     var camBridge = scene.querySelector('.cam--bridge');
     var camSplits = scene.querySelectorAll('.cam--split'), camDoors = scene.querySelectorAll('.cam--door');
+    var scrim = scene.querySelector('.scene-scrim');
     if (!camSky || !camFour || !camTown || !camBridge) return;
     var chaps = [];
     ['device', 'budget', 'pages'].forEach(function (id) {
@@ -303,6 +309,7 @@
     function resetZoom() {
       clearWrites(scene); clearWrites(zt); clearWrites(heroWrap); clearWrites(doc);
       [camSky, camFour, camTown, camBridge].forEach(clearWrites);
+      if (scrim) clearWrites(scrim);
       for (var i = 0; i < camSplits.length; i++) clearWrites(camSplits[i]);
       for (var j = 0; j < camDoors.length; j++) clearWrites(camDoors[j]);
       chaps.forEach(function (ch) { clearWrites(ch.el); ch.s = .3; ch.o = 0; });
@@ -469,21 +476,24 @@
       // at the size of the first screen and parts past the camera, leaving by scale like the first pair
       var sDoor = 1 + 2.2 * ss(seg(u, 3.95, 4.75)), oDoor = ss(seg(u, 3.95, 4.02));
       // caps keep each photograph near its own resolution: the sky and the mountains used to reach
-      // 9x, several times their source, and the late frames went soft
-      setVar(scene, '--s-sky', depth(30, c, 4).toFixed(4));
-      setVar(scene, '--s-four', depth(5, c, narrow ? 2.6 : 3.4).toFixed(4));
-      setVar(scene, '--o-four', (.9 + .1 * ss(seg(c, 1.25, 1.85))).toFixed(3));
-      setVar(scene, '--s-town', sTown.toFixed(4));
-      setVar(scene, '--o-town', oTown.toFixed(3));
-      setVar(scene, '--s-br', sBr.toFixed(4));
-      setVar(scene, '--o-br', oBr.toFixed(3));
-      setVar(scene, '--s-tw', sTw.toFixed(4));
-      setVar(scene, '--s-door', sDoor.toFixed(4));
-      setVar(scene, '--o-door', oDoor.toFixed(3));
+      // 9x, several times their source, and the late frames went soft.
+      // Each value is written on the box that reads it, not on .scene: a custom property on .scene restyled every
+      // scene element each frame (about 5ms a frame at a phone's CPU, with the hero and the chapters)
+      setVar(camSky, '--s-sky', depth(30, c, 4).toFixed(4));
+      setVar(camFour, '--s-four', depth(5, c, narrow ? 2.6 : 3.4).toFixed(4));
+      setVar(camFour, '--o-four', (.9 + .1 * ss(seg(c, 1.25, 1.85))).toFixed(3));
+      setVar(camTown, '--s-town', sTown.toFixed(4));
+      setVar(camTown, '--o-town', oTown.toFixed(3));
+      setVar(camBridge, '--s-br', sBr.toFixed(4));
+      setVar(camBridge, '--o-br', oBr.toFixed(3));
+      var sTwS = sTw.toFixed(4), sDoorS = sDoor.toFixed(4), oDoorS = oDoor.toFixed(3);
       setClass(camTown, 'is-gone', oTown <= .001);
       setClass(camBridge, 'is-gone', oBr <= .001);
-      for (var s = 0; s < camSplits.length; s++) setClass(camSplits[s], 'is-gone', sTw >= 3.2);
-      for (var g = 0; g < camDoors.length; g++) setClass(camDoors[g], 'is-gone', oDoor <= .001 || sDoor >= 3.2);
+      for (var s = 0; s < camSplits.length; s++) { setVar(camSplits[s], '--s-tw', sTwS); setClass(camSplits[s], 'is-gone', sTw >= 3.2); }
+      for (var g = 0; g < camDoors.length; g++) {
+        setVar(camDoors[g], '--s-door', sDoorS); setVar(camDoors[g], '--o-door', oDoorS);
+        setClass(camDoors[g], 'is-gone', oDoor <= .001 || sDoor >= 3.2);
+      }
 
       // the hero UI passes the camera first (depth 1)
       var hs = depth(1, c, 2.2);
@@ -508,7 +518,7 @@
         if (ch.o > mo) mo = ch.o;
       }
       // the scrim only protects text: it follows the most visible chapter, and the photo is clear in between
-      setVar(scene, '--scrim-o', (.34 * mo).toFixed(3));
+      if (scrim) setVar(scrim, '--scrim-o', (.34 * mo).toFixed(3));
 
       setAsk(ho < .05 && !blocking && !footBlocks);
 
@@ -684,6 +694,11 @@
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(scheduleMeasure);
     if (reduceMQ.addEventListener) reduceMQ.addEventListener('change', scheduleMeasure);
     else if (reduceMQ.addListener) reduceMQ.addListener(scheduleMeasure);
+    if (touchMQ) {
+      var onTouch = function () { textWithGlass = touchMQ.matches; scheduleMeasure(); };
+      if (touchMQ.addEventListener) touchMQ.addEventListener('change', onTouch);
+      else if (touchMQ.addListener) touchMQ.addListener(onTouch);
+    }
     if (window.ResizeObserver) {
       var ro = new ResizeObserver(scheduleMeasure);
       ro.observe(heroWrap);
@@ -710,7 +725,7 @@
     // a thrown error must never leave content faded, scaled or pinned: fall back to the static page
     doc.classList.remove('zt-on');
     doc.classList.remove('zt-pending');
-    ['.scene', '.zt', '.zt-hero', '.zt-chap'].forEach(function (sel) {
+    ['.scene', '.cam', '.scene-scrim', '.zt', '.zt-hero', '.zt-chap'].forEach(function (sel) {
       var els = document.querySelectorAll(sel);
       for (var i = 0; i < els.length; i++) els[i].removeAttribute('style');
     });

@@ -755,12 +755,22 @@
     // The chart is built at its container's width, so it is rebuilt when that width changes.
     var host = $('curveWrap');
     if (host && window.ResizeObserver) {
+      var roFrame = 0;
       new ResizeObserver(function () {
+        // rebuilt on the next frame, not inside the callback: a synchronous rebuild resized the
+        // observed box again and WebKit reported "ResizeObserver loop completed"
+        if (roFrame) return;
+        roFrame = requestAnimationFrame(function () {
+          roFrame = 0;
+          redraw();
+        });
+      }).observe(host);
+      function redraw() {
         // Only a change in width matters. A phone's toolbar collapsing on scroll fires a
         // resize at the same width, and redrawing then reset the table under the thumb.
         if (lastCurve === null || plotWidth(host) === lastW) return;
         curve(lastCurve, true);
-      }).observe(host);
+      }
     }
     window.addEventListener('beforeprint', function () {
       var plot = $('curvePlot');
